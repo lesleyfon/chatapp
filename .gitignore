@@ -1,0 +1,13 @@
+# Directories to ignore
+node_modules/
+dist/
+build/
+.idea/
+.vscode/
+
+# Files to ignore
+*.log
+*.txt
+*.csv
+package-lock.json
+.env
