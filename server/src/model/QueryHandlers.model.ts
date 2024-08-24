@@ -2,7 +2,7 @@ import { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { connectToDB } from "../db";
 import { chatMembers, messages, chats, user } from "../schema";
 import { UserSchema } from "./Auth.model";
-import { sql, desc, eq } from "drizzle-orm";
+import { sql, desc, eq, asc } from "drizzle-orm";
 
 
 export type MessageType = {
@@ -141,8 +141,10 @@ export class QueryHandlers extends UserSchema {
       }
     }).from(chats)
       .where(eq(chats.pk_chats_id , chatRoomId))
+      .orderBy(asc(messages.sent_at))
       .leftJoin(messages, eq(chats.pk_chats_id, messages.fk_chat_id))
       .leftJoin(user, eq(messages.fk_user_id, user.pk_user_id));
+      
 			
     const mappedMessages = chatRoomMessages.map(data => {
       const dataUserId = (data.chat_user?.pk_user_id)?.toString();
