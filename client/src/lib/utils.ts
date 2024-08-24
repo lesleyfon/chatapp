@@ -43,7 +43,6 @@ export function formatDate(date: Date) {
 		year: 'numeric',
 		hour: 'numeric',
 		minute: 'numeric',
-		second: 'numeric',
 		timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
 	})
 }
