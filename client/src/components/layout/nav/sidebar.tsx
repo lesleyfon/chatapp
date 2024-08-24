@@ -1,10 +1,9 @@
 import { cn, timeDifference } from "../../../lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "../../ui/avatar";
-import { Button } from "../../ui/button";
-import { PlusIcon } from "../../ui/avatar/index";
 import { Link } from "react-router-dom";
 import { SidebarProps } from "../../../types";
 import { useGetChatList } from "../../../hooks/useGetChatList";
+import { JoinRoom } from "../../join-room";
 
 export default function Sidebar({ className }: SidebarProps) {
 	const { chatList } = useGetChatList();
@@ -13,14 +12,7 @@ export default function Sidebar({ className }: SidebarProps) {
 		<section className={cn(`relative hidden h-screen border-r md:block w-72`, className)}>
 			<div className="sticky top-0 z-10 flex h-14 items-center justify-between border-b px-4">
 				<div className="font-semibold">Chats</div>
-				<Button
-					variant="ghost"
-					size="icon"
-					className="p-0 bg-transparent  hover:bg-[#2f2f2f] rounded-[10%]"
-				>
-					<PlusIcon className="h-5 w-5" />
-					<span className="sr-only">New Chat</span>
-				</Button>
+				<JoinRoom />
 			</div>
 
 			<nav className="grid gap-1 p-2">
