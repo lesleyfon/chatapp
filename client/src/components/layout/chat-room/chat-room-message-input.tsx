@@ -36,7 +36,6 @@ export function MessageInput({ chatId, chatName }: { chatId: string; chatName: s
 		setValue(INPUT_NAME, "");
 	};
 
-	console.log(errors);
 	return (
 		<div className="p-4 border-t">
 			<form onSubmit={handleSubmit(onSubmit)} className="flex items-center">
@@ -47,7 +46,7 @@ export function MessageInput({ chatId, chatName }: { chatId: string; chatName: s
 				<Input
 					type="text"
 					className={cn(
-						"flex-1 rounded-[0.5rem]",
+						"flex-1 rounded-[0.2rem]",
 						errors?.message_text ? "border-red-400" : ""
 					)}
 					placeholder="Type a message..."

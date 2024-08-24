@@ -11,8 +11,8 @@ import {
 	useFormState,
 } from "react-hook-form";
 
-import { cn } from "@/lib/utils";
-import { Label } from "@/components/ui/label";
+import { cn } from "./../../lib/utils";
+import { Label } from "./label";
 
 const Form = FormProvider;
 
@@ -164,7 +164,7 @@ const FormRootError = React.forwardRef<
 >(({ className, ...props }, ref) => {
 	const { errors } = useFormState();
 	const rootError = errors.root;
-	console.log(errors);
+
 	if (!rootError) {
 		return null;
 	}

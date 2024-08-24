@@ -12,7 +12,6 @@ export const useSendMessage = () => {
 	}
 
 	function sendMessage(data: MessageInput & { chatId: string; chatName: string }) {
-		console.log(data);
 		const socket = io("http://localhost:3010/", {
 			reconnectionDelay: 10000,
 			timestampRequests: true,
@@ -20,8 +19,6 @@ export const useSendMessage = () => {
 			transports: ["websocket", "polling", "flashsocket"],
 		});
 
-		console.log(data.chatName);
-		console.log(data.chatId);
 		socket.emit("add-message", {
 			chatId: data.chatId,
 			message: data.message_text,

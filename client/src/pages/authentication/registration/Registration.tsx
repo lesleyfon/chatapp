@@ -38,7 +38,6 @@ export function Register() {
 		const parseResponse = JSON.parse(response as string);
 
 		if ("code" in parseResponse) {
-			console.log("here");
 			return setError("root", {
 				message: parseResponse.message,
 				type: "custom",
