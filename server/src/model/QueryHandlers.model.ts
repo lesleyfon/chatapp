@@ -238,6 +238,32 @@ export class QueryHandlers extends UserSchema {
       });
     return insertIntoChatResponse;
   }
+
+
+  /**
+   * @description - Get all chat rooms
+   * @example
+   * const chatRooms = await getAllChatRooms();
+   * console.log(chatRooms);
+   * // Output: [{ id: '...', chat_name: '...' }]
+   * @returns {Promise<ChatType[]>}
+   * @memberof QueryHandlers
+  */
+  async getAllChatRooms(): Promise<ChatType[]> {
+    try{
+      const chatRooms = await this.db.select().from(chats);
+      return chatRooms;
+    } catch (err) {
+      if (typeof err === "object" && Object.keys(err as object).length) {
+        return {
+          error: true,
+          reason: err.message,
+          ...err
+        };
+      }
+      return err;
+    }
+  }
 }
 
 export default QueryHandlers;

@@ -41,6 +41,7 @@ export class Chat extends AuthMiddlewareMixin(QueryHandlersMixin(BaseClass)) {
 
     // Method Binding
     this.getChatMessagesById = this.getChatMessagesById.bind(this);
+    this.getAllChatRooms = this.getAllChatRooms.bind(this);
 
 
     // Middlewares
@@ -49,6 +50,10 @@ export class Chat extends AuthMiddlewareMixin(QueryHandlersMixin(BaseClass)) {
       // @ts-expect-error desc
       this.authMiddleware.authenticateRequests,
       this.getChatMessagesById);
+    this.router.get('/all/chat-rooms',
+      // @ts-expect-error desc
+      this.authMiddleware.authenticateRequests,
+      this.getAllChatRooms);
   }
 
   async getChatMessagesById(req: RequestWithUser, res: Response) {
@@ -66,6 +71,15 @@ export class Chat extends AuthMiddlewareMixin(QueryHandlersMixin(BaseClass)) {
       return res.status(StatusCodes.BAD_REQUEST).json(chatMessages);
     }
     return res.status(StatusCodes.OK).json({ msg: chatMessages });
+  }
+
+  async getAllChatRooms(_req: Request, res: Response) {
+
+    const chatRooms = await this.queryHandlers.getAllChatRooms();
+    if ('error' in chatRooms) {
+      return res.status(StatusCodes.BAD_REQUEST).json(chatRooms);
+    }
+    return res.status(StatusCodes.OK).json(chatRooms);
   }
 
 

@@ -1,7 +1,6 @@
 "use client";
 
-import React from "react";
-import { Check } from "lucide-react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { Button } from "../ui/button";
@@ -14,38 +13,38 @@ import {
 	CommandList,
 } from "../ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
-import { cn } from "../../lib/utils";
+import { getBearer } from "../../lib/utils";
 import { PlusIcon } from "../ui/avatar/index";
-
-const chatroomNames = [
-	{
-		value: "next.js",
-		label: "Next.js",
-	},
-	{
-		value: "sveltekit",
-		label: "SvelteKit",
-	},
-	{
-		value: "nuxt.js",
-		label: "Nuxt.js",
-	},
-	{
-		value: "remix",
-		label: "Remix",
-	},
-	{
-		value: "astro",
-		label: "Astro",
-	},
-];
+import { useQuery } from "@tanstack/react-query";
+import { ChatRoomType } from "../../types";
 
 export function JoinRoom() {
 	const [open, setOpen] = React.useState(false);
-	const [value, setValue] = React.useState("");
+	const [chatroomNames, setChatroomNames] = useState<{ value: string; label: string }[]>([]);
+	const { data } = useQuery<ChatRoomType[], Error>({
+		queryKey: ["chat-rooms"],
+		queryFn: async () => {
+			const response = await fetch(`http://localhost:3010/chats/all/chat-rooms`, {
+				headers: {
+					Authorization: getBearer(),
+				},
+			});
+			return await response.json();
+		},
+	});
 
-	const handleSelect = (currentValue: string) => {
-		setValue(currentValue === value ? "" : currentValue);
+	useEffect(() => {
+		if (data?.length) {
+			setChatroomNames(
+				data.map((chatroom) => ({
+					value: chatroom.pk_chats_id,
+					label: chatroom.chat_name || "",
+				}))
+			);
+		}
+	}, [data]);
+
+	const handleSelect = () => {
 		setOpen(false);
 	};
 
@@ -77,14 +76,6 @@ export function JoinRoom() {
 										onSelect={handleSelect}
 										className=" cursor-pointer !w-full hover:!bg-[#4c4c52] !rounded-[0.2rem]"
 									>
-										<Check
-											className={cn(
-												"mr-2 h-4 w-4",
-												value === chatroomName.value
-													? "opacity-100"
-													: "opacity-0"
-											)}
-										/>
 										{chatroomName.label}
 									</CommandItem>
 								</Link>

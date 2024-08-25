@@ -42,7 +42,11 @@ export type ChatListType = {
 	messages: MessageType;
 }[];
 
-
+export type ChatRoomType = {
+		pk_chats_id: string;
+		chat_name: string | null;
+		createdAt: Date;
+};
 
 export type RoomMessagesResponse = {
 	chats: {

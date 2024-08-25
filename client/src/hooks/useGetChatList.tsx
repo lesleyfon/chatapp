@@ -25,6 +25,7 @@ export const useGetChatList = () => {
 		return () => {
 			socket.disconnect();
 		};
-	});
+		//TODO: Look into why this is calling the useEffect multiple times when the dependency array is not there
+	}, []);
 	return { chatList };
 };
