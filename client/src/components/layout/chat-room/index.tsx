@@ -25,7 +25,10 @@ function ChatRoomLayout() {
 		return <Loader />;
 	}
 
-	const roomName = data?.msg[0]?.chats?.chat_name ?? "";
+	if (data.error) {
+		return <p>Error</p>;
+	}
+	const roomName = data?.msg?.[0]?.chats?.chat_name ?? "";
 
 	return (
 		<section className="h-screen overflow-y-hidden grid grid-rows-[1fr_11fr_1fr]">

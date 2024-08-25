@@ -4,44 +4,48 @@ import { chatMembers, messages, chats, user } from "../schema";
 import { UserSchema } from "./Auth.model";
 import { sql, desc, eq, asc } from "drizzle-orm";
 
+export type SQLErrorType = {
+  error: boolean,
+  reason: string
+}
 
 export type MessageType = {
-	id: number;
-	fk_chat_id: string;
-	fk_user_id: string;
-	message_text: string | null;
-	sent_at: Date;
-} 
+  id: number;
+  fk_chat_id: string;
+  fk_user_id: string;
+  message_text: string | null;
+  sent_at: Date;
+}
 
 export type ChatType = {
-	pk_chats_id: string;
-	chat_name: string | null;
-	createdAt: Date;
+  pk_chats_id: string;
+  chat_name: string | null;
+  createdAt: Date;
 } | null
 
 export type ChatMembersType = {
-	id: string | null;
-	fk_chat_id: string;
-	fk_user_id: string;
-	added_at: Date;
+  id: string | null;
+  fk_chat_id: string;
+  fk_user_id: string;
+  added_at: Date;
 }
 
 export type ChatListType = {
-	chat_members: ChatMembersType
-	chats: ChatType
-	messages?: MessageType
-}[] 
+  chat_members: ChatMembersType
+  chats: ChatType
+  messages?: MessageType
+}[]
 
 
 export class QueryHandlers extends UserSchema {
   db: NodePgDatabase;
 
-  constructor(){
+  constructor() {
     super();
     this.db = connectToDB();
   }
- 
-  
+
+
   /**
  * Inserts a message into the `messages` table and ensures the user is a member of the chat.
  * 
@@ -54,7 +58,7 @@ export class QueryHandlers extends UserSchema {
  * console.log(messageResponse);
  * // Output: { id: '...', sent_at: '...', fk_user_id: 'user456', fk_chat_id: 'chat123', message_text: 'Hello World' }
  */
-  async insertMessageToTable(chatId:string, user_id:string, message: string){
+  async insertMessageToTable(chatId: string, user_id: string, message: string) {
 
     const [messageResponse] = await Promise.all([
       this.db.insert(messages)
@@ -66,7 +70,7 @@ export class QueryHandlers extends UserSchema {
           fk_chat_id: messages.fk_chat_id,
           message_text: messages.message_text,
         }),
-      
+
       /** @description  Insert a new record into the chatMembers table, but only if that record does not already exist. */
       this.db.execute(sql`
         INSERT INTO ${chatMembers} (fk_chat_id, fk_user_id)
@@ -76,7 +80,7 @@ export class QueryHandlers extends UserSchema {
         );
       `)
     ]);
-    
+
     return messageResponse;
   }
 
@@ -92,11 +96,11 @@ export class QueryHandlers extends UserSchema {
  *     console.error(error);
  *   });
  */
-  async selectUserChatRoomsWithLastSetMessages(userId: string): Promise<ChatListType>{
+  async selectUserChatRoomsWithLastSetMessages(userId: string): Promise<ChatListType> {
     const chatList: ChatListType = await this.db.select().from(chatMembers)
-      .where(eq(chatMembers.fk_user_id , userId))
+      .where(eq(chatMembers.fk_user_id, userId))
       .leftJoin(chats, eq(chats.pk_chats_id, chatMembers.fk_chat_id));
-			
+
 
     const chatListPromises = chatList.map(async (chat) => {
       const mostRecentMessages = await this.db.select().from(messages)
@@ -115,46 +119,77 @@ export class QueryHandlers extends UserSchema {
     return updatedChatList;
   }
 
-  async selectChatByChatName(chatName: string){
+  async selectChatByChatName(chatName: string) {
     const chatExist = await this.db.select().from(chats).where(eq(chats.chat_name, chatName));
     return chatExist;
   }
 
 
-  async selectChatRoomMessagesByUserId(userId: string, chatRoomId:string) {
-    const chatRoomMessages = await this.db.select({
-      chats: {
-        pk_chats_id: chats.pk_chats_id,
-        chat_name: chats.chat_name,
-        createdAt: chats.createdAt
-      },
-      messages: {
-        id: messages.id,
-        fk_chat_id: messages.fk_chat_id,
-        message_text: messages.message_text,
-        sent_at: messages.sent_at
-      },
-      chat_user: {
-        pk_user_id: user.pk_user_id,
-        name: user.name,
-        email: user.email,
+  async selectChatRoomMessagesByUserId(userId: string, chatRoomId: string): Promise<{
+    chats: {
+      pk_chats_id: string,
+      chat_name: string | null,
+      createdAt: Date
+    } | null,
+    messages: {
+      id: number;
+      fk_chat_id: string ;
+      message_text: string | null;
+      sent_at: Date;
+    } | null,  
+    chat_user: {
+      pk_user_id: string,
+      name: string | null,
+      email: string | null,
+      sender?: string
+    } | null
+  }[] | SQLErrorType> {
+    try {
+
+      const chatRoomMessages = await this.db.select({
+        chats: {
+          pk_chats_id: chats.pk_chats_id,
+          chat_name: chats.chat_name,
+          createdAt: chats.createdAt
+        },
+        messages: {
+          id: messages.id,
+          fk_chat_id: messages.fk_chat_id,
+          message_text: messages.message_text,
+          sent_at: messages.sent_at
+        },
+        chat_user: {
+          pk_user_id: user.pk_user_id,
+          name: user.name,
+          email: user.email,
+        }
+      }).from(chats)
+        .where(eq(chats.pk_chats_id, chatRoomId))
+        .orderBy(asc(messages.sent_at))
+        .leftJoin(messages, eq(chats.pk_chats_id, messages.fk_chat_id))
+        .leftJoin(user, eq(messages.fk_user_id, user.pk_user_id));
+
+
+      const mappedMessages = chatRoomMessages.map(data => {
+        const dataUserId = (data.chat_user?.pk_user_id)?.toString();
+        if (dataUserId === userId) {
+          // @ts-expect-error ignore
+          data.chat_user.sender = 'You';
+        }
+        return data;
+      });
+      return mappedMessages;
+    } catch (err) {
+      if (typeof err === "object" && Object.keys(err as object).length) {
+        // throw new Error(JSON.stringify(err as object));
+        return {
+          error: true,
+          reason: err.message,
+          ...err
+        };
       }
-    }).from(chats)
-      .where(eq(chats.pk_chats_id , chatRoomId))
-      .orderBy(asc(messages.sent_at))
-      .leftJoin(messages, eq(chats.pk_chats_id, messages.fk_chat_id))
-      .leftJoin(user, eq(messages.fk_user_id, user.pk_user_id));
-      
-			
-    const mappedMessages = chatRoomMessages.map(data => {
-      const dataUserId = (data.chat_user?.pk_user_id)?.toString();
-      if(dataUserId === userId){
-        //@ts-expect-error ignore
-        data.chat_user.sender = 'You';
-      }
-      return data;
-    });
-    return mappedMessages;
+      return err;
+    }
   }
   /**
  * @description Retrieves the most recent chat message sent along with the user information. 
@@ -166,7 +201,7 @@ export class QueryHandlers extends UserSchema {
  * console.log(recentMessage);
  * // Output: [{ messages: {...}, chat_user: {...} }]
  */
-  async getMostRecentChatMessageSent(messageResponse:MessageType[]){
+  async getMostRecentChatMessageSent(messageResponse: MessageType[]) {
     const messageResponseObj = messageResponse[0];
     const chatRoomMessages = await this.db.select({
       pk_user_id: user.pk_user_id,
@@ -194,7 +229,7 @@ export class QueryHandlers extends UserSchema {
  * console.log(newChatRoom);
  * // Output: { id: 'newChatRoomId' }
  */
-  async createNewChatRoom(chatName:string){
+  async createNewChatRoom(chatName: string) {
     const insertIntoChatResponse = await this.db
       .insert(chats)
       .values({ chat_name: chatName })

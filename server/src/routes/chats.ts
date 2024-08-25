@@ -12,7 +12,7 @@ export type ClassType = new (...args: unknown[]) => object
 export const AuthMiddlewareMixin = (Base: ClassType) =>
   class extends Base {
     authMiddleware: AuthMiddleware;
-    
+
     constructor(...args: unknown[]) {
       super(...args);
       this.authMiddleware = new AuthMiddleware();
@@ -22,15 +22,15 @@ export const AuthMiddlewareMixin = (Base: ClassType) =>
 export const QueryHandlersMixin = (Base: ClassType) =>
   class extends Base {
     queryHandlers: QueryHandlers;
-    
+
     constructor(...args: unknown[]) {
       super(...args);
       this.queryHandlers = new QueryHandlers();
     }
-    
+
   };
 
-class BaseClass {}
+class BaseClass { }
 
 export class Chat extends AuthMiddlewareMixin(QueryHandlersMixin(BaseClass)) {
   router = Router();
@@ -45,29 +45,31 @@ export class Chat extends AuthMiddlewareMixin(QueryHandlersMixin(BaseClass)) {
 
     // Middlewares
     this.router.get('/', this.baseRoute);
-    this.router.get('/:chatId', 
+    this.router.get('/:chatId',
       // @ts-expect-error desc
-      this.authMiddleware.authenticateRequests, 
+      this.authMiddleware.authenticateRequests,
       this.getChatMessagesById);
   }
 
-  async getChatMessagesById(req:RequestWithUser , res: Response){
-    
+  async getChatMessagesById(req: RequestWithUser, res: Response) {
+
     const { chatId } = req.params;
-    if(!chatId){
+    if (!chatId) {
       res.status(StatusCodes.BAD_REQUEST).json({
-        messages: `Bad Request: chatId is required chatId = ${chatId}`  
+        messages: `Bad Request: chatId is required chatId = ${chatId}`
       });
     }
 
     const userId = req.user.pk_user_id;
     const chatMessages = await this.queryHandlers.selectChatRoomMessagesByUserId(userId, chatId);
-
-    res.status(StatusCodes.OK).json({ msg: chatMessages });
+    if ('error' in chatMessages) {
+      return res.status(StatusCodes.BAD_REQUEST).json(chatMessages);
+    }
+    return res.status(StatusCodes.OK).json({ msg: chatMessages });
   }
 
-  
-  baseRoute(_req:Request, res: Response){
+
+  baseRoute(_req: Request, res: Response) {
     res.json({ 'Base': "Routes" });
   }
 }

@@ -2,6 +2,7 @@
 
 import React from "react";
 import { Check } from "lucide-react";
+import { Link } from "react-router-dom";
 
 import { Button } from "../ui/button";
 import {
@@ -69,22 +70,24 @@ export function JoinRoom() {
 						<CommandEmpty>No framework found.</CommandEmpty>
 						<CommandGroup className=" flex !w-full [&>div]:!w-full ">
 							{chatroomNames.map((chatroomName) => (
-								<CommandItem
-									key={chatroomName.value}
-									value={chatroomName.value}
-									onSelect={handleSelect}
-									className=" cursor-pointer !w-full hover:!bg-[#4c4c52] !rounded-[0.2rem]"
-								>
-									<Check
-										className={cn(
-											"mr-2 h-4 w-4",
-											value === chatroomName.value
-												? "opacity-100"
-												: "opacity-0"
-										)}
-									/>
-									{chatroomName.label}
-								</CommandItem>
+								<Link to={`/chats/${chatroomName.value}`}>
+									<CommandItem
+										key={chatroomName.value}
+										value={chatroomName.value}
+										onSelect={handleSelect}
+										className=" cursor-pointer !w-full hover:!bg-[#4c4c52] !rounded-[0.2rem]"
+									>
+										<Check
+											className={cn(
+												"mr-2 h-4 w-4",
+												value === chatroomName.value
+													? "opacity-100"
+													: "opacity-0"
+											)}
+										/>
+										{chatroomName.label}
+									</CommandItem>
+								</Link>
 							))}
 						</CommandGroup>
 					</CommandList>
