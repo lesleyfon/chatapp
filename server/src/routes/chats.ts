@@ -42,6 +42,7 @@ export class Chat extends AuthMiddlewareMixin(QueryHandlersMixin(BaseClass)) {
     // Method Binding
     this.getChatMessagesById = this.getChatMessagesById.bind(this);
     this.getAllChatRooms = this.getAllChatRooms.bind(this);
+    this.createChatRoom = this.createChatRoom.bind(this);
 
 
     // Middlewares
@@ -54,6 +55,11 @@ export class Chat extends AuthMiddlewareMixin(QueryHandlersMixin(BaseClass)) {
       // @ts-expect-error desc
       this.authMiddleware.authenticateRequests,
       this.getAllChatRooms);
+    this.router.post('/chat/new-chatroom',
+      // @ts-expect-error desc
+      this.authMiddleware.authenticateRequests,
+      this.createChatRoom);
+
   }
 
   async getChatMessagesById(req: RequestWithUser, res: Response) {
@@ -79,6 +85,24 @@ export class Chat extends AuthMiddlewareMixin(QueryHandlersMixin(BaseClass)) {
     if ('error' in chatRooms) {
       return res.status(StatusCodes.BAD_REQUEST).json(chatRooms);
     }
+    return res.status(StatusCodes.OK).json(chatRooms);
+  }
+  async createChatRoom(req: RequestWithUser, res: Response) {
+
+    const { chat_name } = req.body;
+    const userId = req.user.pk_user_id;
+
+    if(chat_name?.length === 0){
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        msg: "Room name cant be a falsy value"
+      });
+    }
+    const chatRooms = await this.queryHandlers.createNewChatroomRoomNameAndByUserId(chat_name, userId);
+
+    if ('error' in chatRooms) {
+      return res.status(StatusCodes.BAD_REQUEST).json(chatRooms);
+    }
+
     return res.status(StatusCodes.OK).json(chatRooms);
   }
 

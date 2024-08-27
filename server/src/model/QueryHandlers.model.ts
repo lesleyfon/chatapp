@@ -239,6 +239,42 @@ export class QueryHandlers extends UserSchema {
     return insertIntoChatResponse;
   }
 
+  async createNewChatroomRoomNameAndByUserId(chatName: string, userId: string){
+    const insertIntoChatResponse = await this.db
+      .insert(chats)
+      .values({ chat_name: chatName })
+      .returning({
+        id: chats.pk_chats_id,
+      });
+
+    const chatResponse = insertIntoChatResponse[0];
+    const chatId = chatResponse.id;
+
+
+    await this.db.execute(sql`
+        INSERT INTO ${chatMembers} (fk_chat_id, fk_user_id)
+        SELECT ${chatId}, ${userId}
+        WHERE NOT EXISTS (
+          SELECT 1 FROM ${chatMembers} WHERE fk_chat_id = ${chatId} AND fk_user_id = ${userId}
+        );
+      `);
+
+
+    const chatRoom = await this.db.select({
+      chats: {
+        pk_chats_id: chats.pk_chats_id,
+        chat_name: chats.chat_name,
+        createdAt: chats.createdAt
+      },
+    }).from(chats).where(eq(chats.pk_chats_id, chatId));
+
+  
+    return {
+      chats: chatRoom,
+      chat_user: chatResponse,
+      messages: []
+    };
+  }
 
   /**
    * @description - Get all chat rooms
