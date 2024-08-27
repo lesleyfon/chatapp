@@ -19,7 +19,7 @@ const scrollToBottom = (lastElemRef: React.MutableRefObject<null>) => {
 export const ChatRoomSection = ({ data }: { data: [] }) => {
 	const [allRoomMessages, setAllRoomMessages] = useState<RoomMessagesResponse[]>(data);
 	const messageSectionContainerRef = useRef(null);
-
+	console.log(data);
 	useEffect(() => {
 		scrollToBottom(messageSectionContainerRef);
 	}, [allRoomMessages.length]);
@@ -36,7 +36,7 @@ export const ChatRoomSection = ({ data }: { data: [] }) => {
 		socket.on("add-message-response", (response: RoomMessagesResponse[]) => {
 			setAllRoomMessages((previousRoomMessages) => {
 				response = response.map((responseData) => {
-					if (responseData.chat_user.pk_user_id.toString() === userId) {
+					if (responseData?.chat_user?.pk_user_id.toString() === userId) {
 						responseData.chat_user.sender = "You";
 					}
 					return responseData;
@@ -55,7 +55,7 @@ export const ChatRoomSection = ({ data }: { data: [] }) => {
 			{allRoomMessages.length > 1 ? (
 				<section ref={messageSectionContainerRef}>
 					{allRoomMessages?.map((msgData: RoomMessagesResponse) => {
-						const isSender = msgData.chat_user.sender === "You";
+						const isSender = msgData?.chat_user?.sender === "You";
 						return (
 							<div
 								key={msgData?.messages?.id}
@@ -79,7 +79,7 @@ export const ChatRoomSection = ({ data }: { data: [] }) => {
 													: "text-secondary-foreground"
 											)}
 										>
-											{msgData.chat_user.name}
+											{msgData?.chat_user?.name}
 										</div>
 										<p>{msgData.messages?.message_text}</p>
 										<div className="text-[10px] text-muted-foreground mt-1">

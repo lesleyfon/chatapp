@@ -34,18 +34,21 @@ export default function Sidebar({ className }: SidebarProps) {
 								<div className="from-neutral-100 font-bold">
 									{chatdata.chats?.chat_name}
 								</div>
-								<div className="bottom-row flex gap-2 items-center w-full">
-									<div className="w-full">
-										<p className=" truncate w-full text-xs text-ellipsis overflow-hidden md:block md:w-44 ">
-											{chatdata?.messages.message_text}
-										</p>
+
+								{chatdata?.messages ? (
+									<div className="bottom-row flex gap-2 items-center w-full">
+										<div className="w-full">
+											<p className=" truncate w-full text-xs text-ellipsis overflow-hidden md:block md:w-44 ">
+												{chatdata?.messages.message_text ?? ""}
+											</p>
+										</div>
+										<div className="text-xs text-muted-foreground">
+											<p className="text-xs">
+												{timeDifference(chatdata?.messages?.sent_at)}
+											</p>
+										</div>
 									</div>
-									<div className="text-xs text-muted-foreground">
-										<p className="text-xs">
-											{timeDifference(chatdata?.messages.sent_at)}
-										</p>
-									</div>
-								</div>
+								) : null}
 							</div>
 						</Link>
 					))}
