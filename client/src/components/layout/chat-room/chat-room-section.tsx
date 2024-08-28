@@ -5,6 +5,7 @@ import { cn, formatDate } from "../../../lib/utils";
 import { Card, CardContent } from "../../ui/card";
 import { ScrollArea } from "../../ui/scroll-area";
 import { type RoomMessagesResponse } from "../../../types";
+import { useLocation } from "react-router";
 
 const scrollToBottom = (lastElemRef: React.MutableRefObject<null>) => {
 	if (lastElemRef.current) {
@@ -19,7 +20,9 @@ const scrollToBottom = (lastElemRef: React.MutableRefObject<null>) => {
 export const ChatRoomSection = ({ data }: { data: [] }) => {
 	const [allRoomMessages, setAllRoomMessages] = useState<RoomMessagesResponse[]>(data);
 	const messageSectionContainerRef = useRef(null);
-	console.log(data);
+	const location = useLocation();
+	const chatroomId = location.pathname.split("/").at(-1);
+
 	useEffect(() => {
 		scrollToBottom(messageSectionContainerRef);
 	}, [allRoomMessages.length]);
@@ -34,6 +37,10 @@ export const ChatRoomSection = ({ data }: { data: [] }) => {
 			transports: ["websocket", "polling", "flashsocket"],
 		});
 		socket.on("add-message-response", (response: RoomMessagesResponse[]) => {
+			if (chatroomId?.toString() !== response?.[0]?.chats?.pk_chats_id?.toString()) {
+				return;
+			}
+
 			setAllRoomMessages((previousRoomMessages) => {
 				response = response.map((responseData) => {
 					if (responseData?.chat_user?.pk_user_id.toString() === userId) {

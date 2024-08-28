@@ -14,10 +14,10 @@ export class AppSocketBase extends QueryHandlers {
 
 
   async getAUserChatList(socket: Socket) {
-    const token = socket.handshake.auth?.token ;
+    const token = socket.handshake.auth?.token;
     const user = await this.decodeJWT(token);
 
-    if(!user) return; 
+    if (!user) return;
     const userId = user.userId;
     socket.on("get-chat-list", async (cb: CbType) => {
 
@@ -28,20 +28,21 @@ export class AppSocketBase extends QueryHandlers {
   }
 
   /**
-	 * The function `emitAddMessageErrorResponse` sends an error response message to a specific chat room
-	 * or to all connected clients.
-	 * @param {string | null} chatName - The `chatName` parameter is a string that represents the name of
-	 * the chat room where the message is being added. It can also be `null` if the message is not
-	 * associated with any specific chat room.
-	 * @param {string} message - The `message` parameter in the `emitAddMessageErrorResponse` function is
-	 * a string that represents the error message to be included in the response object. This message will
-	 * be sent back to the client when emitting the "add-message-response" event.
-	 */
+   * The function `emitAddMessageErrorResponse` sends an error response message to a specific chat room
+   * or to all connected clients.
+   * @param {string | null} chatName - The `chatName` parameter is a string that represents the name of
+   * the chat room where the message is being added. It can also be `null` if the message is not
+   * associated with any specific chat room.
+   * @param {string} message - The `message` parameter in the `emitAddMessageErrorResponse` function is
+   * a string that represents the error message to be included in the response object. This message will
+   * be sent back to the client when emitting the "add-message-response" event.
+   */
   private emitAddMessageErrorResponse(chatName: string | null, message: string) {
     const response = {
       data: null,
       error: true,
       message: message,
+      chats: { chatName }
     };
     if (chatName) {
       this.io.to(chatName).emit("add-message-response", response);
@@ -50,14 +51,14 @@ export class AppSocketBase extends QueryHandlers {
     }
   }
 
-		
+
   addMessageToRoom(socket: Socket) {
-    socket.on("add-message", async (data:{ chatName: string; message: string, senderId: string }) => {
+    socket.on("add-message", async (data: { chatName: string; message: string, senderId: string }) => {
 
       const { chatName, message } = data;
       const token = socket.handshake.auth?.token;
       const user = await this.decodeJWT(token);
-			
+
       this.io.socketsJoin(chatName);
 
       if (!chatName) {
@@ -65,14 +66,14 @@ export class AppSocketBase extends QueryHandlers {
       }
       if (!message) {
         return this.emitAddMessageErrorResponse(chatName, "Message cannot be empty");
-				
+
       }
       if (!user) {
         return this.emitAddMessageErrorResponse(chatName, "User not found");
       }
 
-      const userId = user.userId; 
-	
+      const userId = user.userId;
+
       const chatExist = await this.selectChatByChatName(chatName);
 
       if (chatExist.length === 0) {
@@ -83,16 +84,27 @@ export class AppSocketBase extends QueryHandlers {
 
         // Add message to the message table - refactor this
         const messageResponse = await this.insertMessageToTable(chatId, userId, message);
-        this.io.to(chatName).emit("add-message-response", messageResponse);
-        return; 
-      } 
+        const chatExist = await this.selectChatByChatName(chatName);
+
+        const addMessageResponse = messageResponse.map(message => ({
+          ...message,
+          chats: chatExist[0],
+        }));
+
+        this.io.to(chatName).emit("add-message-response", addMessageResponse);
+        return;
+      }
 
       const chatId = chatExist[0].pk_chats_id;
       const messageInsertResponse = await this.insertMessageToTable(chatId, userId, message);
       const messageResponse = await this.getMostRecentChatMessageSent(messageInsertResponse);
 
       // Emit message to other users
-      this.io.to(chatName).emit("add-message-response", messageResponse);
+      const addMessageResponse = messageResponse.map(message => ({
+        ...message,
+        chats: chatExist[0],
+      }));
+      this.io.to(chatName).emit("add-message-response", addMessageResponse);
       this.io.to(chatName).emit("get-chat-list");
     });
   }
