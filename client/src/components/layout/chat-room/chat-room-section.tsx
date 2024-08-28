@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { io } from "socket.io-client";
 
 import { cn, formatDate } from "../../../lib/utils";
 import { Card, CardContent } from "../../ui/card";
 import { ScrollArea } from "../../ui/scroll-area";
 import { type RoomMessagesResponse } from "../../../types";
 import { useLocation } from "react-router";
+import { createSocketInstance } from "../../../api/sockets";
 
 const scrollToBottom = (lastElemRef: React.MutableRefObject<null>) => {
 	if (lastElemRef.current) {
@@ -28,14 +28,9 @@ export const ChatRoomSection = ({ data }: { data: [] }) => {
 	}, [allRoomMessages.length]);
 
 	useEffect(() => {
-		const token = localStorage.getItem("auth_token");
 		const userId = localStorage.getItem("userId");
-		const socket = io("http://localhost:3010/", {
-			reconnectionDelay: 10000,
-			timestampRequests: true,
-			auth: { token },
-			transports: ["websocket", "polling", "flashsocket"],
-		});
+		const socket = createSocketInstance();
+
 		socket.on("add-message-response", (response: RoomMessagesResponse[]) => {
 			if (chatroomId?.toString() !== response?.[0]?.chats?.pk_chats_id?.toString()) {
 				return;

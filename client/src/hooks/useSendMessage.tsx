@@ -1,7 +1,6 @@
-import { io } from "socket.io-client";
-
 import { useNavigate } from "react-router-dom";
 import { MessageInput } from "./../types/index";
+import { createSocketInstance } from "../api/sockets";
 
 export const useSendMessage = () => {
 	const token = localStorage.getItem("auth_token");
@@ -12,12 +11,7 @@ export const useSendMessage = () => {
 	}
 
 	function sendMessage(data: MessageInput & { chatId: string; chatName: string }) {
-		const socket = io("http://localhost:3010/", {
-			reconnectionDelay: 10000,
-			timestampRequests: true,
-			auth: { token },
-			transports: ["websocket", "polling", "flashsocket"],
-		});
+		const socket = createSocketInstance();
 
 		socket.emit("add-message", {
 			chatId: data.chatId,
