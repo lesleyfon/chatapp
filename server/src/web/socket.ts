@@ -90,7 +90,9 @@ export class AppSocketBase extends QueryHandlers {
           ...message,
           chats: chatExist[0],
         }));
-
+        const chatList = await this.getLatestChatRoomMessageSent(userId, chatId);
+        
+        this.io.to(chatName).emit("get-latest-chat-room-message", chatList);
         this.io.to(chatName).emit("add-message-response", addMessageResponse);
         return;
       }
@@ -104,8 +106,12 @@ export class AppSocketBase extends QueryHandlers {
         ...message,
         chats: chatExist[0],
       }));
+
+      const chatList = await this.getLatestChatRoomMessageSent(userId, chatId);
+      
+      // Emitter
       this.io.to(chatName).emit("add-message-response", addMessageResponse);
-      this.io.to(chatName).emit("get-chat-list");
+      this.io.to(chatName).emit("get-latest-chat-room-message", chatList);
     });
   }
   socketEvents() {
