@@ -1,5 +1,12 @@
 import { type LucideIcon } from "lucide-react";
 
+export type ChatUserType = {
+	name: string | null;
+	pk_user_id: string;
+	email: string | null;
+	sender?: string;
+};
+
 export interface NavItem {
 	title: string;
 	href: string;
@@ -40,6 +47,7 @@ export type ChatListType = {
 		createdAt: Date;
 	} | null;
 	messages: MessageType;
+	chat_user: ChatUserType;
 }[];
 
 export type ChatRoomType = {
