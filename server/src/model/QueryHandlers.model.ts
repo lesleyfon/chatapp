@@ -97,8 +97,28 @@ export class QueryHandlers extends UserSchema {
  *   });
  */
   async selectUserChatRoomsWithLastSetMessages(userId: string): Promise<ChatListType> {
-    const chatList: ChatListType = await this.db.select().from(chatMembers)
+    const chatList: ChatListType = await this.db.select({
+      chat_members:{
+        added_at: chatMembers.added_at,
+        fk_chat_id: chatMembers.fk_chat_id,
+        fk_user_id: chatMembers.fk_user_id,
+        id: chatMembers.id
+      },
+      chats: {
+        pk_chats_id: chats.pk_chats_id,
+        chat_name: chats.chat_name,
+        createdAt: chats.createdAt
+      },
+      chat_user: {
+        created_at: user.created_at,
+        email: user.email,
+        name: user.name,
+        pk_user_id: user.pk_user_id,
+      },
+
+    }).from(chatMembers)
       .where(eq(chatMembers.fk_user_id, userId))
+      .leftJoin(user, eq(user.pk_user_id, userId))
       .leftJoin(chats, eq(chats.pk_chats_id, chatMembers.fk_chat_id));
 
 
@@ -121,7 +141,28 @@ export class QueryHandlers extends UserSchema {
 
 
   async getLatestChatRoomMessageSent(userId:string, chatRoomId:string){
-    const chatList = await this.db.select().from(chats)
+    const chatList = await this.db
+      .select({
+        chats: {
+          chat_name: chats.chat_name,
+          createdAt: chats.createdAt,
+          pk_chats_id: chats.pk_chats_id,
+        },
+        chat_user: {
+          created_at: user.created_at,
+          email: user.email,
+          name: user.name,
+          pk_user_id: user.pk_user_id,
+        },
+        messages: {
+          fk_chat_id: messages.fk_chat_id,
+          fk_user_id: messages.fk_user_id,
+          id: messages.id,
+          message_text: messages.message_text,
+          sent_at: messages.sent_at,
+        },
+      })
+      .from(chats)
       .where(eq(chats.pk_chats_id, chatRoomId))
       .leftJoin(messages, eq(messages.fk_chat_id, chats.pk_chats_id))
       .leftJoin(user, eq(user.pk_user_id, userId))
