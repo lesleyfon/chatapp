@@ -119,6 +119,17 @@ export class QueryHandlers extends UserSchema {
     return updatedChatList;
   }
 
+
+  async getLatestChatRoomMessageSent(userId:string, chatRoomId:string){
+    const chatList = await this.db.select().from(chats)
+      .where(eq(chats.pk_chats_id, chatRoomId))
+      .leftJoin(messages, eq(messages.fk_chat_id, chats.pk_chats_id))
+      .leftJoin(user, eq(user.pk_user_id, userId))
+      .orderBy(desc(messages.sent_at))
+      .limit(1);
+
+    return chatList;
+  }
   async selectChatByChatName(chatName: string) {
     const chatExist = await this.db.select().from(chats).where(eq(chats.chat_name, chatName));
     return chatExist;
