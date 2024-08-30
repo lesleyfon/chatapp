@@ -6,7 +6,7 @@ import { useGetChatList } from "../../../hooks/useGetChatList";
 import { JoinRoom } from "../../join-room";
 
 export default function Sidebar({ className }: SidebarProps) {
-	const { chatList } = useGetChatList();
+	const { chatroomList } = useGetChatList();
 
 	return (
 		<section className={cn(`relative hidden h-screen border-r md:block w-72`, className)}>
@@ -16,8 +16,8 @@ export default function Sidebar({ className }: SidebarProps) {
 			</div>
 
 			<nav className="grid gap-1 p-2">
-				{chatList.length > 0 &&
-					chatList.map((chatdata) => (
+				{chatroomList.length > 0 &&
+					chatroomList.map((chatdata) => (
 						<Link
 							to={`/chats/${chatdata.chats?.pk_chats_id}`}
 							className="flex items-center gap-3 rounded-md p-2 text-sm font-medium transition-colors hover:bg-muted from-neutral-200"

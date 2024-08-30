@@ -5,22 +5,42 @@ import { ChatListType } from "./../types/index";
 import { createSocketInstance } from "../api/sockets";
 
 export const useGetChatList = () => {
-	const [chatList, setChatList] = useState<ChatListType>([]);
-	const token = localStorage.getItem("auth_token");
+	const [chatroomList, setChatList] = useState<ChatListType>([]);
 	const navigate = useNavigate();
-	if (!token) {
-		navigate("/");
-	}
+
 	useEffect(() => {
+		const token = localStorage.getItem("auth_token");
+		if (!token) {
+			navigate("/");
+			return;
+		}
+
 		const socket = createSocketInstance();
+
+		// Fetch initial chat list
+		// 		// This socket is mean to fire only on initial render, to get the list of chatrooms for a user.
+		// 		// THOUGHT: Would it make sense to have this be an api?
 		socket.emit("get-chat-list", (response: ChatListType) => {
 			setChatList(response);
 		});
 
+		// Setup listener for new messages
+		const handleMessageUpdate = (response: ChatListType) => {
+			setChatList((prevChatList) =>
+				prevChatList.map((chat) =>
+					chat.chats?.pk_chats_id === response[0].chats?.pk_chats_id ? response[0] : chat
+				)
+			);
+		};
+
+		socket.on("get-latest-chat-room-message", handleMessageUpdate);
+
+		// Cleanup function to avoid memory leaks
 		return () => {
+			socket.off("get-latest-chat-room-message", handleMessageUpdate);
 			socket.disconnect();
 		};
-		//TODO: Look into why this is calling the useEffect multiple times when the dependency array is not there
-	}, []);
-	return { chatList };
+	}, [navigate]); // Added 'navigate' to the dependency array to ensure effect runs only when it changes
+
+	return { chatroomList };
 };
