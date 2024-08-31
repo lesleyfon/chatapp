@@ -112,7 +112,6 @@ export function CreateNewRoom() {
 
 	const mutation = useMutation({
 		mutationFn: (data: { [key: string]: string }) => {
-			console.log({ chat_name: data?.[INPUT_NAME] });
 			return fetch("http://localhost:3010/chats/chat/new-chatroom", {
 				method: "POST",
 				headers: {
@@ -136,7 +135,6 @@ export function CreateNewRoom() {
 	const onSubmit = (data: { [key: string]: string }) => {
 		mutation.mutate(data);
 
-		console.log(mutation.data);
 		setValue(INPUT_NAME, "");
 	};
 

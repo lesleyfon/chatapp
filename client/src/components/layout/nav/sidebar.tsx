@@ -36,7 +36,7 @@ const SidebarItemLink = React.memo(({ chatData }: { chatData: ChatListType[0] })
 
 export default function Sidebar({ className }: SidebarProps) {
 	const { chatroomList } = useGetChatList();
-	console.log(chatroomList);
+
 	const renderedChats = useMemo(
 		() =>
 			chatroomList.map(
