@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
 import { MenuIcon } from "lucide-react";
-import { SideNav } from "./side-nav";
-import { Sheet, SheetContent, SheetTrigger } from "./../ui/sheet";
-import { NavItems } from "../constants";
+import Sidebar from "./sidebar";
+import { Sheet, SheetContent, SheetTrigger } from "../../ui/sheet";
 
 export const MobileSidebar = () => {
 	const [open, setOpen] = useState(false);
@@ -17,20 +16,19 @@ export const MobileSidebar = () => {
 	}
 
 	return (
-		<>
+		<div className="block md:!hidden mx-5">
 			<Sheet open={open} onOpenChange={setOpen}>
 				<SheetTrigger asChild>
-					<div className="flex items-center justify-center gap-2">
+					<div className="flex items-center justify-center ">
 						<MenuIcon />
-						<h1 className="text-lg font-semibold">T3 app template</h1>
 					</div>
 				</SheetTrigger>
-				<SheetContent side="left" className="w-72">
+				<SheetContent side="left" className="w-72 p-0 br-0">
 					<div className="px-1 py-6 pt-16">
-						<SideNav items={NavItems} setOpen={setOpen} />
+						<Sidebar className="block md:hidden h-screen border-0" />
 					</div>
 				</SheetContent>
 			</Sheet>
-		</>
+		</div>
 	);
 };

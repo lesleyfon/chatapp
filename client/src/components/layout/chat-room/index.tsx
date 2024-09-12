@@ -3,7 +3,6 @@ import { getBearer } from "../../../lib/utils";
 import { useParams } from "react-router";
 import { Loader } from "../../loader";
 import { MessageInput } from "./chat-room-message-input";
-import { ChatRoomHeader } from "./chat-room-header";
 import { ChatRoomSection } from "./chat-room-section";
 
 function ChatRoomLayout() {
@@ -31,8 +30,7 @@ function ChatRoomLayout() {
 	const roomName = data?.msg?.[0]?.chats?.chat_name ?? "";
 
 	return (
-		<section className="h-screen overflow-y-hidden grid grid-rows-[1fr_11fr_1fr]">
-			<ChatRoomHeader roomName={roomName} />
+		<section className="overflow-y-hidden grid grid-rows-[12fr_1fr] md:grid-rows-[11fr_1fr] ">
 			<ChatRoomSection data={data?.msg ?? []} />
 			{chatId && chatId.length > 0 ? (
 				<MessageInput chatId={chatId} chatName={roomName} />
