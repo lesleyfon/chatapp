@@ -44,13 +44,14 @@ export function MessageInput({ chatId, chatName }: { chatId: string; chatName: s
 					<span className="sr-only">Attach file</span>
 				</Button>
 				<Input
+					{...register(INPUT_NAME)}
 					type="text"
 					className={cn(
 						"flex-1 rounded-[0.2rem]",
 						errors?.message_text ? "border-red-400" : ""
 					)}
 					placeholder="Type a message..."
-					{...register(INPUT_NAME)}
+					autoComplete="off"
 				/>
 				<Popover>
 					<PopoverTrigger>

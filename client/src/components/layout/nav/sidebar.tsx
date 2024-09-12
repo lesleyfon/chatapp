@@ -9,7 +9,7 @@ import { JoinRoom } from "../../join-room";
 const SidebarItemLink = React.memo(({ chatData }: { chatData: ChatListType[0] }) => (
 	<Link
 		to={`/chats/${chatData.chats?.pk_chats_id}`}
-		className="flex items-center gap-3 rounded-md p-2 text-sm font-medium transition-colors hover:bg-muted from-neutral-200"
+		className="flex items-center gap-3 rounded-md p-2 text-sm font-medium transition-colors hover:bg-muted from-neutral-200 hover:!bg-[#4c4c52]"
 	>
 		<Avatar className="h-8 w-8 border">
 			<AvatarImage
@@ -45,13 +45,19 @@ export default function Sidebar({ className }: SidebarProps) {
 		[chatroomList]
 	);
 	return (
-		<section className={className}>
-			<div className="sticky top-0 z-10 flex h-14 items-center justify-between border-b px-4">
-				<div className="font-semibold">Chats</div>
-				<JoinRoom />
-			</div>
+		<>
+			{chatroomList.length > 0 ? (
+				<section className={className}>
+					<div className="sticky top-0 flex h-14 items-center justify-between border-b px-4">
+						<div className="font-semibold">Chats</div>
+						<div>
+							<JoinRoom />
+						</div>
+					</div>
 
-			<nav className="grid gap-1 p-2">{renderedChats}</nav>
-		</section>
+					<nav className="grid gap-1 p-2">{renderedChats}</nav>
+				</section>
+			) : null}
+		</>
 	);
 }

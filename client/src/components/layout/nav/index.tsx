@@ -1,5 +1,8 @@
 import { ReactNode, type FC } from "react";
 import { JoinRoom } from "../../join-room";
+import { useParams } from "react-router";
+import { useQuery } from "@tanstack/react-query";
+import { getBearer } from "../../../lib/utils";
 
 const MobileNav: FC = (): ReactNode => {
 	return (
@@ -9,10 +12,9 @@ const MobileNav: FC = (): ReactNode => {
 	);
 };
 
-const Desktop: FC = (): ReactNode => {
-	const roomName = "Room Name";
+const Desktop: FC<{ roomName: string }> = ({ roomName }): ReactNode => {
 	return (
-		<nav className=" md:flex hidden items-center justify-between bg-[#242424] shadow-md h-full mx-6 w-full content-center flex-wrap">
+		<nav className=" md:flex hidden items-center justify-between bg-[#242424] shadow-md h-full w-full content-center flex-wrap px-6">
 			<div>
 				<div className="font-semibold">{roomName}</div>
 				<div className="text-xs text-muted-foreground">
@@ -22,14 +24,41 @@ const Desktop: FC = (): ReactNode => {
 					</span>
 				</div>
 			</div>
-			<JoinRoom />
+			<div className="">
+				<JoinRoom />
+			</div>
 		</nav>
 	);
 };
+
 const Header: FC = (): ReactNode => {
+	const { chatId } = useParams();
+
+	const { isPending, data, isFetching } = useQuery({
+		queryKey: [chatId], // Makes another call when chatId changes
+		queryFn: async () => {
+			const response = await fetch(`http://localhost:3010/chats/${chatId}`, {
+				headers: {
+					Authorization: getBearer(),
+				},
+			});
+			return await response.json();
+		},
+	});
+
+	if (isFetching ?? isPending) {
+		return <Desktop roomName="FETCHING DATA" />;
+	}
+
+	if (data.error) {
+		return <p>Error</p>;
+	}
+
+	const roomName = data?.msg?.[0]?.chats?.chat_name ?? "";
+
 	return (
 		<header className="supports-backdrop-blur:bg-background/60 left-0 right-0 top-0 z-20 border-b bg-background/95 backdrop-blur">
-			<Desktop />
+			<Desktop roomName={roomName} />
 			<MobileNav />
 		</header>
 	);
