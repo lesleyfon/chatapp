@@ -53,7 +53,7 @@ export const ChatRoomSection = ({ data }: { data: [] }) => {
 	});
 
 	return (
-		<ScrollArea className="flex-1 p-4">
+		<ScrollArea className="flex-1 px-4">
 			{allRoomMessages.length > 1 ? (
 				<section ref={messageSectionContainerRef}>
 					{allRoomMessages?.map((msgData: RoomMessagesResponse) => {

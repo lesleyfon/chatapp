@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { cn, timeDifference } from "../../../lib/utils";
+import { timeDifference } from "../../../lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "../../ui/avatar";
 import { Link } from "react-router-dom";
 import { type ChatListType, type SidebarProps } from "../../../types";
@@ -44,9 +44,8 @@ export default function Sidebar({ className }: SidebarProps) {
 			),
 		[chatroomList]
 	);
-
 	return (
-		<section className={cn(`relative hidden h-screen border-r md:block w-72`, className)}>
+		<section className={className}>
 			<div className="sticky top-0 z-10 flex h-14 items-center justify-between border-b px-4">
 				<div className="font-semibold">Chats</div>
 				<JoinRoom />
