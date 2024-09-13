@@ -48,7 +48,7 @@ export function Login() {
 
 	return (
 		<Form {...form}>
-			<form onSubmit={form.handleSubmit(onSubmit)} className="w-2/3 space-y-6">
+			<form onSubmit={form.handleSubmit(onSubmit)} className="w-full space-y-6">
 				<FormField
 					control={form.control}
 					name="email"
@@ -70,7 +70,7 @@ export function Login() {
 					render={({ field }) => (
 						<FormItem>
 							<>
-								<FormLabel className="text-left w-full flex">password</FormLabel>
+								<FormLabel className="text-left w-full flex">Password</FormLabel>
 								<FormControl>
 									<Input placeholder="password" type="password" {...field} />
 								</FormControl>
@@ -80,7 +80,9 @@ export function Login() {
 					)}
 				/>
 				<FormRootError className=" text-red-300 text-left" />
-				<Button type="submit">Submit</Button>
+				<Button type="submit" className="bg-white text-black rounded-[0.2rem]">
+					Submit
+				</Button>
 			</form>
 		</Form>
 	);

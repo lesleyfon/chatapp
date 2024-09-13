@@ -48,7 +48,7 @@ export function Register() {
 
 	return (
 		<Form {...form}>
-			<form onSubmit={form.handleSubmit(onSubmit)} className="w-2/3 space-y-6">
+			<form onSubmit={form.handleSubmit(onSubmit)} className="w-full space-y-6">
 				<FormField
 					control={form.control}
 					name="name"
@@ -86,7 +86,7 @@ export function Register() {
 					render={({ field }) => (
 						<FormItem>
 							<>
-								<FormLabel className="text-left w-full flex">password</FormLabel>
+								<FormLabel className="text-left w-full flex">Password</FormLabel>
 								<FormControl>
 									<Input placeholder="password" type="password" {...field} />
 								</FormControl>
@@ -96,7 +96,9 @@ export function Register() {
 					)}
 				/>
 				<FormRootError className=" text-red-300 text-left" />
-				<Button type="submit">Submit</Button>
+				<Button type="submit" className="bg-white text-black rounded-[0.2rem]">
+					Submit
+				</Button>
 			</form>
 		</Form>
 	);

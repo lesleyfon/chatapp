@@ -1,0 +1,9 @@
+
+button[data-state="active"]{
+  background-color: #09090B !important ;
+  color: white !important;
+  font-weight: bold;
+  transition-duration: 0.25s;
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
