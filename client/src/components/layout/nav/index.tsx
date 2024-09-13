@@ -2,7 +2,7 @@ import { ReactNode, type FC } from "react";
 import { JoinRoom } from "../../join-room";
 import { useParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
-import { fetchChatListsDataFromChatId } from "../../../lib/utils";
+import api from "./../../../api/httpMethods";
 import { LogoutButton } from "../../logout-button";
 
 const MobileNav: FC = (): ReactNode => {
@@ -38,7 +38,7 @@ const Header: FC = (): ReactNode => {
 
 	const { isPending, data, isFetching } = useQuery({
 		queryKey: [chatId], // Makes another call when chatId changes
-		queryFn: chatId ? () => fetchChatListsDataFromChatId(chatId) : undefined,
+		queryFn: chatId ? () => api.fetchChatListsDataFromChatId(chatId) : undefined,
 	});
 
 	if ((isFetching || isPending) && chatId) {

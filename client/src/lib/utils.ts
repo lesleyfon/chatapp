@@ -61,13 +61,3 @@ export const getBearer = () => {
 	const token = localStorage.getItem("auth_token");
 	return `Bearer ${token}`;
 };
-
-
-export const fetchChatListsDataFromChatId = async (chatId: string) => {
-	const response = await fetch(`http://localhost:3010/chats/${chatId}`, {
-		headers: {
-			Authorization: getBearer(),
-		},
-	});
-	return await response.json();
-};

@@ -12,7 +12,6 @@ import {
 	CommandItem,
 	CommandList,
 } from "../ui/command";
-import { getBearer } from "../../lib/utils";
 import { SearchIcon } from "../ui/avatar/index";
 import { ChatRoomType } from "../../types";
 import {
@@ -23,6 +22,7 @@ import {
 	DialogTitle,
 	DialogDescription,
 } from "../ui/dialog";
+import api from "./../../api/httpMethods";
 
 export function SearchRoom() {
 	const [open, setOpen] = useState(false);
@@ -31,14 +31,7 @@ export function SearchRoom() {
 
 	const { data } = useQuery<ChatRoomType[], Error>({
 		queryKey: ["chat-rooms"],
-		queryFn: async () => {
-			const response = await fetch(`http://localhost:3010/chats/all/chat-rooms`, {
-				headers: {
-					Authorization: getBearer(),
-				},
-			});
-			return await response.json();
-		},
+		queryFn: () => api.fetchAllChatroom(),
 	});
 
 	const handleSelect = () => {

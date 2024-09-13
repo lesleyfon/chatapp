@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { fetchChatListsDataFromChatId } from "../../../lib/utils";
+import api from "./../../../api/httpMethods";
 import { useParams } from "react-router";
 import { Loader } from "../../loader";
 import { MessageInput } from "./chat-room-message-input";
@@ -10,7 +10,7 @@ function ChatRoomLayout() {
 
 	const { isPending, data, isFetching } = useQuery({
 		queryKey: [chatId], // Makes another call when chatId changes
-		queryFn: chatId ? () => fetchChatListsDataFromChatId(chatId) : undefined,
+		queryFn: chatId ? () => api.fetchChatListsDataFromChatId(chatId) : undefined,
 	});
 
 	if (isFetching ?? isPending) {
