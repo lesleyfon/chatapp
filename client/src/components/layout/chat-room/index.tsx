@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { getBearer } from "../../../lib/utils";
+import { fetchChatListsDataFromChatId } from "../../../lib/utils";
 import { useParams } from "react-router";
 import { Loader } from "../../loader";
 import { MessageInput } from "./chat-room-message-input";
@@ -10,14 +10,7 @@ function ChatRoomLayout() {
 
 	const { isPending, data, isFetching } = useQuery({
 		queryKey: [chatId], // Makes another call when chatId changes
-		queryFn: async () => {
-			const response = await fetch(`http://localhost:3010/chats/${chatId}`, {
-				headers: {
-					Authorization: getBearer(),
-				},
-			});
-			return await response.json();
-		},
+		queryFn: chatId ? () => fetchChatListsDataFromChatId(chatId) : undefined,
 	});
 
 	if (isFetching ?? isPending) {

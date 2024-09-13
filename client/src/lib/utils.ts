@@ -18,13 +18,16 @@ export function cn(...inputs: ClassValue[]) {
 export function timeDifference(date: Date) {
 	const currentDate = new Date();
 	const previousDate = new Date(date);
-	const difference = currentDate.getTime() - previousDate.getTime();
+	const difference:number = currentDate.getTime() - previousDate.getTime();
 	const daysDifference = difference / (1000 * 3600 * 24);
 	const hoursDifference = difference / (1000 * 3600);
 	const minutesDifference = difference / (1000 * 60);
 	const secondsDifference = difference / 1000;
 
-	if (daysDifference > 1) {
+	if (daysDifference > 7) {
+		const d = new Date(date)
+		return d.toLocaleDateString()
+	}else if (daysDifference > 1) {
 		return `${Math.floor(daysDifference)}d`;
 	} else if (hoursDifference > 1) {
 		return `${Math.floor(hoursDifference)}h`;
@@ -57,4 +60,14 @@ export function formatDate(date: Date) {
 export const getBearer = () => {
 	const token = localStorage.getItem("auth_token");
 	return `Bearer ${token}`;
+};
+
+
+export const fetchChatListsDataFromChatId = async (chatId: string) => {
+	const response = await fetch(`http://localhost:3010/chats/${chatId}`, {
+		headers: {
+			Authorization: getBearer(),
+		},
+	});
+	return await response.json();
 };
