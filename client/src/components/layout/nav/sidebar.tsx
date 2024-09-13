@@ -1,22 +1,19 @@
 import React, { useMemo } from "react";
 import { timeDifference } from "../../../lib/utils";
-import { Avatar, AvatarFallback, AvatarImage } from "../../ui/avatar";
+import { Avatar } from "../../ui/avatar";
 import { Link } from "react-router-dom";
 import { type ChatListType, type SidebarProps } from "../../../types";
 import { useGetChatList } from "../../../hooks/useGetChatList";
 import { JoinRoom } from "../../join-room";
+import { User } from "lucide-react";
 
 const SidebarItemLink = React.memo(({ chatData }: { chatData: ChatListType[0] }) => (
 	<Link
 		to={`/chats/${chatData.chats?.pk_chats_id}`}
 		className="flex items-center gap-3 rounded-md p-2 text-sm font-medium transition-colors hover:bg-muted from-neutral-200 hover:!bg-[#4c4c52]"
 	>
-		<Avatar className="h-8 w-8 border">
-			<AvatarImage
-				src="https://generated.vusercontent.net/placeholder-user.jpg"
-				alt={`${chatData.chat_user.name}'s avatar`}
-			/>
-			<AvatarFallback>{chatData.chat_user.name?.[0]}</AvatarFallback>
+		<Avatar className="h-8 w-8 border flex content-center justify-center items-center">
+			<User />
 		</Avatar>
 		<div className="flex-1 truncate">
 			<div className="from-neutral-100 font-bold">{chatData.chats?.chat_name}</div>
@@ -40,7 +37,10 @@ export default function Sidebar({ className }: SidebarProps) {
 	const renderedChats = useMemo(
 		() =>
 			chatroomList.map(
-				(chatData) => chatData.messages && <SidebarItemLink chatData={chatData} />
+				(chatData) =>
+					chatData.messages && (
+						<SidebarItemLink chatData={chatData} key={chatData.messages.id} />
+					)
 			),
 		[chatroomList]
 	);
