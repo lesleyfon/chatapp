@@ -9,7 +9,6 @@ export interface UserInterface {
 	updatedAt?: string;
 }
 class HttpServer {
-	authBasePath = 'http://localhost:3010/auth';
 	apiBasePath = 'http://localhost:3010';
 
 	async login(userCredential: { email: string; password: string }) {

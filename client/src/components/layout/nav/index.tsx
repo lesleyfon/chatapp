@@ -1,15 +1,25 @@
-import { ReactNode, type FC } from "react";
+import { ReactNode, useState, type FC } from "react";
 import { JoinRoom } from "../../join-room";
 import { useParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import api from "./../../../api/httpMethods";
 import { LogoutButton } from "../../logout-button";
+import { Menu } from "lucide-react";
+import { Button } from "../../ui/button";
+import { MobileSidebar } from "./mobile-nav";
 
 const MobileNav: FC = (): ReactNode => {
+	const [open, setOpen] = useState(false);
 	return (
-		<nav className="flex md:hidden items-center justify-between bg-[#242424] shadow-md h-full mx-6 w-full content-center flex-wrap">
-			Mobile
-		</nav>
+		<>
+			<nav className="flex md:hidden items-center justify-between bg-[#242424] shadow-md h-full px-6 w-full content-center flex-wrap">
+				<Button className="p-0" onClick={() => setOpen(true)}>
+					<Menu />
+				</Button>
+				<LogoutButton />
+			</nav>
+			<MobileSidebar open={open} setOpen={setOpen} />
+		</>
 	);
 };
 
