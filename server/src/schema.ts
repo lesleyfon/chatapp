@@ -28,6 +28,26 @@ export const user = pgTable("chat_user", {
     .default(sql`now()`),
 });
 
+/**
+ * Represents the schema for the `private_chat` table in the database.
+ * 
+ * This table stores information about private chat messages between users.
+ * 
+ * Columns:
+ * - `pk_private_chat_id`: Primary key for the private chat entry, generated as a random UUID.
+ * - `sender`: The ID of the user who sent the message. References the `pk_user_id` in the `user` table. 
+ *   If the referenced user is deleted, the corresponding chat entries will also be deleted (cascade).
+ * - `recipient`: The ID of the user who received the message. References the `pk_user_id` in the `user` table. 
+ *   If the referenced user is deleted, the corresponding chat entries will also be deleted (cascade).
+ * - `createdAt`: The timestamp when the chat message was created. Defaults to the current time.
+ */
+export const privateChats = pgTable("private_chat", {
+  pk_private_chat_id: uuid("pk_private_chat_id").primaryKey().defaultRandom(), // Assuming UUID is your primary key type
+  sender_id: uuid("sender_id").references(() => user.pk_user_id, { onDelete: "cascade" }).notNull(), // Use uuid if user_id is also UUID
+  recipient_id: uuid("recipient_id").references(() => user.pk_user_id, { onDelete: "cascade" }).notNull(), // Use uuid for consistency
+  created_at: timestamp("created_at").notNull().default(sql`now()`), // Use snake_case for consistency
+});
+
 
 export const chatMembers = pgTable("chat_members",
   {
@@ -62,3 +82,15 @@ export const messages = pgTable("messages", {
 });
 
 
+export const privateMessages = pgTable("private_messages", {
+  id: serial("id").primaryKey(),
+  fk_private_chat_id: text("fk_private_chat_id")
+    .references(() => privateChats.pk_private_chat_id, { onDelete: "cascade" }).notNull(),
+  fk_user_id: text("fk_user_id")
+    .references(() => user.pk_user_id, { onDelete: "cascade" })
+    .notNull(),
+  message_text: text("message_text"),
+  sent_at: timestamp("sent_at")
+    .notNull()
+    .default(sql`now()`),
+});
