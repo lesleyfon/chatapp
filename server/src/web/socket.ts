@@ -26,6 +26,16 @@ export class AppSocketBase extends QueryHandlers {
       cb(chatList);
     });
   }
+  async getPrivateMessageList(socket: Socket) {
+    const token = socket.handshake.auth?.token;
+    const user = await this.decodeJWT(token);
+    if (!user) return;
+    const userId = user.userId;
+    socket.on("get-private-message-list", async (cb) => {
+      const chatList = await this.getLatestPrivateMessageSent({ userId });
+      cb(chatList);
+    });
+  }
 
   /**
    * The function `emitAddMessageErrorResponse` sends an error response message to a specific chat room
@@ -91,7 +101,7 @@ export class AppSocketBase extends QueryHandlers {
           chats: chatExist[0],
         }));
         const chatList = await this.getLatestChatRoomMessageSent(userId, chatId);
-        
+
         this.io.to(chatName).emit("get-latest-chat-room-message", chatList);
         this.io.to(chatName).emit("add-message-response", addMessageResponse);
         return;
@@ -108,7 +118,7 @@ export class AppSocketBase extends QueryHandlers {
       }));
 
       const chatList = await this.getLatestChatRoomMessageSent(userId, chatId);
-      
+
       // Emitter
       this.io.to(chatName).emit("add-message-response", addMessageResponse);
       this.io.to(chatName).emit("get-latest-chat-room-message", chatList);
@@ -118,6 +128,7 @@ export class AppSocketBase extends QueryHandlers {
     this.io.on("connection", (socket) => {
       this.addMessageToRoom(socket);
       this.getAUserChatList(socket);
+      this.getPrivateMessageList(socket);
     });
   }
 
