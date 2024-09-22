@@ -1,8 +1,9 @@
+
 import { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { connectToDB } from "../db";
-import { chatMembers, messages, chats, user } from "../schema";
+import { chatMembers, messages, chats, user, privateChats, privateMessages } from "../schema";
 import { UserSchema } from "./Auth.model";
-import { sql, desc, eq, asc } from "drizzle-orm";
+import { sql, desc, eq, asc, } from "drizzle-orm";
 
 export type SQLErrorType = {
   error: boolean,
@@ -36,6 +37,27 @@ export type ChatListType = {
   messages?: MessageType
 }[]
 
+export type PrivateChatResult = {
+  private_chat: {
+    pk_private_chat_id: string; // Assuming UUID or similar
+    sender_id: string;
+    recipient_id: string;
+    created_at: Date; // Assuming it's a timestamp
+  };
+  chat_user: {
+    pk_user_id: string; // Assuming UUID or similar
+    name: string;
+    email: string;
+    created_at: Date; // Assuming it's a timestamp
+  };
+  private_messages: {
+    id: string; // Assuming UUID or similar
+    fk_private_chat_id: string;
+    fk_user_id: string;
+    message_text: string;
+    sent_at: Date; // Assuming it's a timestamp
+  };
+}
 
 export class QueryHandlers extends UserSchema {
   db: NodePgDatabase;
@@ -98,7 +120,7 @@ export class QueryHandlers extends UserSchema {
  */
   async selectUserChatRoomsWithLastSetMessages(userId: string): Promise<ChatListType> {
     const chatList: ChatListType = await this.db.select({
-      chat_members:{
+      chat_members: {
         added_at: chatMembers.added_at,
         fk_chat_id: chatMembers.fk_chat_id,
         fk_user_id: chatMembers.fk_user_id,
@@ -140,7 +162,7 @@ export class QueryHandlers extends UserSchema {
   }
 
 
-  async getLatestChatRoomMessageSent(userId:string, chatRoomId:string){
+  async getLatestChatRoomMessageSent(userId: string, chatRoomId: string) {
     const chatList = await this.db
       .select({
         chats: {
@@ -185,10 +207,10 @@ export class QueryHandlers extends UserSchema {
     } | null,
     messages: {
       id: number;
-      fk_chat_id: string ;
+      fk_chat_id: string;
       message_text: string | null;
       sent_at: Date;
-    } | null,  
+    } | null,
     chat_user: {
       pk_user_id: string,
       name: string | null,
@@ -291,7 +313,7 @@ export class QueryHandlers extends UserSchema {
     return insertIntoChatResponse;
   }
 
-  async createNewChatroomRoomNameAndByUserId(chatName: string, userId: string){
+  async createNewChatroomRoomNameAndByUserId(chatName: string, userId: string) {
     const insertIntoChatResponse = await this.db
       .insert(chats)
       .values({ chat_name: chatName })
@@ -320,7 +342,7 @@ export class QueryHandlers extends UserSchema {
       },
     }).from(chats).where(eq(chats.pk_chats_id, chatId));
 
-  
+
     return {
       chats: chatRoom,
       chat_user: chatResponse,
@@ -338,7 +360,7 @@ export class QueryHandlers extends UserSchema {
    * @memberof QueryHandlers
   */
   async getAllChatRooms(): Promise<ChatType[]> {
-    try{
+    try {
       const chatRooms = await this.db.select().from(chats);
       return chatRooms;
     } catch (err) {
@@ -352,8 +374,64 @@ export class QueryHandlers extends UserSchema {
       return err;
     }
   }
+  //
+
+
+  async getLatestPrivateMessageSent({ userId }: { userId: string }): Promise<PrivateChatResult[]> {
+
+    const privateChatsIds = await this.db.selectDistinctOn([privateChats.recipient_id],
+      {
+        private_chat: {
+          pk_private_chat_id: privateChats.pk_private_chat_id,
+          sender_id: privateChats.sender_id,
+          recipient_id: privateChats.recipient_id,
+          created_at: privateChats.created_at,
+        },
+        chat_user: {
+          pk_user_id: user.pk_user_id,
+          name: user.name,
+          email: user.email,
+          created_at: user.created_at,
+        },
+        private_messages: {
+          id: privateMessages.id,
+          fk_private_chat_id: privateMessages.fk_private_chat_id,
+          fk_user_id: privateMessages.fk_user_id,
+          message_text: privateMessages.message_text,
+          sent_at: privateMessages.sent_at,
+        }
+      })
+      .from(privateChats)
+      .where(eq(privateChats.sender_id, userId))
+      .orderBy(privateChats.recipient_id, desc(privateChats.created_at))
+      .leftJoin(user, eq(user.pk_user_id,
+        //Cast string to int
+        sql<number>`cast(${privateChats.recipient_id} as int)`))
+      .leftJoin(privateMessages, eq(privateMessages.fk_private_chat_id,
+        sql<string>`cast(${privateChats.pk_private_chat_id} as text)`));
+
+    return privateChatsIds.map(data => ({
+      private_chat: {
+        pk_private_chat_id: data.private_chat.pk_private_chat_id,
+        sender_id: data.private_chat.sender_id,
+        recipient_id: data.private_chat.recipient_id,
+        created_at: data.private_chat.created_at,
+      },
+      chat_user: {
+        pk_user_id: data.chat_user?.pk_user_id as string,
+        name: data.chat_user?.name ?? '',
+        email: data.chat_user?.email ?? '',
+        created_at: data.chat_user?.created_at ?? new Date(0),
+      },
+      private_messages: {
+        id: data.private_messages?.id as unknown as string,
+        fk_private_chat_id: data.private_messages?.fk_private_chat_id ?? '',
+        fk_user_id: data.private_messages?.fk_user_id ?? '',
+        message_text: data.private_messages?.message_text ?? '',
+        sent_at: data.private_messages?.sent_at ?? new Date(0),
+      }
+    }));
+  }
 }
 
 export default QueryHandlers;
-
-
