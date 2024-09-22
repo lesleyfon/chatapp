@@ -8,7 +8,7 @@
     "dev": "nodemon ./src/index.ts",
     "generate": "drizzle-kit generate",
     "migrate": "drizzle-kit migrate",
-    "db:push": "drizzle-kit push:pg",
+    "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "eslint:fix": "eslint --fix"
   },
