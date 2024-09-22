@@ -54,7 +54,7 @@ export const ChatRoomSection = ({ data }: { data: [] }) => {
 
 	return (
 		<ScrollArea className="flex-1 px-4">
-			{allRoomMessages.length > 1 ? (
+			{allRoomMessages.length > 0 ? (
 				<section ref={messageSectionContainerRef}>
 					{allRoomMessages?.map((msgData: RoomMessagesResponse) => {
 						const isSender = msgData?.chat_user?.sender === "You";
@@ -62,7 +62,7 @@ export const ChatRoomSection = ({ data }: { data: [] }) => {
 							<div
 								key={msgData?.messages?.id}
 								className={cn(
-									"flex mb-4",
+									"flex py-4 ",
 									isSender ? "justify-end" : "justify-start"
 								)}
 							>
