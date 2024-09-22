@@ -76,6 +76,27 @@ export type RoomMessagesResponse = {
 	};
 };
 
+export type PrivateChatResultType = {
+  private_chat: {
+    pk_private_chat_id: string; // Assuming UUID or similar
+    sender_id: string;
+    recipient_id: string;
+    created_at: Date; // Assuming it's a timestamp
+  };
+  chat_user: {
+    pk_user_id: string; // Assuming UUID or similar
+    name: string;
+    email: string;
+    created_at: Date; // Assuming it's a timestamp
+  };
+  private_messages: {
+    id: string; // Assuming UUID or similar
+    fk_private_chat_id: string;
+    fk_user_id: string;
+    message_text: string;
+    sent_at: Date; // Assuming it's a timestamp
+  };
+}
 
 export type MessageInput = {
 	message_text: string;
