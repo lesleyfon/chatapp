@@ -34,7 +34,7 @@ export class AppSocketBase extends QueryHandlers {
     if (!user) return;
     const userId = user.userId;
     socket.on("get-private-message-list", async (cb) => {
-      const chatList = await this.getLatestPrivateMessageSent({ userId });
+      const chatList = await this.getLatestPrivateChatMessagesSent({ userId });
       cb(chatList);
     });
   }
@@ -120,7 +120,7 @@ export class AppSocketBase extends QueryHandlers {
       }));
 
       const chatList = await this.getLatestChatRoomMessageSent(userId, chatId);
-      
+
       // Emitter
       this.io.to(chatName).emit("add-message-response", addMessageResponse);
       this.io.to(chatName).emit("get-latest-chat-room-message", chatList);
@@ -159,7 +159,7 @@ export class AppSocketBase extends QueryHandlers {
         sent_at: privateMessages.sent_at
       });
 
-      
+
       const addPrivateMessageSocketResponse = {
         private_chat: {
           pk_private_chat_id: privateChatsInsertResponse[0].pk_private_chat_id,
@@ -174,11 +174,11 @@ export class AppSocketBase extends QueryHandlers {
           created_at: sender[0].created_at,
         },
         private_messages: {
-          id:  privateMessageInsertResponse[0].id,
-          fk_private_chat_id:  privateMessageInsertResponse[0].fk_private_chat_id,
-          fk_user_id:  privateMessageInsertResponse[0].fk_user_id,
-          message_text:  privateMessageInsertResponse[0].message_text,
-          sent_at:  privateMessageInsertResponse[0].sent_at,
+          id: privateMessageInsertResponse[0].id,
+          fk_private_chat_id: privateMessageInsertResponse[0].fk_private_chat_id,
+          fk_user_id: privateMessageInsertResponse[0].fk_user_id,
+          message_text: privateMessageInsertResponse[0].message_text,
+          sent_at: privateMessageInsertResponse[0].sent_at,
         },
         recipient: {
           pk_user_id: receiver[0].pk_user_id,
@@ -187,8 +187,8 @@ export class AppSocketBase extends QueryHandlers {
         }
       };
       this.io.emit("add-private-message-response", addPrivateMessageSocketResponse);
-      // TODO: add this to emit an event to display sidebar most recent message
-      // this.io.to(chatName).emit("add-message-response", addMessageResponse);
+      // Emits an event to display the most recent message sent
+      this.io.emit("get-latest-private-message-sent", addPrivateMessageSocketResponse);
     });
   }
   socketEvents() {
@@ -203,4 +203,4 @@ export class AppSocketBase extends QueryHandlers {
   connectToRooms(socket: SocketIOServer) {
     socket.to(["person-1", "person-1"]);
   }
-}
+}ƒ

@@ -474,7 +474,7 @@ export class QueryHandlers extends UserSchema {
     }
   }
 
-  async getLatestPrivateMessageSent({ userId }: { userId: string }): Promise<PrivateChatResult[]> {
+  async getLatestPrivateChatMessagesSent({ userId }: { userId: string }): Promise<PrivateChatResult[]> {
     const privateChatsData = await this.db.selectDistinctOn([privateChats.recipient_id, privateChats.sender_id],
       {
         private_chat: {
