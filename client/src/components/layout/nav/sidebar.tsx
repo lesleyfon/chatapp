@@ -43,7 +43,7 @@ const SidebarItemLink = React.memo(({ chatData }: { chatData: ChatListType[0] })
 const SidebarPrivateMessageLink = React.memo(({ data }: { data: PrivateChatResultType }) => {
 	const location = useLocation();
 	const currentPath = location.pathname;
-	const to = `/private-chats/${data.private_chat.recipient_id}`;
+	const to = `/private-chats/${data.recipient.pk_user_id}`;
 	const isActivePath = currentPath === to;
 	return (
 		<Link
@@ -57,7 +57,7 @@ const SidebarPrivateMessageLink = React.memo(({ data }: { data: PrivateChatResul
 				<User />
 			</Avatar>
 			<div className="flex-1 truncate">
-				<div className="from-neutral-100 font-bold">{data.chat_user.name}</div>
+				<div className="from-neutral-100 font-bold">{data.recipient?.name}</div>
 				{data.private_messages && (
 					<div className="md:flex grid grid-cols-[10fr_2fr] gap-2 items-center">
 						<p className=" truncate w-full text-xs text-ellipsis overflow-hidden md:block md:w-44 ">
@@ -102,22 +102,27 @@ export default function Sidebar({ className }: SidebarProps) {
 	);
 
 	return (
-		<>
-			<section className={className}>
-				<div className="sticky top-0 flex h-14 items-center justify-between border-b px-4">
-					<div className="font-semibold">Chats</div>
-					<div>
-						<JoinRoom />
-					</div>
+		<section className={className}>
+			<div className="sticky top-0 flex h-14 items-center justify-between border-b px-4">
+				<div className="font-semibold">Chats</div>
+				<div>
+					<JoinRoom />
 				</div>
-
-				<nav className="grid gap-1 p-2 grid-rows-2">
-					{chatroomList.length ? (
-						<section className="grid gap-1 p-2">{renderedChats}</section>
-					) : null}
-					{privateRoomList.length ? <section>{renderedPrivateData}</section> : null}
-				</nav>
-			</section>
-		</>
+			</div>
+			<nav className="grid gap-1 p-2 grid-rows-2">
+				{chatroomList.length ? (
+					<section className="">
+						<h1 className="text-center font-bold text-l">Channels</h1>
+						<div className="grid gap-1 p-2">{renderedChats}</div>
+					</section>
+				) : null}
+				{privateRoomList.length ? (
+					<section>
+						<h1 className="text-center font-bold text-l">Private Message</h1>
+						<div className="grid gap-1 p-2">{renderedPrivateData}</div>
+					</section>
+				) : null}
+			</nav>
+		</section>
 	);
 }
