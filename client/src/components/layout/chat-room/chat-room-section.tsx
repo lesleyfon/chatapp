@@ -1,23 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 
-import { cn, formatDate } from "../../../lib/utils";
+import { cn, formatDate, scrollToBottom } from "../../../lib/utils";
 import { Card, CardContent } from "../../ui/card";
 import { ScrollArea } from "../../ui/scroll-area";
 import { type RoomMessagesResponse } from "../../../types";
 import { useLocation } from "react-router";
 import { createSocketInstance } from "../../../api/sockets";
 
-// Move this to Utils
-export const scrollToBottom = (lastElemRef: React.MutableRefObject<null>) => {
-	if (lastElemRef.current) {
-		const messageSectionContainerRef = lastElemRef.current as HTMLElement;
-		const lastChild = messageSectionContainerRef.lastElementChild;
-
-		if (lastChild !== null) {
-			lastChild.scrollIntoView();
-		}
-	}
-};
 export const ChatRoomSection = ({ data }: { data: [] }) => {
 	const [allRoomMessages, setAllRoomMessages] = useState<RoomMessagesResponse[]>(data);
 	const messageSectionContainerRef = useRef(null);
