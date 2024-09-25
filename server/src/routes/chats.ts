@@ -41,6 +41,7 @@ export class Chat extends AuthMiddlewareMixin(QueryHandlersMixin(BaseClass)) {
 
     // Method Binding
     this.getChatMessagesById = this.getChatMessagesById.bind(this);
+    this.getPrivateMessagesById = this.getPrivateMessagesById.bind(this);
     this.getAllChatRooms = this.getAllChatRooms.bind(this);
     this.createChatRoom = this.createChatRoom.bind(this);
 
@@ -51,6 +52,10 @@ export class Chat extends AuthMiddlewareMixin(QueryHandlersMixin(BaseClass)) {
       // @ts-expect-error desc
       this.authMiddleware.authenticateRequests,
       this.getChatMessagesById);
+    this.router.get('/private-message/:recipientId',
+      // @ts-expect-error desc
+      this.authMiddleware.authenticateRequests,
+      this.getPrivateMessagesById);
     this.router.get('/all/chat-rooms',
       // @ts-expect-error desc
       this.authMiddleware.authenticateRequests,
@@ -77,6 +82,24 @@ export class Chat extends AuthMiddlewareMixin(QueryHandlersMixin(BaseClass)) {
       return res.status(StatusCodes.BAD_REQUEST).json(chatMessages);
     }
     return res.status(StatusCodes.OK).json({ msg: chatMessages });
+  }
+  async getPrivateMessagesById(req: RequestWithUser, res: Response) {
+
+    const { recipientId } = req.params;
+    if (!recipientId) {
+      res.status(StatusCodes.BAD_REQUEST).json({
+        messages: `Bad Request: recipientId is required: recipientId = ${recipientId}`
+      });
+    }
+
+    const userId = req.user.pk_user_id;
+    
+    const privateMessages = await this.queryHandlers.getPrivateRoomMessagesBySenderId({userId, recipientId});
+
+    if ('error' in privateMessages) {
+      return res.status(StatusCodes.BAD_REQUEST).json(privateMessages);
+    }
+    return res.status(StatusCodes.OK).json({ msg: privateMessages });
   }
 
   async getAllChatRooms(_req: Request, res: Response) {
