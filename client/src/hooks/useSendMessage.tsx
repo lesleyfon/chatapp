@@ -10,6 +10,15 @@ export const useSendMessage = () => {
 		navigate("/");
 	}
 
+	function sendPrivateMessage(data: MessageInput & { recipientId: string }) {
+		const socket = createSocketInstance();
+		socket.emit("add-private-message", {
+			recipientId: data.recipientId,
+			senderId: userId,
+			message: data.message_text,
+		});
+		return data;
+	}
 	function sendMessage(data: MessageInput & { chatId: string; chatName: string }) {
 		const socket = createSocketInstance();
 
@@ -21,5 +30,5 @@ export const useSendMessage = () => {
 		});
 	}
 
-	return { sendMessage };
+	return { sendMessage, sendPrivateMessage };
 };
