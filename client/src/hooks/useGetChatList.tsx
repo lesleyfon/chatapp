@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 
 import { useNavigate } from "react-router-dom";
-import { ChatListType, PrivateChatResultType } from "./../types/index";
+import { ChatListType } from "./../types/index";
 import { createSocketInstance } from "../api/sockets";
 
 export const useGetChatList = () => {
@@ -43,44 +43,4 @@ export const useGetChatList = () => {
 	}, [navigate]); // Added 'navigate' to the dependency array to ensure effect runs only when it changes
 
 	return { chatroomList };
-};
-export const useGetPrivateMessageList = () => {
-	const [privateRoomList, setPrivateRoomList] = useState<PrivateChatResultType[]>([]);
-	const navigate = useNavigate();
-
-	useEffect(() => {
-		const token = localStorage.getItem("auth_token");
-		if (!token) {
-			navigate("/");
-			return;
-		}
-
-		const socket = createSocketInstance();
-
-		// Fetch initial chat list
-		// 		// This socket is mean to fire only on initial render, to get the list of privateRooms for a user.
-		// 		// THOUGHT: Would it make sense to have this be an api?
-		socket.emit("get-private-message-list", (response: PrivateChatResultType[]) => {
-			setPrivateRoomList(response);
-		});
-
-		// // Setup listener for new messages
-		// const handleMessageUpdate = (response: ChatListType) => {
-		// 	setPrivateRoomList((prevChatList) =>
-		// 		prevChatList.map((chat) =>
-		// 			chat.chats?.pk_chats_id === response[0].chats?.pk_chats_id ? response[0] : chat
-		// 		)
-		// 	);
-		// };
-
-		// socket.on("get-latest-private-message-sent", handleMessageUpdate);
-
-		// Cleanup function to avoid memory leaks
-		return () => {
-			// socket.off("get-latest-private-message-sent", handleMessageUpdate);
-			socket.disconnect();
-		};
-	}, [navigate]); // Added 'navigate' to the dependency array to ensure effect runs only when it changes
-
-	return { privateRoomList };
 };

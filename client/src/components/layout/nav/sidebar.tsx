@@ -3,7 +3,8 @@ import { cn, timeDifference } from "../../../lib/utils";
 import { Avatar } from "../../ui/avatar";
 import { Link, useLocation } from "react-router-dom";
 import { PrivateChatResultType, type ChatListType, type SidebarProps } from "../../../types";
-import { useGetChatList, useGetPrivateMessageList } from "../../../hooks/useGetChatList";
+import { useGetChatList } from "../../../hooks/useGetChatList";
+import { useGetPrivateMessageList } from "../../../hooks/useGetPrivateMessageList";
 import { JoinRoom } from "../../join-room";
 import { User } from "lucide-react";
 
@@ -45,6 +46,7 @@ const SidebarPrivateMessageLink = React.memo(({ data }: { data: PrivateChatResul
 	const currentPath = location.pathname;
 	const to = `/private-chats/${data.recipient.pk_user_id}`;
 	const isActivePath = currentPath === to;
+
 	return (
 		<Link
 			to={to}
@@ -100,7 +102,6 @@ export default function Sidebar({ className }: SidebarProps) {
 			),
 		[privateRoomList]
 	);
-
 	return (
 		<section className={className}>
 			<div className="sticky top-0 flex h-14 items-center justify-between border-b px-4">
@@ -116,7 +117,7 @@ export default function Sidebar({ className }: SidebarProps) {
 						<div className="grid gap-1 p-2">{renderedChats}</div>
 					</section>
 				) : null}
-				{privateRoomList.length ? (
+				{privateRoomList.length > 0 ? (
 					<section>
 						<h1 className="text-center font-bold text-l">Private Message</h1>
 						<div className="grid gap-1 p-2">{renderedPrivateData}</div>
