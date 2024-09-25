@@ -7,7 +7,8 @@ import { type RoomMessagesResponse } from "../../../types";
 import { useLocation } from "react-router";
 import { createSocketInstance } from "../../../api/sockets";
 
-const scrollToBottom = (lastElemRef: React.MutableRefObject<null>) => {
+// Move this to Utils
+export const scrollToBottom = (lastElemRef: React.MutableRefObject<null>) => {
 	if (lastElemRef.current) {
 		const messageSectionContainerRef = lastElemRef.current as HTMLElement;
 		const lastChild = messageSectionContainerRef.lastElementChild;
