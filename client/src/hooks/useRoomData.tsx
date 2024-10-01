@@ -1,6 +1,6 @@
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import api from "./../api/httpMethods";
+import api from "../api/http-methods";
 
 const useRoomData = () => {
 	const { chatId, recipientId } = useParams<{ chatId?: string; recipientId?: string }>();

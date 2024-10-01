@@ -22,7 +22,7 @@ import {
 	DialogTitle,
 	DialogDescription,
 } from "../ui/dialog";
-import api from "./../../api/httpMethods";
+import api from "../../api/http-methods";
 
 export function SearchRoom() {
 	const [open, setOpen] = useState(false);

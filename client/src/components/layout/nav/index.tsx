@@ -2,7 +2,7 @@ import { ReactNode, useState, type FC } from "react";
 import { JoinRoom } from "../../join-room";
 import { useParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
-import api from "./../../../api/httpMethods";
+import api from "../../../api/http-methods";
 import { LogoutButton } from "../../logout-button";
 import { Menu } from "lucide-react";
 import { Button } from "../../ui/button";
