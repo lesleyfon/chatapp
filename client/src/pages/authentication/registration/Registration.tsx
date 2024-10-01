@@ -54,13 +54,11 @@ export function Register() {
 					name="name"
 					render={({ field }) => (
 						<FormItem>
-							<>
-								<FormLabel className="text-left w-full flex">Full Name</FormLabel>
-								<FormControl>
-									<Input placeholder="Name" {...field} />
-								</FormControl>
-								<FormMessage />
-							</>
+							<FormLabel className="text-left w-full flex">Full Name</FormLabel>
+							<FormControl>
+								<Input placeholder="Name" {...field} />
+							</FormControl>
+							<FormMessage />
 						</FormItem>
 					)}
 				/>
@@ -70,13 +68,11 @@ export function Register() {
 					name="email"
 					render={({ field }) => (
 						<FormItem>
-							<>
-								<FormLabel className="text-left w-full flex">Email</FormLabel>
-								<FormControl>
-									<Input placeholder="Email" {...field} />
-								</FormControl>
-								<FormMessage />
-							</>
+							<FormLabel className="text-left w-full flex">Email</FormLabel>
+							<FormControl>
+								<Input placeholder="Email" {...field} />
+							</FormControl>
+							<FormMessage />
 						</FormItem>
 					)}
 				/>
@@ -85,13 +81,11 @@ export function Register() {
 					name="password"
 					render={({ field }) => (
 						<FormItem>
-							<>
-								<FormLabel className="text-left w-full flex">Password</FormLabel>
-								<FormControl>
-									<Input placeholder="password" type="password" {...field} />
-								</FormControl>
-								<FormMessage />
-							</>
+							<FormLabel className="text-left w-full flex">Password</FormLabel>
+							<FormControl>
+								<Input placeholder="password" type="password" {...field} />
+							</FormControl>
+							<FormMessage />
 						</FormItem>
 					)}
 				/>

@@ -51,13 +51,11 @@ export function Login() {
 					name="email"
 					render={({ field }) => (
 						<FormItem>
-							<>
-								<FormLabel className="text-left w-full flex">Email</FormLabel>
-								<FormControl>
-									<Input placeholder="Email" {...field} />
-								</FormControl>
-								<FormMessage />
-							</>
+							<FormLabel className="text-left w-full flex">Email</FormLabel>
+							<FormControl>
+								<Input placeholder="Email" {...field} />
+							</FormControl>
+							<FormMessage />
 						</FormItem>
 					)}
 				/>
@@ -66,13 +64,11 @@ export function Login() {
 					name="password"
 					render={({ field }) => (
 						<FormItem>
-							<>
-								<FormLabel className="text-left w-full flex">Password</FormLabel>
-								<FormControl>
-									<Input placeholder="password" type="password" {...field} />
-								</FormControl>
-								<FormMessage />
-							</>
+							<FormLabel className="text-left w-full flex">Password</FormLabel>
+							<FormControl>
+								<Input placeholder="password" type="password" {...field} />
+							</FormControl>
+							<FormMessage />
 						</FormItem>
 					)}
 				/>
