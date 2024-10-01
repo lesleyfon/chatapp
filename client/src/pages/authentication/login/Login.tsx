@@ -14,6 +14,7 @@ import {
 } from "../../../components/ui/form";
 import { Input } from "../../../components/ui/input";
 import { useNavigate } from "react-router";
+import useAuthStorage from "../../../store/useAuthStorage";
 
 const FormSchema = z.object({
 	email: z.string().email("Invalid Email").min(2, {
@@ -26,6 +27,7 @@ const FormSchema = z.object({
 
 export function Login() {
 	const navigate = useNavigate();
+	const authStorageLogin = useAuthStorage((state) => state.login);
 	const form = useForm<z.infer<typeof FormSchema>>({
 		resolver: zodResolver(FormSchema),
 	});
@@ -41,8 +43,11 @@ export function Login() {
 			});
 		}
 
-		localStorage.setItem("auth_token", parseResponse.token);
-		localStorage.setItem("userId", parseResponse.user.userId);
+		authStorageLogin({
+			userId: parseResponse.user.userId,
+			token: parseResponse.token,
+		});
+
 		navigate("/chats");
 	}
 

@@ -16,7 +16,7 @@ type AuthFormDataType = Pick<UserInterface, "name" | "email" > & {"password"?: s
 class HttpServer {
 	apiBasePath = 'http://localhost:3010';
 
-	async login(userCredential: AuthFormDataType) {
+	async login(userCredential: { email: string; password: string }) {
 		try {
 			const myHeaders = new Headers();
 			myHeaders.append('Content-Type', 'application/json');
