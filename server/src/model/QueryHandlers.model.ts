@@ -276,7 +276,7 @@ export class QueryHandlers extends UserSchema {
   }
 
 
-  async getPrivateRoomMessagesBySenderId({userId, recipientId}:{userId: string, recipientId: string}): Promise<{
+  async getPrivateRoomMessagesBySenderId({ userId, recipientId }: { userId: string, recipientId: string }): Promise<{
     chats: {
       pk_chats_id: string,
       chat_name: string | null,
@@ -315,7 +315,7 @@ export class QueryHandlers extends UserSchema {
           eq(privateChats.recipient_id, recipientId)),
         and(eq(privateChats.recipient_id, userId),
           eq(privateChats.sender_id, recipientId))))
-          
+
         .leftJoin(privateMessages,
           eq(privateChats.pk_private_chat_id,
             sql<number>`cast(${privateMessages.fk_private_chat_id} as int)`))
@@ -503,13 +503,13 @@ export class QueryHandlers extends UserSchema {
       .orderBy(privateChats.recipient_id, privateChats.sender_id, desc(privateChats.created_at))
       .leftJoin(user, eq(user.pk_user_id, sql<number>`cast(${userId} as int)`))
       .leftJoin(privateMessages, eq(privateMessages.fk_private_chat_id, sql<string>`cast(${privateChats.pk_private_chat_id} as text)`));
-  
+
     // Get unique recipient IDs that are not the current user
-    const recipientIds = new Set(privateChatsData.map(data => 
-      String(data.private_chat.sender_id) === String(userId) 
-        ? String(data.private_chat.recipient_id) 
+    const recipientIds = new Set(privateChatsData.map(data =>
+      String(data.private_chat.sender_id) === String(userId)
+        ? String(data.private_chat.recipient_id)
         : String(data.private_chat.sender_id)));
-  
+
     // Fetch recipient details from user table
     const allRecipients = await this.db.select({
       recipient: {
@@ -519,17 +519,17 @@ export class QueryHandlers extends UserSchema {
         created_at: user.created_at,
       },
     }).from(user).where(inArray(user.pk_user_id, Array.from(recipientIds)));
-  
+
     // Map privateChatsData and ensure unique recipients
     const returnData = privateChatsData.map(data => {
       // Determine the correct recipient ID based on the current user
       const otherUserId = String(data.private_chat.sender_id) === String(userId)
         ? String(data.private_chat.recipient_id)
         : String(data.private_chat.sender_id);
-  
+
       // Find the recipient details
       const recipientDetails = allRecipients.find(d => String(d.recipient.pk_user_id) === otherUserId)?.recipient;
-  
+
       return {
         private_chat: {
           pk_private_chat_id: data.private_chat.pk_private_chat_id,
@@ -553,15 +553,49 @@ export class QueryHandlers extends UserSchema {
         recipient: recipientDetails, // Use the found recipient details
       };
     });
-  
+
     // Use a Set to filter unique recipients based on their IDs
-    const uniqueRecipients = Array.from(new Map(returnData.map(item => 
+    const uniqueRecipients = Array.from(new Map(returnData.map(item =>
       // Use recipient pk_user_id as the key
       [item.recipient?.pk_user_id, item])).values());
-  
+
     return uniqueRecipients; // Return the unique recipients
   }
-  
+
+  async getUserByUserIds({ userIdList }: { userIdList: string[] }): Promise<{ name: string | null; pk_user_id: string; email: string | null; password: string | null; created_at: Date; updated_at: Date; }[][]> {
+    const userListPromises = userIdList.map((userId) => this.db.select().from(user).where(eq(user.pk_user_id, userId)));
+
+    const userListResponse = await Promise.all(userListPromises);
+
+    return userListResponse;
+  }
+
+  async createPrivateChatEntry(sender: { name: string | null; pk_user_id: string; email: string | null; password: string | null; created_at: Date; updated_at: Date; }, receiver: { name: string | null; pk_user_id: string; email: string | null; password: string | null; created_at: Date; updated_at: Date; }) {
+
+    return await this.db.insert(privateChats).values({
+      sender_id: sender.pk_user_id,
+      recipient_id: receiver.pk_user_id
+    }).returning({
+      pk_private_chat_id: privateChats.pk_private_chat_id, sender_id: privateChats.sender_id,
+      recipient_id: privateChats.recipient_id,
+      created_at: privateChats.created_at
+    });
+  }
+
+
+  async createPrivateMessage(privateChatsInsertResponse: { pk_private_chat_id: string; sender_id: string; recipient_id: string; created_at: Date; }, senderId: string, message: string) {
+    return await this.db.insert(privateMessages).values({
+      fk_private_chat_id: privateChatsInsertResponse.pk_private_chat_id,
+      fk_user_id: senderId,
+      message_text: message
+    }).returning({
+      id: privateMessages.id,
+      fk_private_chat_id: privateMessages.fk_private_chat_id,
+      fk_user_id: privateMessages.fk_user_id,
+      message_text: privateMessages.message_text,
+      sent_at: privateMessages.sent_at
+    });
+  }
 }
 
 
