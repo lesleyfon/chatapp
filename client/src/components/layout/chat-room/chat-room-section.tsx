@@ -5,10 +5,12 @@ import { Card, CardContent } from "../../ui/card";
 import { ScrollArea } from "../../ui/scroll-area";
 import { type RoomMessagesResponse } from "../../../types";
 import { useLocation } from "react-router";
-import { createSocketInstance } from "../../../api/sockets";
+import { useSocketInstance } from "../../../api/sockets";
+import useAuthStorage from "../../../store/useAuthStorage";
 
 export const ChatRoomSection = ({ data }: { data: [] }) => {
 	const [allRoomMessages, setAllRoomMessages] = useState<RoomMessagesResponse[]>(data);
+	const userId = useAuthStorage((state) => state.userId);
 	const messageSectionContainerRef = useRef(null);
 	const location = useLocation();
 	const chatroomId = location.pathname.split("/").at(-1);
@@ -17,9 +19,13 @@ export const ChatRoomSection = ({ data }: { data: [] }) => {
 		scrollToBottom(messageSectionContainerRef);
 	}, [allRoomMessages.length]);
 
+	const socket = useSocketInstance();
+
 	useEffect(() => {
-		const userId = localStorage.getItem("userId");
-		const socket = createSocketInstance();
+		// If the socket is null, return early
+		if (socket === null) return;
+		// If the socket is not connected, connect it
+		if (socket.connected === false) socket.connect();
 
 		socket.on("add-message-response", (response: RoomMessagesResponse[]) => {
 			if (chatroomId?.toString() !== response?.[0]?.chats?.pk_chats_id?.toString()) {

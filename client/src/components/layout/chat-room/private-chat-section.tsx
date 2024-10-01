@@ -4,13 +4,14 @@ import { set } from "lodash";
 import { ScrollArea } from "../../ui/scroll-area";
 import { Card, CardContent } from "../../ui/card";
 import { PrivateChatResultType } from "../../../types";
-import { createSocketInstance } from "../../../api/sockets";
+import { useSocketInstance } from "../../../api/sockets";
 import { cn, formatDate, scrollToBottom } from "../../../lib/utils";
+import useAuthStorage from "../../../store/useAuthStorage";
 
 export const PrivateMessageSection = ({ data }: { data: PrivateChatResultType[] }) => {
 	const [allRoomMessages, setAllRoomMessages] = useState<PrivateChatResultType[]>([]);
 	const messageSectionContainerRef = useRef(null);
-	const userId = localStorage?.getItem("userId");
+	const userId = useAuthStorage((state) => state.userId);
 
 	useEffect(() => {
 		if (!data?.length) {
@@ -23,9 +24,11 @@ export const PrivateMessageSection = ({ data }: { data: PrivateChatResultType[] 
 		scrollToBottom(messageSectionContainerRef);
 	}, [allRoomMessages.length]);
 
+	const socket = useSocketInstance();
 	useEffect(() => {
-		const socket = createSocketInstance();
-		socket.on("add-private-message-response", (response: PrivateChatResultType) => {
+		if (socket?.connected === false) socket?.connect();
+
+		socket?.on("add-private-message-response", (response: PrivateChatResultType) => {
 			setAllRoomMessages((previousRoomMessages) => {
 				if (String(response.chat_user.pk_user_id) === String(userId)) {
 					set(response, "responseData?.chat_user?.pk_user_id", "You");
@@ -34,7 +37,7 @@ export const PrivateMessageSection = ({ data }: { data: PrivateChatResultType[] 
 			});
 		});
 		return () => {
-			socket.disconnect();
+			socket?.disconnect();
 		};
 	});
 
@@ -43,7 +46,7 @@ export const PrivateMessageSection = ({ data }: { data: PrivateChatResultType[] 
 			{allRoomMessages.length > 0 ? (
 				<section ref={messageSectionContainerRef}>
 					{allRoomMessages.map((data) => {
-						const isSender = data?.chat_user?.pk_user_id.toString() === userId;
+						const isSender = data?.chat_user?.pk_user_id.toString() === String(userId);
 						return (
 							<div
 								key={data?.private_messages.id}
