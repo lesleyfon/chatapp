@@ -10,21 +10,20 @@ export interface UserInterface {
 	updatedAt?: string;
 }
 
-type AuthFormDataType = Pick<UserInterface, "name" | "email" > & {"password"?: string}
+type AuthFormDataType = Pick<UserInterface,  "password" | "email" > & { "name"?: string};
 
 
 class HttpServer {
 	apiBasePath = 'http://localhost:3010';
+	apiHeaders = new Headers({ 'Content-Type': 'application/json'});
 
-	async login(userCredential: { email: string; password: string }) {
+	async login(userCredential: AuthFormDataType) {
 		try {
-			const myHeaders = new Headers();
-			myHeaders.append('Content-Type', 'application/json');
 			const raw = JSON.stringify(userCredential);
 
 			const response = await fetch(`${this.apiBasePath}/auth/login`, {
 				method: 'POST',
-				headers: myHeaders,
+				headers: this.apiHeaders,
 				body: raw,
 				redirect: 'follow',
 			});
@@ -36,13 +35,11 @@ class HttpServer {
 	}
 	async register(userCredential: AuthFormDataType) {
 		try {
-			const myHeaders = new Headers();
-			myHeaders.append('Content-Type', 'application/json');
 			const raw = JSON.stringify(userCredential);
 
 			const response = await fetch(`${this.apiBasePath}/auth/register`, {
 				method: 'POST',
-				headers: myHeaders,
+				headers: this.apiHeaders,
 				body: raw,
 				redirect: 'follow',
 			});
@@ -53,13 +50,26 @@ class HttpServer {
 		}
 	}
 
+	/**
+	 * @description The method `setBearerTokenToHeader` sets a bearer token to the Authorization header if it is not
+	 * already set.
+	 */
+	setBearerTokenToHeader():void {
+		const BEARER_TOKEN:string =  getBearer();
+		if(this.apiHeaders.get('Authorization') === null){
+			this.apiHeaders.set('Authorization', BEARER_TOKEN);
+		}
+	}
+
 	async fetchChatListsDataFromChatId  (chatId: string) {
+		this.setBearerTokenToHeader();
+
 		const response = await fetch(`${this.apiBasePath}/chats/${chatId}`, {
-			headers: {
-				Authorization: getBearer(),
-			},
+			headers: this.apiHeaders,
 		});
-		return await response.json();
+		const data =  await response.json();
+		
+		return data
 	}
 
 /**
@@ -71,24 +81,26 @@ class HttpServer {
  * to an object with a property `msg` containing an array of `PrivateChatResultType` items.
  */
 	async fetchPrivateMessageListsDataFromRecipientId  (recipientId: string): Promise<{msg: PrivateChatResultType[]}> {
+		this.setBearerTokenToHeader();
 		
 		const response = await fetch(`${this.apiBasePath}/chats/private-message/${recipientId}`, {
-			headers: {
-				Authorization: getBearer(),
-			},
+			headers: this.apiHeaders,
 		});
-		const data =  await response.json()
+		const data =  await response.json();
 
 		return data
 	}
 
 	async fetchAllChatroom (){
+		this.setBearerTokenToHeader();
+
 		const response = await fetch(`${this.apiBasePath}/chats/all/chat-rooms`, {
-			headers: {
-				Authorization: getBearer(),
-			},
+			headers: this.apiHeaders,
 		});
-		return await response.json();
+
+		const data =  await response.json();
+		
+		return data
 	}
 }
 
