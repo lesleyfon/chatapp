@@ -28,13 +28,14 @@ export const ChatRoomSection = ({ data }: { data: [] }) => {
 		if (socket.connected === false) socket.connect();
 
 		socket.on("add-message-response", (response: RoomMessagesResponse[]) => {
+			//TODO: WHY AM I DOING THIS? WHAT HAPPENS IF YOU ONLY SETALLROOMMESSAGES IF THE CHATROOMID MATCHES?
 			if (chatroomId?.toString() !== response?.[0]?.chats?.pk_chats_id?.toString()) {
 				return;
 			}
 
 			setAllRoomMessages((previousRoomMessages) => {
 				response = response.map((responseData) => {
-					if (responseData?.chat_user?.pk_user_id.toString() === userId) {
+					if (responseData?.chat_user?.pk_user_id.toString() === String(userId)) {
 						responseData.chat_user.sender = "You";
 					}
 					return responseData;
@@ -52,8 +53,12 @@ export const ChatRoomSection = ({ data }: { data: [] }) => {
 		<ScrollArea className="flex-1 px-4">
 			{allRoomMessages.length > 0 ? (
 				<section ref={messageSectionContainerRef}>
-					{allRoomMessages?.map((msgData: RoomMessagesResponse) => {
+					{allRoomMessages.map((msgData: RoomMessagesResponse) => {
+						// If the message text is empty, return null
+						if (!msgData?.messages?.message_text) return null;
+
 						const isSender = msgData?.chat_user?.sender === "You";
+
 						return (
 							<div
 								key={msgData?.messages?.id}
@@ -81,7 +86,7 @@ export const ChatRoomSection = ({ data }: { data: [] }) => {
 										</div>
 										<p>{msgData.messages?.message_text}</p>
 										<div className="text-[10px] text-muted-foreground mt-1">
-											{formatDate(msgData.messages.sent_at)}
+											{formatDate(msgData?.messages?.sent_at)}
 										</div>
 									</CardContent>
 								</Card>
