@@ -1,5 +1,6 @@
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
+import { LOCAL_STORAGE_AUTH_KEYS, LOCAL_STORAGE_AUTH_NAME } from "../store/useAuthStorage";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -58,7 +59,10 @@ export function formatDate(date: Date) {
  * value of the "auth_token" stored in the localStorage.
  */
 export const getBearer = () => {
-	const token = localStorage.getItem("auth_token");
+	const localStorageItem = localStorage.getItem(LOCAL_STORAGE_AUTH_NAME) ?? "{}"
+	const authStorage = JSON.parse(localStorageItem) ?? {};
+	const token:string = authStorage?.state?.[LOCAL_STORAGE_AUTH_KEYS.TOKEN] ?? ""
+
 	return `Bearer ${token}`;
 };
 
