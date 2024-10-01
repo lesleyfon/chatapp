@@ -2,12 +2,14 @@ import { ReactNode, type FC } from "react";
 import { type NavigateFunction, useNavigate } from "react-router";
 import { Button } from "./ui/button";
 import { LogOutIcon } from "lucide-react";
+import useAuthStorage from "../store/useAuthStorage";
 
 export const LogoutButton: FC = (): ReactNode => {
+	const authStorageLogout = useAuthStorage((state) => state.logout);
 	const navigate: NavigateFunction = useNavigate();
 
 	const logoutHandler = (): void => {
-		localStorage.removeItem("auth_token");
+		authStorageLogout();
 		navigate("/");
 	};
 	return (
