@@ -15,27 +15,19 @@ import {
 import { Input } from "../../../components/ui/input";
 import { useNavigate } from "react-router";
 import useAuthStorage from "../../../store/useAuthStorage";
-
-const FormSchema = z.object({
-	email: z.string().email("Invalid Email").min(2, {
-		message: "Username must be at least 2 characters.",
-	}),
-	password: z.string().min(6, {
-		message: "Password must be of length 6 or greater",
-	}),
-	name: z.string().min(1, {
-		message: "Full name is required",
-	}),
-});
+import { RegisterFormSchemaValidation } from "../validation";
 
 export function Register() {
 	const navigate = useNavigate();
 	const authStorageLogin = useAuthStorage((state) => state.login);
-	const form = useForm<z.infer<typeof FormSchema>>({
-		resolver: zodResolver(FormSchema),
+
+	const form = useForm<z.infer<typeof RegisterFormSchemaValidation>>({
+		resolver: zodResolver(RegisterFormSchemaValidation),
 	});
+
 	const { setError } = form;
-	async function onSubmit(data: z.infer<typeof FormSchema>) {
+
+	async function onSubmit(data: z.infer<typeof RegisterFormSchemaValidation>) {
 		const response = await api.register(data);
 		const parseResponse = JSON.parse(response as string);
 
