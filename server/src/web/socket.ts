@@ -18,7 +18,7 @@ export class AppSocketBase extends QueryHandlers {
   async getAUserChatList(socket: Socket) {
     const token = socket.handshake.auth?.token;
     const user = await this.decodeJWT(token);
-
+    
     if (!user) return;
     const userId = user.userId;
     socket.on("get-chat-list", async (cb: CbType) => {
@@ -203,4 +203,4 @@ export class AppSocketBase extends QueryHandlers {
   connectToRooms(socket: SocketIOServer) {
     socket.to(["person-1", "person-1"]);
   }
-}ƒ
+}
