@@ -1,8 +1,6 @@
 import { Socket, Server as SocketIOServer } from "socket.io";
 import { QueryHandlers } from "../model/QueryHandlers.model";
 import { type ChatListType } from "../model/QueryHandlers.model";
-import { eq } from "drizzle-orm";
-import { privateChats, privateMessages, user } from "../schema";
 
 
 type CbType = (chatList: ChatListType) => void
@@ -18,7 +16,7 @@ export class AppSocketBase extends QueryHandlers {
   async getAUserChatList(socket: Socket) {
     const token = socket.handshake.auth?.token;
     const user = await this.decodeJWT(token);
-    
+
     if (!user) return;
     const userId = user.userId;
     socket.on("get-chat-list", async (cb: CbType) => {
@@ -129,63 +127,44 @@ export class AppSocketBase extends QueryHandlers {
 
   async addPrivateMessage(socket: Socket) {
     socket.on('add-private-message', async ({ recipientId, senderId, message
-
-    }) => {
+    }: { recipientId: string, senderId: string, message: string }) => {
 
       // Ensure that you do not return the passwords when selecting users
-      const [sender, receiver] = await Promise.all([
-        this.db.select().from(user).where(eq(user.pk_user_id, senderId)),
-        this.db.select().from(user).where(eq(user.pk_user_id, recipientId))
-      ]);
+      const [sender, receiver] = (await this.getUserByUserIds({ userIdList: [senderId, recipientId] })).flat();
 
-      const privateChatsInsertResponse = await this.db.insert(privateChats).values({
-        sender_id: sender[0].pk_user_id,
-        recipient_id: receiver[0].pk_user_id
-      }).returning({
-        pk_private_chat_id: privateChats.pk_private_chat_id, sender_id: privateChats.sender_id,
-        recipient_id: privateChats.recipient_id,
-        created_at: privateChats.created_at
-      });
 
-      const privateMessageInsertResponse = await this.db.insert(privateMessages).values({
-        fk_private_chat_id: privateChatsInsertResponse[0].pk_private_chat_id,
-        fk_user_id: senderId,
-        message_text: message
-      }).returning({
-        id: privateMessages.id,
-        fk_private_chat_id: privateMessages.fk_private_chat_id,
-        fk_user_id: privateMessages.fk_user_id,
-        message_text: privateMessages.message_text,
-        sent_at: privateMessages.sent_at
-      });
+      const privateChatsInsertResponse = (await this.createPrivateChatEntry(sender, receiver))[0];
+
+      const privateMessageInsertResponse = (await this.createPrivateMessage(privateChatsInsertResponse, senderId, message))[0];
 
 
       const addPrivateMessageSocketResponse = {
         private_chat: {
-          pk_private_chat_id: privateChatsInsertResponse[0].pk_private_chat_id,
-          sender_id: privateChatsInsertResponse[0].sender_id,
-          recipient_id: privateChatsInsertResponse[0].recipient_id,
-          created_at: privateChatsInsertResponse[0].created_at,
+          pk_private_chat_id: privateChatsInsertResponse.pk_private_chat_id,
+          sender_id: privateChatsInsertResponse.sender_id,
+          recipient_id: privateChatsInsertResponse.recipient_id,
+          created_at: privateChatsInsertResponse.created_at,
         },
         chat_user: {
-          pk_user_id: sender[0].pk_user_id,
-          name: sender[0].name,
-          email: sender[0].email,
-          created_at: sender[0].created_at,
+          pk_user_id: sender.pk_user_id,
+          name: sender.name,
+          email: sender.email,
+          created_at: sender.created_at,
         },
         private_messages: {
-          id: privateMessageInsertResponse[0].id,
-          fk_private_chat_id: privateMessageInsertResponse[0].fk_private_chat_id,
-          fk_user_id: privateMessageInsertResponse[0].fk_user_id,
-          message_text: privateMessageInsertResponse[0].message_text,
-          sent_at: privateMessageInsertResponse[0].sent_at,
+          id: privateMessageInsertResponse.id,
+          fk_private_chat_id: privateMessageInsertResponse.fk_private_chat_id,
+          fk_user_id: privateMessageInsertResponse.fk_user_id,
+          message_text: privateMessageInsertResponse.message_text,
+          sent_at: privateMessageInsertResponse.sent_at,
         },
         recipient: {
-          pk_user_id: receiver[0].pk_user_id,
-          name: receiver[0].name,
-          email: receiver[0].email,
+          pk_user_id: receiver.pk_user_id,
+          name: receiver.name,
+          email: receiver.email,
         }
       };
+      
       this.io.emit("add-private-message-response", addPrivateMessageSocketResponse);
       // Emits an event to display the most recent message sent
       this.io.emit("get-latest-private-message-sent", addPrivateMessageSocketResponse);
