@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 
 import { cn, formatDate, scrollToBottom } from "../../../lib/utils";
 import { Card, CardContent } from "../../ui/card";
@@ -9,7 +9,7 @@ import { useSocketInstance } from "../../../api/sockets";
 import useAuthStorage from "../../../store/useAuthStorage";
 
 export const ChatRoomSection = ({ data }: { data: [] }) => {
-	const [allRoomMessages, setAllRoomMessages] = useState<RoomMessagesResponse[]>(data);
+	const [allRoomMessages, setAllRoomMessages] = React.useState<RoomMessagesResponse[]>(data);
 	const userId = useAuthStorage((state) => state.userId);
 	const messageSectionContainerRef = useRef(null);
 	const location = useLocation();
@@ -28,7 +28,7 @@ export const ChatRoomSection = ({ data }: { data: [] }) => {
 		if (socket.connected === false) socket.connect();
 
 		socket.on("add-message-response", (response: RoomMessagesResponse[]) => {
-			//TODO: WHY AM I DOING THIS? WHAT HAPPENS IF YOU ONLY SETALLROOMMESSAGES IF THE CHATROOMID MATCHES?
+			//TODO: WHY AM I DOING THIS? WHAT HAPPENS IF YOU ONLY setAllRoomMessages IF THE CHATROOM_ID MATCHES?
 			if (chatroomId?.toString() !== response?.[0]?.chats?.pk_chats_id?.toString()) {
 				return;
 			}

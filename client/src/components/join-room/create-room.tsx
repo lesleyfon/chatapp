@@ -70,7 +70,7 @@ export function CreateNewRoom() {
 				<DialogHeader>
 					<DialogTitle>Create a new Chatroom</DialogTitle>
 					<DialogDescription>
-						Create a new chatroom here. Click send button when you're done.
+						Create a new chatroom here. Click send button when you&lsquo;re done.
 					</DialogDescription>
 				</DialogHeader>
 				<form onSubmit={handleSubmit(onSubmit)}>
@@ -100,7 +100,7 @@ export function CreateNewRoom() {
 							<Button
 								type="submit"
 								size="icon"
-								className={cn("ml-2 alin hover:border-primary hover:border-solid")}
+								className={cn("ml-2 hover:border-primary hover:border-solid")}
 							>
 								<SendIcon className="h-5 w-5" />
 								<span className="sr-only">Send message</span>

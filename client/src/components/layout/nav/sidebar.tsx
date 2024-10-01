@@ -26,7 +26,7 @@ const SidebarItemLink = React.memo(({ chatData }: { chatData: ChatListType[0] })
 			</Avatar>
 			<div className="flex-1 truncate">
 				<div className="from-neutral-100 font-bold">{chatData.chats?.chat_name}</div>
-				{chatData.messages && (
+				{chatData.messages ? (
 					<div className="md:flex grid grid-cols-[10fr_2fr] gap-2 items-center">
 						<p className=" truncate w-full text-xs text-ellipsis overflow-hidden md:block md:w-44 ">
 							{chatData.messages.message_text}
@@ -35,11 +35,13 @@ const SidebarItemLink = React.memo(({ chatData }: { chatData: ChatListType[0] })
 							{timeDifference(chatData.messages.sent_at)}
 						</p>
 					</div>
-				)}
+				) : null}
 			</div>
 		</Link>
 	);
 });
+
+SidebarItemLink.displayName = "SidebarItemLink";
 
 const SidebarPrivateMessageLink = React.memo(({ data }: { data: PrivateChatResultType }) => {
 	const location = useLocation();
@@ -60,7 +62,7 @@ const SidebarPrivateMessageLink = React.memo(({ data }: { data: PrivateChatResul
 			</Avatar>
 			<div className="flex-1 truncate">
 				<div className="from-neutral-100 font-bold">{data.recipient?.name}</div>
-				{data.private_messages && (
+				{data.private_messages ? (
 					<div className="md:flex grid grid-cols-[10fr_2fr] gap-2 items-center">
 						<p className=" truncate w-full text-xs text-ellipsis overflow-hidden md:block md:w-44 ">
 							{data.private_messages.message_text}
@@ -69,11 +71,13 @@ const SidebarPrivateMessageLink = React.memo(({ data }: { data: PrivateChatResul
 							{timeDifference(data.private_messages.sent_at)}
 						</p>
 					</div>
-				)}
+				) : null}
 			</div>
 		</Link>
 	);
 });
+
+SidebarPrivateMessageLink.displayName = "SidebarPrivateMessageLink";
 
 export default function Sidebar({ className }: SidebarProps) {
 	const { chatroomList } = useGetChatList();
