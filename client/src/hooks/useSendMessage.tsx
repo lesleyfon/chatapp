@@ -1,26 +1,41 @@
 import { useNavigate } from "react-router-dom";
 import { MessageInput } from "./../types/index";
-import { createSocketInstance } from "../api/sockets";
+import useAuthStorage from "../store/useAuthStorage";
+import { Socket } from "socket.io-client";
 
 export const useSendMessage = () => {
-	const token = localStorage.getItem("auth_token");
-	const userId = localStorage.getItem("userId");
+	const { token, userId } = useAuthStorage((state) => state);
 	const navigate = useNavigate();
-	if (!token) {
+
+	if (!token || !userId) {
 		navigate("/");
 	}
 
-	function sendPrivateMessage(data: MessageInput & { recipientId: string }) {
-		const socket = createSocketInstance();
+	function sendPrivateMessage(
+		data: MessageInput & { recipientId: string },
+		socket: Socket | null
+	) {
+		// If the socket is null, return early
+		if (socket === null) return;
+		// If the socket is not connected, connect it
+		if (socket.connected === false) socket.connect();
+
 		socket.emit("add-private-message", {
 			recipientId: data.recipientId,
 			senderId: userId,
 			message: data.message_text,
 		});
+
 		return data;
 	}
-	function sendMessage(data: MessageInput & { chatId: string; chatName: string }) {
-		const socket = createSocketInstance();
+	function sendMessage(
+		data: MessageInput & { chatId: string; chatName: string },
+		socket: Socket | null
+	) {
+		// If the socket is null, return early
+		if (socket === null) return;
+		// If the socket is not connected, connect it
+		if (socket.connected === false) socket.connect();
 
 		socket.emit("add-message", {
 			chatId: data.chatId,

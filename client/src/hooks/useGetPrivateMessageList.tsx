@@ -2,23 +2,24 @@ import { useEffect, useState } from "react";
 
 import { useNavigate, useParams } from "react-router-dom";
 import { PrivateChatResultType } from "./../types/index";
-import { createSocketInstance } from "../api/sockets";
+import { useSocketInstance } from "../api/sockets";
+import useAuthStorage from "../store/useAuthStorage";
 
 export const useGetPrivateMessageList = () => {
 	const [privateRoomList, setPrivateRoomList] = useState<PrivateChatResultType[]>([]);
 	const navigate = useNavigate();
+	const { token, userId } = useAuthStorage((state) => state);
 	const { recipientId } = useParams();
+	const socket = useSocketInstance();
 
 	useEffect(() => {
-		const token: string | null = localStorage.getItem("auth_token");
-		const userId: string | null = localStorage.getItem("userId");
-
 		if (!token || !userId) {
 			navigate("/");
 			return;
 		}
+		if (socket === null) return;
 
-		const socket = createSocketInstance();
+		if (socket.connected === false) socket.connect();
 
 		socket.emit("get-private-message-list", (response: PrivateChatResultType[]) => {
 			setPrivateRoomList(response);

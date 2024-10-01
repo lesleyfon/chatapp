@@ -1,12 +1,18 @@
 import { io } from "socket.io-client";
-export function createSocketInstance(){
-  const token = localStorage.getItem("auth_token");
-		const socket = io("http://localhost:3010/", {
-			reconnectionDelay: 10000,
-			timestampRequests: true,
-			auth: { token },
-			transports: ["websocket", "polling", "flashsocket"],
-		});
+import useAuthStorage from "../store/useAuthStorage";
 
-    return socket
+export function useSocketInstance() {
+  const token = useAuthStorage(state => state.token);
+
+	if(!token) return null
+
+
+  const socket = io("http://localhost:3010/", {
+	reconnectionDelay: 10000,
+	timestampRequests: true,
+	auth: { token },
+	transports: ["websocket", "polling", "flashsocket"],
+  });
+
+  return socket;
 }

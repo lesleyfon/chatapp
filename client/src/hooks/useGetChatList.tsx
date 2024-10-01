@@ -2,24 +2,28 @@ import { useEffect, useState } from "react";
 
 import { useNavigate } from "react-router-dom";
 import { ChatListType } from "./../types/index";
-import { createSocketInstance } from "../api/sockets";
+import { useSocketInstance } from "../api/sockets";
+import useAuthStorage from "../store/useAuthStorage";
 
 export const useGetChatList = () => {
 	const [chatroomList, setChatList] = useState<ChatListType>([]);
+	const token = useAuthStorage((authState) => authState.token);
 	const navigate = useNavigate();
+	const socket = useSocketInstance();
 
 	useEffect(() => {
-		const token = localStorage.getItem("auth_token");
 		if (!token) {
 			navigate("/");
 			return;
 		}
-
-		const socket = createSocketInstance();
+		// If the socket is null, return early
+		if (socket === null) return;
+		// If the socket is not connected, connect it
+		if (socket.connected === false) socket.connect();
 
 		// Fetch initial chat list
-		// 		// This socket is mean to fire only on initial render, to get the list of chatrooms for a user.
-		// 		// THOUGHT: Would it make sense to have this be an api?
+		// This socket is mean to fire only on initial render, to get the list of chatrooms for a user.
+		// THOUGHT: Would it make sense to have this be an api?
 		socket.emit("get-chat-list", (response: ChatListType) => {
 			setChatList(response);
 		});
