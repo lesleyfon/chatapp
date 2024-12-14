@@ -7,6 +7,7 @@ import { LogoutButton } from "../../logout-button";
 import { Menu } from "lucide-react";
 import { Button } from "../../ui/button";
 import { MobileSidebar } from "./mobile-nav";
+import "./style.css";
 
 const MobileNav: FC = (): ReactNode => {
 	const [open, setOpen] = useState(false);
@@ -62,7 +63,7 @@ const Header: FC = (): ReactNode => {
 	const roomName = data?.msg?.[0]?.chats?.chat_name ?? "Chat App";
 
 	return (
-		<header className="supports-backdrop-blur:bg-background/60 left-0 right-0 top-0 z-20 border-b bg-background/95 backdrop-blur">
+		<header className="supports-backdrop-blur:bg-background/60 left-0 right-0 top-0 z-20 bg-background/95 backdrop-blur">
 			<Desktop roomName={roomName} />
 			<MobileNav />
 		</header>

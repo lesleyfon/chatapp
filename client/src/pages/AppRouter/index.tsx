@@ -18,7 +18,7 @@ const MainAppLayoutWithSidebarAndChatroom = () => (
 	<div className="h-screen border-collapse overflow-hidden w-screen grid grid-rows-[1fr_11fr]">
 		<Header />
 		<main className="flex-1 overflow-y-auto overflow-x-hidden bg-secondary/10 pb-1 grid md:grid-cols-[1fr_11fr]">
-			<Sidebar className="relative hidden h-full border-r md:grid grid-rows-[62px_auto]" />
+			<Sidebar className="relative hidden h-full md:grid grid-rows-[62px_auto]" />
 			<ChatRoomLayout />
 		</main>
 	</div>
@@ -35,11 +35,9 @@ export const AppRouter = createBrowserRouter([
 			{
 				path: "/chats",
 				element: (
-					<div className="h-screen border-collapse overflow-hidden w-screen grid grid-rows-[1fr_11fr]">
+					<div className="h-screen border-collapse overflow-hidden w-screen">
+						<Sidebar className="relative hidden h-full  md:grid grid-rows-[62px_auto]" />
 						<Header />
-						<main className="flex-1 overflow-y-auto overflow-x-hidden bg-secondary/10 pb-1 grid md:grid-cols-[1fr_11fr]">
-							<Sidebar className="relative hidden h-full border-r md:grid grid-rows-[62px_auto]" />
-						</main>
 					</div>
 				),
 			},

@@ -7,6 +7,7 @@ import { useGetChatList } from "../../../hooks/useGetChatList";
 import { useGetPrivateMessageList } from "../../../hooks/useGetPrivateMessageList";
 import { JoinRoom } from "../../join-room";
 import { User } from "lucide-react";
+import { Sidebar, SidebarContent, SidebarHeader } from "../../ui/sidebar";
 
 const SidebarItemLink = React.memo(({ chatData }: { chatData: ChatListType[0] }) => {
 	const location = useLocation();
@@ -25,13 +26,15 @@ const SidebarItemLink = React.memo(({ chatData }: { chatData: ChatListType[0] })
 				<User />
 			</Avatar>
 			<div className="flex-1 truncate">
-				<div className="from-neutral-100 font-bold">{chatData.chats?.chat_name}</div>
+				<div className="from-neutral-100 font-bold text-xs">
+					{chatData.chats?.chat_name}
+				</div>
 				{chatData.messages ? (
 					<div className="md:flex grid grid-cols-[10fr_2fr] gap-2 items-center">
-						<p className=" truncate w-full text-xs text-ellipsis overflow-hidden md:block md:w-44 ">
+						<p className=" truncate w-full text-xs text-ellipsis overflow-hidden md:block text-left md:max-w-[110px]">
 							{chatData.messages.message_text}
 						</p>
-						<p className="text-xs text-muted-foreground">
+						<p className="text-[10px] text-muted-foreground">
 							{timeDifference(chatData.messages.sent_at)}
 						</p>
 					</div>
@@ -61,13 +64,13 @@ const SidebarPrivateMessageLink = React.memo(({ data }: { data: PrivateChatResul
 				<User />
 			</Avatar>
 			<div className="flex-1 truncate">
-				<div className="from-neutral-100 font-bold">{data.recipient?.name}</div>
+				<div className="from-neutral-100 font-bold text-xs">{data.recipient?.name}</div>
 				{data.private_messages ? (
 					<div className="md:flex grid grid-cols-[10fr_2fr] gap-2 items-center">
-						<p className=" truncate w-full text-xs text-ellipsis overflow-hidden md:block md:w-44 ">
+						<p className="truncate w-full text-xs text-ellipsis overflow-hidden md:block text-left md:max-w-[110px]">
 							{data.private_messages.message_text}
 						</p>
-						<p className="text-xs text-muted-foreground">
+						<p className="text-[10px] text-muted-foreground">
 							{timeDifference(data.private_messages.sent_at)}
 						</p>
 					</div>
@@ -79,7 +82,7 @@ const SidebarPrivateMessageLink = React.memo(({ data }: { data: PrivateChatResul
 
 SidebarPrivateMessageLink.displayName = "SidebarPrivateMessageLink";
 
-export default function Sidebar({ className }: SidebarProps) {
+export default function SidebarWrapper({ className }: SidebarProps) {
 	const { chatroomList } = useGetChatList();
 	const { privateRoomList } = useGetPrivateMessageList();
 
@@ -107,27 +110,34 @@ export default function Sidebar({ className }: SidebarProps) {
 		[privateRoomList]
 	);
 	return (
-		<section className={className}>
-			<div className="sticky top-0 flex h-14 items-center justify-between border-b px-4">
-				<div className="font-semibold">Chats</div>
-				<div>
-					<JoinRoom />
+		<Sidebar side="left" className="dark h-screen">
+			<SidebarHeader>
+				<div className="sticky top-0 flex h-14 items-center justify-between px-4">
+					<div className="font-semibold">Chats</div>
+					<div>
+						<JoinRoom />
+					</div>
 				</div>
-			</div>
-			<nav className="grid gap-1 p-2 grid-rows-2">
-				{chatroomList.length ? (
-					<section className="">
-						<h1 className="text-center font-bold text-l">Channels</h1>
-						<div className="grid gap-1 p-2">{renderedChats}</div>
-					</section>
-				) : null}
-				{privateRoomList.length > 0 ? (
-					<section>
-						<h1 className="text-center font-bold text-l">Private Message</h1>
-						<div className="grid gap-1 p-2">{renderedPrivateData}</div>
-					</section>
-				) : null}
-			</nav>
-		</section>
+			</SidebarHeader>
+			<SidebarContent>
+				<section className={cn("w-full", className)}>
+					<nav className="grid gap-1 p-2 grid-rows-2 h-screen">
+						{chatroomList.length ? (
+							<section className="">
+								<h1 className="text-center font-bold text-l">Channels</h1>
+								<div className="grid gap-1 p-2">{renderedChats}</div>
+							</section>
+						) : null}
+
+						{privateRoomList.length > 0 ? (
+							<section>
+								<h1 className="text-center font-bold text-l">Private Message</h1>
+								<div className="grid gap-1 p-2">{renderedPrivateData}</div>
+							</section>
+						) : null}
+					</nav>
+				</section>
+			</SidebarContent>
+		</Sidebar>
 	);
 }
