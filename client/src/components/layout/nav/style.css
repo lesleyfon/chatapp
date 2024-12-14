@@ -1,0 +1,7 @@
+div[data-sidebar="sidebar"] {
+	grid-template-rows: 3.5rem auto;
+}
+
+div[data-sidebar="header"] {
+	border-bottom: 1px solid;
+}
