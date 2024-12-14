@@ -7,7 +7,7 @@ import { useGetChatList } from "../../../hooks/useGetChatList";
 import { useGetPrivateMessageList } from "../../../hooks/useGetPrivateMessageList";
 import { JoinRoom } from "../../join-room";
 import { User } from "lucide-react";
-import { Sidebar, SidebarContent, SidebarHeader } from "../../ui/sidebar";
+import { Sidebar, SidebarContent, SidebarHeader, useSidebar } from "../../ui/sidebar";
 
 const SidebarItemLink = React.memo(({ chatData }: { chatData: ChatListType[0] }) => {
 	const location = useLocation();
@@ -85,6 +85,7 @@ SidebarPrivateMessageLink.displayName = "SidebarPrivateMessageLink";
 export default function SidebarWrapper({ className }: SidebarProps) {
 	const { chatroomList } = useGetChatList();
 	const { privateRoomList } = useGetPrivateMessageList();
+	const { isMobile, setOpenMobile, open } = useSidebar();
 
 	const renderedChats = useMemo(
 		() =>
@@ -109,6 +110,12 @@ export default function SidebarWrapper({ className }: SidebarProps) {
 			),
 		[privateRoomList]
 	);
+
+	function handleCloseDialogOnMobileView() {
+		if (isMobile) {
+			setOpenMobile(!open);
+		}
+	}
 	return (
 		<Sidebar side="left" className="dark h-screen">
 			<SidebarHeader>
@@ -119,7 +126,7 @@ export default function SidebarWrapper({ className }: SidebarProps) {
 					</div>
 				</div>
 			</SidebarHeader>
-			<SidebarContent>
+			<SidebarContent onClick={handleCloseDialogOnMobileView}>
 				<section className={cn("w-full", className)}>
 					<nav className="grid gap-1 p-2 grid-rows-2 h-screen">
 						{chatroomList.length ? (

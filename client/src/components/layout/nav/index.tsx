@@ -8,13 +8,21 @@ import { Menu } from "lucide-react";
 import { Button } from "../../ui/button";
 import { MobileSidebar } from "./mobile-nav";
 import "./style.css";
+import { useSidebar } from "../../ui/sidebar";
 
 const MobileNav: FC = (): ReactNode => {
 	const [open, setOpen] = useState(false);
+	const { setOpenMobile } = useSidebar();
 	return (
 		<>
 			<nav className="flex md:hidden items-center justify-between bg-[#242424] shadow-md h-full px-6 w-full content-center flex-wrap">
-				<Button className="p-0" onClick={() => setOpen(true)}>
+				<Button
+					className="p-0"
+					onClick={() => {
+						setOpen(true);
+						setOpenMobile(true);
+					}}
+				>
 					<Menu />
 				</Button>
 				<LogoutButton />
