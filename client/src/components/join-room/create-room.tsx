@@ -15,8 +15,30 @@ import {
 	DialogDescription,
 	DialogFooter,
 } from "../ui/dialog";
+import { useNavigate } from "react-router";
+
+interface Chat {
+	pk_chats_id: number;
+	chat_name: string;
+	createdAt: string;
+}
+
+interface ChatUser {
+	id: number;
+}
+
+interface ChatItem {
+	chats: Chat;
+}
+
+interface ChatResponse {
+	chats: ChatItem[];
+	chat_user: ChatUser;
+	messages: [];
+}
 export function CreateNewRoom() {
 	const INPUT_NAME = "new-chat-name";
+	const navigate = useNavigate();
 
 	const mutation = useMutation({
 		mutationFn: (data: { [key: string]: string }) => {
@@ -41,7 +63,13 @@ export function CreateNewRoom() {
 	} = useForm();
 
 	const onSubmit = (data: { [key: string]: string }) => {
-		mutation.mutate(data);
+		mutation.mutate(data, {
+			onSuccess: async function (data) {
+				const response: Promise<ChatResponse> = await data.json();
+				const roomId = (await response).chats[0].chats.pk_chats_id;
+				navigate(`/chats/${roomId}`);
+			},
+		});
 
 		setValue(INPUT_NAME, "");
 	};
@@ -85,6 +113,13 @@ export function CreateNewRoom() {
 							autoComplete="off"
 							{...register(INPUT_NAME, {
 								required: "Can't submit an empty field",
+								validate: (value) => {
+									const regex = /^\s*$/;
+									if (regex.test(value)) {
+										return "Room name can't be empty";
+									}
+									return true;
+								},
 							})}
 						/>
 						<ErrorMessage
