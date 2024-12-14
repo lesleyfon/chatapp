@@ -15,11 +15,13 @@ export const ProtectedRoute: FC<{ isAuthenticated: boolean }> = ({ isAuthenticat
 };
 
 const MainAppLayoutWithSidebarAndChatroom = () => (
-	<div className="h-screen border-collapse overflow-hidden w-screen grid grid-rows-[1fr_11fr]">
-		<Header />
+	<div className="h-screen border-collapse overflow-hidden w-screen ">
 		<main className="flex-1 overflow-y-auto overflow-x-hidden bg-secondary/10 pb-1 grid md:grid-cols-[1fr_11fr]">
 			<Sidebar className="relative hidden h-full md:grid grid-rows-[62px_auto]" />
-			<ChatRoomLayout />
+			<div className="grid grid-rows-[1fr_11fr] h-screen">
+				<Header />
+				<ChatRoomLayout />
+			</div>
 		</main>
 	</div>
 );
