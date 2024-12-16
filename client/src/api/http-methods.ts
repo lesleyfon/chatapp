@@ -102,6 +102,17 @@ class HttpServer {
 		
 		return data
 	}
+	async fetchAllPrivateChatroom (){
+		this.setBearerTokenToHeader();
+
+		const response = await fetch(`${this.apiBasePath}/chats/all/private-chat-rooms`, {
+			headers: this.apiHeaders,
+		});
+
+		const data =  await response.json();
+		
+		return data
+	}
 }
 
 export default new HttpServer();
