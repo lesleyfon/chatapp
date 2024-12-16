@@ -6,8 +6,10 @@ import { PrivateChatResultType, type ChatListType, type SidebarProps } from "../
 import { useGetChatList } from "../../../hooks/useGetChatList";
 import { useGetPrivateMessageList } from "../../../hooks/useGetPrivateMessageList";
 import { JoinRoom } from "../../join-room";
-import { User } from "lucide-react";
+import { Plus, User } from "lucide-react";
 import { Sidebar, SidebarContent, SidebarHeader, useSidebar } from "../../ui/sidebar";
+import { SearchPrivateRoom } from "../../join-room/search-private-room";
+import { Button } from "../../ui/button";
 
 const SidebarItemLink = React.memo(({ chatData }: { chatData: ChatListType[0] }) => {
 	const location = useLocation();
@@ -26,7 +28,7 @@ const SidebarItemLink = React.memo(({ chatData }: { chatData: ChatListType[0] })
 				<User />
 			</Avatar>
 			<div className="flex-1 truncate">
-				<div className="from-neutral-100 font-bold text-xs">
+				<div className="from-neutral-100 font-bold text-xs truncate md:max-w-[110px]">
 					{chatData.chats?.chat_name}
 				</div>
 				{chatData.messages ? (
@@ -64,7 +66,9 @@ const SidebarPrivateMessageLink = React.memo(({ data }: { data: PrivateChatResul
 				<User />
 			</Avatar>
 			<div className="flex-1 truncate">
-				<div className="from-neutral-100 font-bold text-xs">{data.recipient?.name}</div>
+				<div className="from-neutral-100 font-bold text-xs truncate md:max-w-[110px]">
+					{data.recipient?.name}
+				</div>
 				{data.private_messages ? (
 					<div className="md:flex grid grid-cols-[10fr_2fr] gap-2 items-center">
 						<p className="truncate w-full text-xs text-ellipsis overflow-hidden md:block text-left md:max-w-[110px]">
@@ -140,6 +144,19 @@ export default function SidebarWrapper({ className }: SidebarProps) {
 							<section>
 								<h1 className="text-center font-bold text-l">Private Message</h1>
 								<div className="grid gap-1 p-2">{renderedPrivateData}</div>
+								<SearchPrivateRoom
+									triggerChild={
+										<Button
+											size="icon"
+											role="combobox"
+											className="flex items-center justify-center p-4 gap-2 hover:bg-muted from-neutral-200 hover:!bg-[#4c4c52] w-full"
+										>
+											<span>New Private Chat</span>
+											<Plus className="h-5 w-5" />
+											<span className="sr-only">Search room</span>
+										</Button>
+									}
+								/>
 							</section>
 						) : null}
 					</nav>

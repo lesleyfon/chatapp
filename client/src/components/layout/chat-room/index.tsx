@@ -24,8 +24,8 @@ function ChatRoomLayout() {
 		);
 	}
 
-	if (recipientData?.msg.length && recipientId) {
-		const data = recipientData.msg ?? [];
+	if (recipientData?.msg && recipientData.msg.length >= 0 && recipientId) {
+		const data = recipientData?.msg ?? [];
 		const recipientsName =
 			data.find(({ chat_user }) => String(chat_user?.pk_user_id) === "4")?.chat_user?.name ??
 			"";
