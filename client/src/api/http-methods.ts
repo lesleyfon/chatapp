@@ -9,6 +9,14 @@ export interface UserInterface {
 	createdAt?: string;
 	updatedAt?: string;
 }
+export interface ErrorResponse {
+	error: boolean;
+	reason: string;
+}
+
+export interface SuccessResponse {
+	msg: PrivateChatResultType[]; 
+}
 
 type AuthFormDataType = Pick<UserInterface,  "password" | "email" > & { "name"?: string};
 
@@ -80,13 +88,14 @@ class HttpServer {
  * @returns The function `fetchPrivateMessageListsDataFromRecipientId` returns a Promise that resolves
  * to an object with a property `msg` containing an array of `PrivateChatResultType` items.
  */
-	async fetchPrivateMessageListsDataFromRecipientId  (recipientId: string): Promise<{msg: PrivateChatResultType[]}> {
+
+	async fetchPrivateMessageListsDataFromRecipientId  (recipientId: string): Promise<SuccessResponse | ErrorResponse> {
 		this.setBearerTokenToHeader();
 		
 		const response = await fetch(`${this.apiBasePath}/chats/private-message/${recipientId}`, {
 			headers: this.apiHeaders,
 		});
-		const data =  await response.json();
+		const data =  await response.json() as SuccessResponse | ErrorResponse;
 
 		return data
 	}

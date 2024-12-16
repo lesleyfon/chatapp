@@ -4,14 +4,21 @@ import { ChatRoomSection } from "./chat-room-section";
 import { PrivateMessageSection } from "./private-chat-section";
 import useRoomData from "../../../hooks/useRoomData";
 import { TriangleAlert } from "lucide-react";
+import { ErrorResponse, SuccessResponse } from "../../../api/http-methods";
+
+function isErrorResponse(data: ErrorResponse | SuccessResponse): data is ErrorResponse {
+	return "error" in data;
+}
 
 function ChatRoomLayout() {
 	const { loadingState, chatData, recipientData, chatId, recipientId } = useRoomData();
 	if (loadingState) {
 		return <Loader />;
 	}
-
-	if (chatData?.error) {
+	if (
+		(chatData && isErrorResponse(chatData)) ||
+		(recipientData && isErrorResponse(recipientData))
+	) {
 		return (
 			<div className="flex flex-col items-center justify-center h-full">
 				<h2 className="flex items-center justify-center text-red-500 text-8xl">
