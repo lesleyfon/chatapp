@@ -4,7 +4,7 @@ import { useParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import api from "../../../api/http-methods";
 import { LogoutButton } from "../../logout-button";
-import { Menu } from "lucide-react";
+import { Menu, TriangleAlert } from "lucide-react";
 import { Button } from "../../ui/button";
 import { MobileSidebar } from "./mobile-nav";
 import "./style.css";
@@ -65,7 +65,21 @@ const Header: FC = (): ReactNode => {
 	}
 
 	if (data?.error) {
-		return <p>Error</p>;
+		return (
+			<>
+				<MobileNav />
+				<nav className=" md:flex hidden items-center justify-between bg-[#242424] shadow-md h-full w-full content-center flex-wrap px-6">
+					<p className="flex items-center justify-center h-full text-red-500 text-2xl">
+						Chat Room Not Found <TriangleAlert className="w-6 h-6" />
+					</p>
+					{/* TODO: Make this a component. If is being repeated in multiple places */}
+					<div className="flex items-center justify-center h-full">
+						<JoinRoom />
+						<LogoutButton />
+					</div>
+				</nav>
+			</>
+		);
 	}
 
 	const roomName = data?.msg?.[0]?.chats?.chat_name ?? "Chat App";

@@ -3,6 +3,7 @@ import { MessageInput } from "./chat-room-message-input";
 import { ChatRoomSection } from "./chat-room-section";
 import { PrivateMessageSection } from "./private-chat-section";
 import useRoomData from "../../../hooks/useRoomData";
+import { TriangleAlert } from "lucide-react";
 
 function ChatRoomLayout() {
 	const { loadingState, chatData, recipientData, chatId, recipientId } = useRoomData();
@@ -11,7 +12,16 @@ function ChatRoomLayout() {
 	}
 
 	if (chatData?.error) {
-		return <p>Error</p>;
+		return (
+			<div className="flex flex-col items-center justify-center h-full">
+				<h2 className="flex items-center justify-center text-red-500 text-8xl">
+					404 <TriangleAlert className="w-24 h-24" />
+				</h2>
+				<p className="flex items-center justify-center text-red-500 text-2xl">
+					Chat Room Not Found
+				</p>
+			</div>
+		);
 	}
 
 	if (recipientData?.msg.length && recipientId) {
