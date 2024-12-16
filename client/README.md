@@ -32,3 +32,4 @@ export default {
 ### FEATURES TO ADD
 - [x] Ensure that you cant go to a chats room page if the chatroom does not exist
 - [ ] Create an error Page
+- [ ] Sidebar has a scroll. And fix to enable no scroll for elements on sidebar
