@@ -44,7 +44,7 @@ export class Chat extends AuthMiddlewareMixin(QueryHandlersMixin(BaseClass)) {
     this.getPrivateMessagesById = this.getPrivateMessagesById.bind(this);
     this.getAllChatRooms = this.getAllChatRooms.bind(this);
     this.createChatRoom = this.createChatRoom.bind(this);
-
+    
 
     // Middlewares
     this.router.get('/', this.baseRoute);
@@ -60,6 +60,11 @@ export class Chat extends AuthMiddlewareMixin(QueryHandlersMixin(BaseClass)) {
       // @ts-expect-error desc
       this.authMiddleware.authenticateRequests,
       this.getAllChatRooms);
+    // Get all private chat rooms
+    this.router.get('/all/private-chat-rooms',
+      // @ts-expect-error desc
+      this.authMiddleware.authenticateRequests,
+      this.getAllPrivateChatRooms);
     this.router.post('/chat/new-chatroom',
       // @ts-expect-error desc
       this.authMiddleware.authenticateRequests,
@@ -110,6 +115,29 @@ export class Chat extends AuthMiddlewareMixin(QueryHandlersMixin(BaseClass)) {
     }
     return res.status(StatusCodes.OK).json(chatRooms);
   }
+
+  getAllPrivateChatRooms = async (req: RequestWithUser, res: Response) => {
+    try {
+      const userId = req.user?.pk_user_id;
+      const privateChatRooms = await this.queryHandlers.getAllPrivateChatRooms({userId});
+  
+      if ('error' in privateChatRooms) {
+        return res.status(StatusCodes.BAD_REQUEST).json(privateChatRooms);
+      }
+
+      return res.status(StatusCodes.OK).json(privateChatRooms);
+    } catch (error) {
+      if (error instanceof Error) {
+        return res.status(StatusCodes.BAD_REQUEST).json({
+          msg: error.message
+        });
+      }
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        msg: "An unknown error occurred"
+      });
+    }
+  };
+
   async createChatRoom(req: RequestWithUser, res: Response) {
 
     const { chat_name } = req.body;

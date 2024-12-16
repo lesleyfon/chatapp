@@ -3,7 +3,7 @@ import { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { connectToDB } from "../db";
 import { chatMembers, messages, chats, user, privateChats, privateMessages } from "../schema";
 import { UserSchema } from "./Auth.model";
-import { sql, desc, eq, asc, and, or, inArray, } from "drizzle-orm";
+import { sql, desc, eq, asc, and, or, inArray, ne, } from "drizzle-orm";
 
 export type SQLErrorType = {
   error: boolean,
@@ -471,6 +471,27 @@ export class QueryHandlers extends UserSchema {
     try {
       const chatRooms = await this.db.select().from(chats);
       return chatRooms;
+    } catch (err) {
+      if (typeof err === "object" && Object.keys(err as object).length) {
+        return {
+          error: true,
+          reason: err.message,
+          ...err
+        };
+      }
+      return err;
+    }
+  }
+
+  async getAllPrivateChatRooms({userId}:{userId:string}): Promise<unknown[] | { error: boolean; reason: string }> {
+    try {
+      const allUsers = await this.db.select({
+        "pk_user_id": user.pk_user_id,
+        "name": user.name,
+        "email": user.email
+      }).from(user).where(ne(user.pk_user_id, userId));
+
+      return allUsers;
     } catch (err) {
       if (typeof err === "object" && Object.keys(err as object).length) {
         return {
