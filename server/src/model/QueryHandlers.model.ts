@@ -229,6 +229,15 @@ export class QueryHandlers extends UserSchema {
   }[] | SQLErrorType> {
     try {
 
+      // IF chatRoomId does not exist, return an error
+      const chatRoomExist = await this.db.select().from(chats).where(eq(chats.pk_chats_id, chatRoomId));
+
+      if (!chatRoomExist.length) {
+        return {
+          error: true,
+          reason: 'Chat room does not exist',
+        };
+      }
       const chatRoomMessages = await this.db.select({
         chats: {
           pk_chats_id: chats.pk_chats_id,
