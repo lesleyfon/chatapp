@@ -305,6 +305,14 @@ export class QueryHandlers extends UserSchema {
     } | null
   }[] | SQLErrorType> {
     try {
+      // If recipientId does not exist, return an error
+      const recipientExist = await this.db.select().from(user).where(eq(user.pk_user_id, recipientId));
+      if (!recipientExist.length) {
+        return {
+          error: true,
+          reason: 'Recipient does not exist',
+        };
+      }
       const chatRoomMessages = await this.db.select({
         private_chat: {
           pk_chats_id: privateChats.pk_private_chat_id,
