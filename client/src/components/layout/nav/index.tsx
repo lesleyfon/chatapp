@@ -1,4 +1,4 @@
-import { ReactNode, useState, type FC } from "react";
+import { ReactNode, useState } from "react";
 import { JoinRoom } from "../../join-room";
 import { useParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -10,7 +10,16 @@ import { MobileSidebar } from "./mobile-nav";
 import "./style.css";
 import { useSidebar } from "../../ui/sidebar";
 
-const MobileNav: FC = (): ReactNode => {
+function NavActions(): ReactNode {
+	return (
+		<div className="flex items-center justify-center h-full">
+			<JoinRoom />
+			<LogoutButton />
+		</div>
+	);
+}
+
+function MobileNav(): ReactNode {
 	const [open, setOpen] = useState(false);
 	const { setOpenMobile } = useSidebar();
 	return (
@@ -30,9 +39,9 @@ const MobileNav: FC = (): ReactNode => {
 			<MobileSidebar open={open} setOpen={setOpen} />
 		</>
 	);
-};
+}
 
-const Desktop: FC<{ roomName: string }> = ({ roomName }): ReactNode => {
+function Desktop({ roomName }: { roomName: string }): ReactNode {
 	return (
 		<nav className=" md:flex hidden items-center justify-between bg-[#242424] shadow-md h-full w-full content-center flex-wrap px-6">
 			<div>
@@ -44,15 +53,12 @@ const Desktop: FC<{ roomName: string }> = ({ roomName }): ReactNode => {
 					</span>
 				</div>
 			</div>
-			<div className="">
-				<JoinRoom />
-				<LogoutButton />
-			</div>
+			<NavActions />
 		</nav>
 	);
-};
+}
 
-const Header: FC = (): ReactNode => {
+function Header(): ReactNode {
 	const { chatId } = useParams();
 
 	const { isPending, data, isFetching } = useQuery({
@@ -72,11 +78,7 @@ const Header: FC = (): ReactNode => {
 					<p className="flex items-center justify-center h-full text-red-500 text-2xl">
 						Chat Room Not Found <TriangleAlert className="w-6 h-6" />
 					</p>
-					{/* TODO: Make this a component. If is being repeated in multiple places */}
-					<div className="flex items-center justify-center h-full">
-						<JoinRoom />
-						<LogoutButton />
-					</div>
+					<NavActions />
 				</nav>
 			</>
 		);
@@ -90,6 +92,6 @@ const Header: FC = (): ReactNode => {
 			<MobileNav />
 		</header>
 	);
-};
+}
 
 export default Header;
