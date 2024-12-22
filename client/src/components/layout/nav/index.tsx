@@ -9,8 +9,9 @@ import { Button } from "../../ui/button";
 import { MobileSidebar } from "./mobile-nav";
 import "./style.css";
 import { useSidebar } from "../../ui/sidebar";
+import { cva } from "class-variance-authority";
 
-function NavActions(): ReactNode {
+export function NavActions(): ReactNode {
 	return (
 		<div className="flex items-center justify-center h-full">
 			<JoinRoom />
@@ -19,12 +20,24 @@ function NavActions(): ReactNode {
 	);
 }
 
+const navVariants = cva(
+	"items-center justify-between bg-[#242424] shadow-md h-full w-full content-center flex-wrap px-6",
+	{
+		variants: {
+			variant: {
+				mobile: "flex md:hidden",
+				desktop: "md:flex hidden",
+			},
+		},
+	}
+);
+
 function MobileNav(): ReactNode {
 	const [open, setOpen] = useState(false);
 	const { setOpenMobile } = useSidebar();
 	return (
 		<>
-			<nav className="flex md:hidden items-center justify-between bg-[#242424] shadow-md h-full px-6 w-full content-center flex-wrap">
+			<nav className={navVariants({ variant: "mobile" })}>
 				<Button
 					className="p-0"
 					onClick={() => {
@@ -43,7 +56,7 @@ function MobileNav(): ReactNode {
 
 function Desktop({ roomName }: { roomName: string }): ReactNode {
 	return (
-		<nav className=" md:flex hidden items-center justify-between bg-[#242424] shadow-md h-full w-full content-center flex-wrap px-6">
+		<nav className={navVariants({ variant: "desktop" })}>
 			<div>
 				<div className="font-semibold">{roomName}</div>
 				<div className="text-xs text-muted-foreground">
@@ -74,7 +87,7 @@ function Header(): ReactNode {
 		return (
 			<>
 				<MobileNav />
-				<nav className=" md:flex hidden items-center justify-between bg-[#242424] shadow-md h-full w-full content-center flex-wrap px-6">
+				<nav className={navVariants({ variant: "desktop" })}>
 					<p className="flex items-center justify-center h-full text-red-500 text-2xl">
 						Chat Room Not Found <TriangleAlert className="w-6 h-6" />
 					</p>
