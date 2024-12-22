@@ -1,15 +1,11 @@
 import { type FC } from "react";
 import { createBrowserRouter, Navigate, Outlet } from "react-router-dom";
-import { getBearer } from "../../lib/utils";
+import { isAuthenticated } from "../../lib/utils";
 import Authentication from "../authentication/Authentication";
 import Header from "../../components/layout/nav";
 import Sidebar from "../../components/layout/nav/sidebar";
 import ChatRoomLayout from "../../components/layout/chat-room";
 
-// Function to check if the user is authenticated
-const isAuthenticated = () => {
-	return !!getBearer();
-};
 export const ProtectedRoute: FC<{ isAuthenticated: boolean }> = ({ isAuthenticated }) => {
 	return isAuthenticated ? <Outlet /> : <Navigate to="/" replace />;
 };

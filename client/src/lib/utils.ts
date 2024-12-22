@@ -62,7 +62,9 @@ export const getBearer = () => {
 	const localStorageItem = localStorage.getItem(LOCAL_STORAGE_AUTH_NAME) ?? "{}"
 	const authStorage = JSON.parse(localStorageItem) ?? {};
 	const token:string = authStorage?.state?.[LOCAL_STORAGE_AUTH_KEYS.TOKEN] ?? ""
-
+	if(token === ""){
+		return null
+	}
 	return `Bearer ${token}`;
 };
 
@@ -82,4 +84,9 @@ export const scrollToBottom = (lastElemRef: React.MutableRefObject<null>) => {
 			lastChild.scrollIntoView();
 		}
 	}
+};
+
+// Function to check if the user is authenticated
+export const isAuthenticated = () => {
+	return !!getBearer();
 };

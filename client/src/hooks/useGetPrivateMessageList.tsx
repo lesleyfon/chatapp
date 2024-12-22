@@ -68,7 +68,6 @@ export const useGetPrivateMessageList = () => {
 
 		// Cleanup function to avoid memory leaks
 		return () => {
-			// socket.off("get-latest-private-message-sent", handleMessageUpdate);
 			socket.disconnect();
 		};
 	}, [navigate]);

@@ -1,10 +1,20 @@
+import { useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs";
 
 import { Login } from "./login/Login";
 import { Register } from "./registration/Registration";
 import "./style.css";
+import { useNavigate } from "react-router-dom";
+import { isAuthenticated } from "../../lib/utils";
 
 export default function Authentication() {
+	const navigate = useNavigate();
+	useEffect(() => {
+		if (isAuthenticated()) {
+			navigate("/chats");
+		}
+	}, [navigate]);
+
 	return (
 		<div className="container h-screen w-screen flex justify-center items-center">
 			<div className="authentication-screen h-72">
