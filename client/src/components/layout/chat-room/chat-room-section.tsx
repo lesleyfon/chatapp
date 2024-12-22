@@ -69,7 +69,7 @@ export const ChatRoomSection = ({ data }: { data: [] }) => {
 							>
 								<Card
 									className={cn(
-										"max-w-[70%] rounded-[0.2rem]",
+										"max-w-[70%]",
 										isSender ? "bg-slate-300 text-black" : ""
 									)}
 								>

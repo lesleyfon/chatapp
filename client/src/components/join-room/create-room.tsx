@@ -42,10 +42,15 @@ export function CreateNewRoom() {
 
 	const mutation = useMutation({
 		mutationFn: (data: { [key: string]: string }) => {
+			const bearer = getBearer();
+			if (!bearer) {
+				throw new Error("No authorization token found");
+			}
+
 			return fetch("http://localhost:3010/chats/chat/new-chatroom", {
 				method: "POST",
 				headers: {
-					Authorization: getBearer(),
+					Authorization: bearer,
 					"Content-Type": "application/json",
 				},
 				body: JSON.stringify({
@@ -88,7 +93,7 @@ export function CreateNewRoom() {
 					size="icon"
 					role="combobox"
 					variant="outline"
-					className="border-0 p-0 bg-transparent  hover:bg-[#2f2f2f] rounded-[10%]"
+					className="border-0 p-0 bg-transparent  hover:bg-[#2f2f2f] "
 				>
 					<PlusIcon className="h-5 w-5" />
 					<span className="sr-only">New Chat</span>
@@ -106,7 +111,7 @@ export function CreateNewRoom() {
 						<Input
 							type="text"
 							className={cn(
-								"flex-1 rounded-[0.2rem]",
+								"flex-1",
 								errors?.["new-chat-name"] ? "border-red-400" : ""
 							)}
 							placeholder="Room name"

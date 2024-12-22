@@ -90,7 +90,7 @@ export function Register() {
 					)}
 				/>
 				<FormRootError className=" text-red-300 text-left" />
-				<Button type="submit" className="bg-white text-black rounded-[0.2rem]">
+				<Button type="submit" className="bg-white text-black">
 					Submit
 				</Button>
 			</form>

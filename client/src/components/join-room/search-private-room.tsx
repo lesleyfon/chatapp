@@ -40,7 +40,7 @@ function CustomDialogTrigger({ triggerChild, openDialog }: CustomDialogTriggerPr
 				size="icon"
 				role="combobox"
 				variant="outline"
-				className="border-0 p-0 bg-transparent  hover:bg-[#2f2f2f] rounded-[10%]"
+				className="border-0 p-0 bg-transparent  hover:bg-[#2f2f2f]"
 				onClick={openDialog}
 			>
 				<SearchIcon className="h-5 w-5" />
@@ -84,7 +84,7 @@ export function SearchPrivateRoom({ triggerChild }: SearchPrivateRoomProps) {
 						<CommandItem
 							value={chatroomName.pk_user_id}
 							onSelect={handleSelect}
-							className=" cursor-pointer !w-full hover:!bg-[#4c4c52] !rounded-[0.2rem]"
+							className=" cursor-pointer !w-full hover:!bg-[#4c4c52] "
 						>
 							{chatroomName.name ?? ""}
 						</CommandItem>
@@ -109,7 +109,7 @@ export function SearchPrivateRoom({ triggerChild }: SearchPrivateRoomProps) {
 					<DialogTitle>Search Users</DialogTitle>
 					<DialogDescription>Search users to chat with</DialogDescription>
 				</DialogHeader>
-				<Command className="p-0 rounded-[0.2rem] border ">
+				<Command className="p-0 border">
 					<CommandInput
 						{...register(SEARCH_INPUT_NAME, {
 							onChange: () => {

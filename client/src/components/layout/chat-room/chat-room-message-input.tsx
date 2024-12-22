@@ -67,10 +67,7 @@ export function MessageInput({ chatId, chatName, isPrivateChat }: ChatInputProps
 				<Input
 					{...register(INPUT_NAME)}
 					type="text"
-					className={cn(
-						"flex-1 rounded-[0.2rem]",
-						errors?.message_text ? "border-red-400" : ""
-					)}
+					className={cn("flex-1", errors?.message_text ? "border-red-400" : "")}
 					placeholder="Type a message..."
 					autoComplete="off"
 				/>

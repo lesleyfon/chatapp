@@ -24,9 +24,9 @@ const SidebarItemLink = React.memo(({ chatData }: { chatData: ChatListType[0] })
 		<Link
 			to={to}
 			className={cn(
-				"flex items-center gap-3 rounded-md p-2 text-sm font-medium transition-colors hover:bg-muted from-neutral-200",
+				"flex items-center gap-3  p-2 text-sm font-medium transition-colors hover:bg-muted from-neutral-200",
 				HOVER_BG_COLOR,
-				isActivePath ? "bg-slate-200 hover:!bg-slate-200 text-black rounded-[0.5rem]" : ""
+				isActivePath ? "bg-slate-200 hover:!bg-slate-200 text-black" : ""
 			)}
 		>
 			<Avatar className="h-8 w-8 border flex content-center justify-center items-center">
@@ -73,9 +73,9 @@ const SidebarPrivateMessageLink = React.memo(({ data }: { data: PrivateChatResul
 		<Link
 			to={to}
 			className={cn(
-				"flex items-center gap-3 rounded-md p-2 text-sm font-medium transition-colors hover:bg-muted from-neutral-200",
+				"flex items-center gap-3 p-2 text-sm font-medium transition-colors hover:bg-muted from-neutral-200",
 				HOVER_BG_COLOR,
-				isActivePath ? "bg-slate-200 hover:!bg-slate-200 text-black rounded-[0.5rem]" : ""
+				isActivePath ? "bg-slate-200 hover:!bg-slate-200 text-black" : ""
 			)}
 		>
 			<Avatar className="h-8 w-8 border flex content-center justify-center items-center">

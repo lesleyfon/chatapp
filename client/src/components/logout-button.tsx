@@ -17,7 +17,7 @@ export const LogoutButton: FC = (): ReactNode => {
 			size="icon"
 			role="combobox"
 			variant="outline"
-			className="border-0 p-0 bg-transparent  hover:bg-[#2f2f2f] rounded-[10%]"
+			className="border-0 p-0 bg-transparent  hover:bg-[#2f2f2f]"
 			onClick={logoutHandler}
 		>
 			<LogOutIcon className="h-5 w-5" />
