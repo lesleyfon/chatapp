@@ -548,6 +548,10 @@ export class QueryHandlers extends UserSchema {
         ? String(data.private_chat.recipient_id)
         : String(data.private_chat.sender_id)));
 
+
+    if(recipientIds.size === 0){
+      return [];
+    }
     // Fetch recipient details from user table
     const allRecipients = await this.db.select({
       recipient: {
