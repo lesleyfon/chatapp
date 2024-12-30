@@ -1,107 +1,61 @@
-import React, { useCallback, useMemo } from "react";
+import React, { memo } from "react";
 import { cn, timeDifference } from "../../../lib/utils";
 import { Avatar } from "../../ui/avatar";
 import { Link, useLocation } from "react-router-dom";
-import { PrivateChatResultType, type ChatListType, type SidebarProps } from "../../../types";
+import {
+	type SidebarProps,
+	type SidebarItemLinkProps,
+	type PrivateChatResultType,
+	type ChatListType,
+} from "../../../types";
 import { useGetChatList } from "../../../hooks/useGetChatList";
 import { useGetPrivateMessageList } from "../../../hooks/useGetPrivateMessageList";
 import { JoinRoom } from "../../join-room";
-import { Plus, User } from "lucide-react";
-import { Sidebar, SidebarContent, SidebarHeader, useSidebar } from "../../ui/sidebar";
+import { Sidebar, SidebarContent, SidebarHeader } from "../../ui/sidebar";
 import { SearchPrivateRoom } from "../../join-room/search-private-room";
 import { Button } from "../../ui/button";
+import { SIDEBAR_CONSTANTS } from "../../constants";
+import { useMobileSidebar } from "../../../hooks/useMobileSidebar";
 
-const MESSAGE_TEXT_MAX_WIDTH = "md:max-w-[110px]";
-const HOVER_BG_COLOR = "hover:!bg-[#4c4c52]";
-
-const SidebarItemLink = React.memo(({ chatData }: { chatData: ChatListType[0] }) => {
+export const SidebarItemLink = React.memo(({ data }: { data: SidebarItemLinkProps }) => {
 	const location = useLocation();
 	const currentPath = location.pathname;
-	const to = `/chats/${chatData.chats?.pk_chats_id}`;
-	const isActivePath = currentPath === to;
+	const isActivePathLinkItem = currentPath === data.to;
+	const Icon = SIDEBAR_CONSTANTS.ICON_MAP[data.itemType];
 
 	return (
 		<Link
-			to={to}
-			className={cn(
-				"flex items-center gap-3  p-2 text-sm font-medium transition-colors hover:bg-muted from-neutral-200",
-				HOVER_BG_COLOR,
-				isActivePath ? "bg-slate-200 hover:!bg-slate-200 text-black" : ""
-			)}
-		>
-			<Avatar className="h-8 w-8 border flex content-center justify-center items-center">
-				<User />
-			</Avatar>
-			<div className="flex-1 truncate">
-				<div
-					className={cn(
-						`from-neutral-100 font-bold text-xs truncate`,
-						MESSAGE_TEXT_MAX_WIDTH
-					)}
-				>
-					{chatData.chats?.chat_name}
-				</div>
-				{chatData.messages ? (
-					<div className="md:flex grid grid-cols-[10fr_2fr] gap-2 items-center">
-						<p
-							className={cn(
-								` truncate w-full text-xs text-ellipsis overflow-hidden md:block text-left`,
-								MESSAGE_TEXT_MAX_WIDTH
-							)}
-						>
-							{chatData.messages.message_text}
-						</p>
-						<p className="text-[10px] text-muted-foreground">
-							{timeDifference(chatData.messages.sent_at)}
-						</p>
-					</div>
-				) : null}
-			</div>
-		</Link>
-	);
-});
-
-SidebarItemLink.displayName = "SidebarItemLink";
-
-const SidebarPrivateMessageLink = React.memo(({ data }: { data: PrivateChatResultType }) => {
-	const location = useLocation();
-	const currentPath = location.pathname;
-	const to = `/private-chats/${data.recipient.pk_user_id}`;
-	const isActivePath = currentPath === to;
-
-	return (
-		<Link
-			to={to}
+			to={data.to}
 			className={cn(
 				"flex items-center gap-3 p-2 text-sm font-medium transition-colors hover:bg-muted from-neutral-200",
-				HOVER_BG_COLOR,
-				isActivePath ? "bg-slate-200 hover:!bg-slate-200 text-black" : ""
+				SIDEBAR_CONSTANTS.HOVER_BG_COLOR,
+				isActivePathLinkItem ? "bg-slate-200 hover:!bg-slate-200 text-black" : ""
 			)}
 		>
 			<Avatar className="h-8 w-8 border flex content-center justify-center items-center">
-				<User />
+				<Icon />
 			</Avatar>
 			<div className="flex-1 truncate">
 				<div
 					className={cn(
 						`from-neutral-100 font-bold text-xs truncate`,
-						MESSAGE_TEXT_MAX_WIDTH
+						SIDEBAR_CONSTANTS.MESSAGE_TEXT_MAX_WIDTH
 					)}
 				>
-					{data.recipient?.name}
+					{data.linkTitle}
 				</div>
-				{data.private_messages ? (
+				{data.message ? (
 					<div className="md:flex grid grid-cols-[10fr_2fr] gap-2 justify-between items-center">
 						<p
 							className={cn(
 								`truncate w-full text-xs text-ellipsis overflow-hidden md:block text-left`,
-								MESSAGE_TEXT_MAX_WIDTH
+								SIDEBAR_CONSTANTS.MESSAGE_TEXT_MAX_WIDTH
 							)}
 						>
-							{data.private_messages.message_text}
+							{data.message.message_text}
 						</p>
 						<p className="text-[10px] text-muted-foreground text-right ">
-							{timeDifference(data.private_messages.sent_at)}
+							{timeDifference(data.message.sent_at)}
 						</p>
 					</div>
 				) : null}
@@ -109,23 +63,23 @@ const SidebarPrivateMessageLink = React.memo(({ data }: { data: PrivateChatResul
 		</Link>
 	);
 });
+SidebarItemLink.displayName = "SidebarLinkItem";
 
-SidebarPrivateMessageLink.displayName = "SidebarPrivateMessageLink";
-
-function ChannelsSection({ renderedChats }: { renderedChats: React.ReactNode }) {
+function ChannelsSection({ children }: { children: React.ReactNode }) {
 	return (
-		<section aria-label="Channels">
+		<section aria-label="Chat channels">
 			<h1 className="text-center font-bold text-l">Channels</h1>
-			<div className="grid gap-1 p-2">{renderedChats}</div>
+			<div className="grid gap-1 p-2">{children}</div>
 		</section>
 	);
 }
+ChannelsSection.displayName = "ChannelsSection";
 
-function PrivateMessagesSection({ renderedPrivateData }: { renderedPrivateData: React.ReactNode }) {
+function PrivateMessagesSection({ children }: { children: React.ReactNode }) {
 	return (
 		<section aria-label="Private Messages">
 			<h1 className="text-center font-bold text-l">Private Message</h1>
-			<div className="grid gap-1 p-2">{renderedPrivateData}</div>
+			<div className="grid gap-1 p-2">{children}</div>
 			<SearchPrivateRoom
 				triggerChild={
 					<Button
@@ -133,11 +87,11 @@ function PrivateMessagesSection({ renderedPrivateData }: { renderedPrivateData: 
 						role="combobox"
 						className={cn(
 							"flex items-center justify-center p-4 gap-2 hover:bg-muted from-neutral-200 w-full",
-							HOVER_BG_COLOR
+							SIDEBAR_CONSTANTS.HOVER_BG_COLOR
 						)}
 					>
 						<span>New Private Chat</span>
-						<Plus className="h-5 w-5" />
+						<SIDEBAR_CONSTANTS.ICON_MAP.Plus className="h-5 w-5" />
 						<span className="sr-only">Search room</span>
 					</Button>
 				}
@@ -145,72 +99,99 @@ function PrivateMessagesSection({ renderedPrivateData }: { renderedPrivateData: 
 		</section>
 	);
 }
+PrivateMessagesSection.displayName = "PrivateMessagesSection";
+
+// SidebarHeader component
+function SidebarWrapperHeader() {
+	return (
+		<SidebarHeader>
+			<div className="sticky top-0 flex h-14 items-center justify-between px-4">
+				<div className="font-semibold">Chats</div>
+				<div>
+					<JoinRoom />
+				</div>
+			</div>
+		</SidebarHeader>
+	);
+}
+
+const PrivateChatList = memo(({ data }: { data: PrivateChatResultType[] }) => {
+	if (data?.length === 0) {
+		return (
+			<div className="flex flex-col items-center gap-2 p-4">
+				<h3 className="text-muted-foreground">No direct messages yet</h3>
+				<p className="text-xs text-center text-muted-foreground">
+					Use the button below to start a conversation
+				</p>
+			</div>
+		);
+	}
+	return data.map(
+		(d) =>
+			d.private_messages && (
+				<SidebarItemLink
+					data={{
+						to: `/private-chats/${d.recipient.pk_user_id}`,
+						linkTitle: d.recipient.name as string,
+						message: {
+							message_text: d.private_messages.message_text as string,
+							sent_at: d.private_messages.sent_at,
+						},
+						itemType: "User",
+					}}
+					key={d.private_chat.pk_private_chat_id}
+				/>
+			)
+	);
+});
+PrivateChatList.displayName = "PrivateChatList";
+
+const ChatRoomList = memo(({ data }: { data: ChatListType }) => {
+	if (data.length === 0) {
+		return (
+			<div className="flex flex-col items-center gap-4 p-4">
+				<h3 className="text-muted-foreground">No channels joined yet</h3>
+				<JoinRoom />
+			</div>
+		);
+	}
+	return data.map((d) =>
+		d.messages ? (
+			<SidebarItemLink
+				data={{
+					to: `/chats/${d.chats?.pk_chats_id}`,
+					linkTitle: d.chats?.chat_name as string,
+					itemType: "Users",
+					message: {
+						message_text: d.messages.message_text as string,
+						sent_at: d.messages.sent_at,
+					},
+				}}
+				key={d.messages.id}
+			/>
+		) : null
+	);
+});
+ChatRoomList.displayName = "ChatRoomList";
 
 export default function SidebarWrapper({ className }: SidebarProps) {
 	const { chatroomList } = useGetChatList();
 	const { privateRoomList } = useGetPrivateMessageList();
-	const { isMobile, setOpenMobile, open } = useSidebar();
-
-	const renderedChats = useMemo(() => {
-		if (chatroomList.length === 0) {
-			return (
-				<div className="flex flex-col items-center gap-4 p-4">
-					<h3 className="text-muted-foreground">No channels joined yet</h3>
-					<JoinRoom />
-				</div>
-			);
-		}
-		return chatroomList.map(
-			(chatData) =>
-				chatData.messages && (
-					<SidebarItemLink chatData={chatData} key={chatData.messages.id} />
-				)
-		);
-	}, [chatroomList]);
-
-	const renderedPrivateData = useMemo(() => {
-		if (privateRoomList.length === 0) {
-			return (
-				<div className="flex flex-col items-center gap-2 p-4">
-					<h3 className="text-muted-foreground">No direct messages yet</h3>
-					<p className="text-xs text-center text-muted-foreground">
-						Use the button below to start a conversation
-					</p>
-				</div>
-			);
-		}
-		return privateRoomList.map(
-			(data) =>
-				data.private_messages && (
-					<SidebarPrivateMessageLink
-						data={data}
-						key={data.private_chat.pk_private_chat_id}
-					/>
-				)
-		);
-	}, [privateRoomList]);
-
-	const handleCloseDialogOnMobileView = useCallback(() => {
-		if (isMobile) {
-			setOpenMobile(!open);
-		}
-	}, [isMobile, open, setOpenMobile]);
+	const { handleCloseDialogOnMobileView } = useMobileSidebar();
 
 	return (
 		<Sidebar side="left" className="dark h-screen">
-			<SidebarHeader>
-				<div className="sticky top-0 flex h-14 items-center justify-between px-4">
-					<div className="font-semibold">Chats</div>
-					<div>
-						<JoinRoom />
-					</div>
-				</div>
-			</SidebarHeader>
+			<SidebarWrapperHeader />
 			<SidebarContent onClick={handleCloseDialogOnMobileView}>
 				<section className={cn("w-full", className)}>
 					<nav className="grid gap-1 p-2 grid-rows-2 h-screen">
-						<ChannelsSection renderedChats={renderedChats} />
-						<PrivateMessagesSection renderedPrivateData={renderedPrivateData} />
+						<ChannelsSection>
+							<ChatRoomList data={chatroomList} />
+						</ChannelsSection>
+
+						<PrivateMessagesSection>
+							<PrivateChatList data={privateRoomList} />
+						</PrivateMessagesSection>
 					</nav>
 				</section>
 			</SidebarContent>
