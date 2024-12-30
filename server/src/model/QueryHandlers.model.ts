@@ -166,8 +166,12 @@ export class QueryHandlers extends UserSchema {
 
 
     const updatedChatList = await Promise.all(chatListPromises);
+    const response = updatedChatList.filter(chat => chat.messages);
+    response.sort((a, b) => {
+      return a.messages.sent_at > b.messages.sent_at ? -1 : 1;
+    });
 
-    return updatedChatList;
+    return response.slice(0, 5);
   }
 
 
@@ -199,8 +203,15 @@ export class QueryHandlers extends UserSchema {
       .leftJoin(user, eq(user.pk_user_id, userId))
       .orderBy(desc(messages.sent_at))
       .limit(1);
+    // SORT THE MESSAGES BY SENT_AT
+    
 
-    return chatList;
+    const response = chatList.filter(chat => chat.messages);
+    response.sort((a, b) => {
+      return (a.messages?.sent_at ?? 0) > (b.messages?.sent_at ?? 0) ? -1 : 1;
+    });
+
+    return response;
   }
   async selectChatByChatName(chatName: string) {
     const chatExist = await this.db.select().from(chats).where(eq(chats.chat_name, chatName));

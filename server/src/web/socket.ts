@@ -117,10 +117,11 @@ export class AppSocketBase extends QueryHandlers {
         chats: chatExist[0],
       }));
 
-      const chatList = await this.getLatestChatRoomMessageSent(userId, chatId);
-
+      
       // Emitter
       this.io.to(chatName).emit("add-message-response", addMessageResponse);
+
+      const chatList = await this.getLatestChatRoomMessageSent(userId, chatId);
       this.io.to(chatName).emit("get-latest-chat-room-message", chatList);
     });
   }
