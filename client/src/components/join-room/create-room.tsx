@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { useMutation } from "@tanstack/react-query";
 
 import { Button } from "../ui/button";
-import { cn, getBearer } from "../../lib/utils";
+import { cn } from "../../lib/utils";
 import { PlusIcon, SendIcon } from "../ui/avatar/index";
 import { Input } from "../ui/input";
 import {
@@ -16,7 +16,7 @@ import {
 	DialogFooter,
 } from "../ui/dialog";
 import { useNavigate } from "react-router";
-
+import api from "../../api/http-methods";
 interface Chat {
 	pk_chats_id: number;
 	chat_name: string;
@@ -36,28 +36,13 @@ interface ChatResponse {
 	chat_user: ChatUser;
 	messages: [];
 }
+
 export function CreateNewRoom() {
-	const INPUT_NAME = "new-chat-name";
 	const navigate = useNavigate();
+	const INPUT_NAME = "new-chat-name";
 
 	const mutation = useMutation({
-		mutationFn: (data: { [key: string]: string }) => {
-			const bearer = getBearer();
-			if (!bearer) {
-				throw new Error("No authorization token found");
-			}
-
-			return fetch("http://localhost:3010/chats/chat/new-chatroom", {
-				method: "POST",
-				headers: {
-					Authorization: bearer,
-					"Content-Type": "application/json",
-				},
-				body: JSON.stringify({
-					chat_name: data?.[INPUT_NAME],
-				}),
-			});
-		},
+		mutationFn: api.createNewRoomMutationFn,
 	});
 
 	const {

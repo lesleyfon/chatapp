@@ -24,7 +24,7 @@ type AuthFormDataType = Pick<UserInterface,  "password" | "email" > & { "name"?:
 class HttpServer {
 	apiBasePath = 'http://localhost:3010';
 	apiHeaders = new Headers({ 'Content-Type': 'application/json'});
-
+	INPUT_NAME = "new-chat-name";
 	async login(userCredential: AuthFormDataType) {
 		try {
 			const raw = JSON.stringify(userCredential);
@@ -63,7 +63,7 @@ class HttpServer {
 	 * already set.
 	 */
 	setBearerTokenToHeader():void {
-		const BEARER_TOKEN:string =  getBearer();
+		const BEARER_TOKEN:string =  getBearer() ?? '';
 		if(this.apiHeaders.get('Authorization') === null){
 			this.apiHeaders.set('Authorization', BEARER_TOKEN);
 		}
@@ -121,6 +121,20 @@ class HttpServer {
 		const data =  await response.json();
 		
 		return data
+	}
+
+	createNewRoomMutationFn = async (data: { [key: string]: string }) => {
+		const bearer = getBearer();
+		if (!bearer) {
+			throw new Error("No authorization token found");
+		}
+		return fetch(`${this.apiBasePath}/chats/chat/new-chatroom`, {
+			method: "POST",
+			headers: this.apiHeaders,
+			body: JSON.stringify({
+				chat_name: data?.[this.INPUT_NAME],
+			}),
+		});
 	}
 }
 
