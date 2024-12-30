@@ -7,6 +7,17 @@ export type ChatUserType = {
 	sender?: string;
 };
 
+
+interface ChatMessage {
+  message_text: string;
+  sent_at: Date;
+}
+export interface SidebarItemLinkProps {
+	to: string;
+	linkTitle: string;
+	message: ChatMessage;
+	itemType: "User" | "Users"
+}
 export type ChatRoomType = {
 	pk_chats_id: string;
 	chat_name: string | null;
