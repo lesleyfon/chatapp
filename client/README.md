@@ -33,3 +33,5 @@ export default {
 - [x] Ensure that you cant go to a chats room page if the chatroom does not exist
 - [ ] Create an error Page
 - [ ] Sidebar has a scroll. And fix to enable no scroll for elements on sidebar
+- [ ] BUG: Clicking on `New Private Chat` on mobile closes the modal for selecting a new chat
+- [ ] BUG: singing into a new session causes an infinite rerender. 
