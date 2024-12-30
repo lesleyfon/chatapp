@@ -16,6 +16,10 @@ import { Input } from "../../../components/ui/input";
 import { useNavigate } from "react-router";
 import useAuthStorage from "../../../store/useAuthStorage";
 import { RegisterFormSchemaValidation } from "../validation";
+import {
+	REGISTRATION_FORM_INPUT_FIELDS,
+	REGISTRATION_DEFAULT_VALUES,
+} from "../../../components/constants";
 
 export function Register() {
 	const navigate = useNavigate();
@@ -23,6 +27,7 @@ export function Register() {
 
 	const form = useForm<z.infer<typeof RegisterFormSchemaValidation>>({
 		resolver: zodResolver(RegisterFormSchemaValidation),
+		defaultValues: REGISTRATION_DEFAULT_VALUES,
 	});
 
 	const { setError } = form;
@@ -45,50 +50,25 @@ export function Register() {
 
 		navigate("/chats");
 	}
-
 	return (
 		<Form {...form}>
 			<form onSubmit={form.handleSubmit(onSubmit)} className="w-full space-y-6">
-				<FormField
-					control={form.control}
-					name="name"
-					render={({ field }) => (
-						<FormItem>
-							<FormLabel className="text-left w-full flex">Full Name</FormLabel>
-							<FormControl>
-								<Input placeholder="Name" {...field} />
-							</FormControl>
-							<FormMessage />
-						</FormItem>
-					)}
-				/>
-
-				<FormField
-					control={form.control}
-					name="email"
-					render={({ field }) => (
-						<FormItem>
-							<FormLabel className="text-left w-full flex">Email</FormLabel>
-							<FormControl>
-								<Input placeholder="Email" {...field} />
-							</FormControl>
-							<FormMessage />
-						</FormItem>
-					)}
-				/>
-				<FormField
-					control={form.control}
-					name="password"
-					render={({ field }) => (
-						<FormItem>
-							<FormLabel className="text-left w-full flex">Password</FormLabel>
-							<FormControl>
-								<Input placeholder="password" type="password" {...field} />
-							</FormControl>
-							<FormMessage />
-						</FormItem>
-					)}
-				/>
+				{REGISTRATION_FORM_INPUT_FIELDS.map((fd) => (
+					<FormField
+						key={fd.name}
+						control={form.control}
+						name={fd.name}
+						render={({ field }) => (
+							<FormItem>
+								<FormLabel className="text-left w-full flex">{fd.label}</FormLabel>
+								<FormControl>
+									<Input {...field} placeholder={fd.label} />
+								</FormControl>
+								<FormMessage />
+							</FormItem>
+						)}
+					/>
+				))}
 				<FormRootError className=" text-red-300 text-left" />
 				<Button type="submit" className="bg-white text-black">
 					Submit
