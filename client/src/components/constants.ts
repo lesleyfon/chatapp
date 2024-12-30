@@ -1,23 +1,13 @@
-import { BookOpenCheck, LayoutDashboard, MessageCircle } from "lucide-react";
-import { type NavItem } from "./../types/index";
+import {User, Users, Plus } from "lucide-react";
 
-export const NavItems: NavItem[] = [
-	{
-		title: "Dashboard",
-		icon: LayoutDashboard,
-		href: "/",
-		color: "text-sky-500",
-	},
-	{
-		title: "Example",
-		icon: BookOpenCheck,
-		href: "/example",
-		color: "text-sky-500",
-	},
-	{
-		title: "Example - 2",
-		icon: MessageCircle,
-		href: "/example",
-		color: "text-sky-500",
-	},
-];
+export const SIDEBAR_CONSTANTS = {
+  MESSAGE_TEXT_MAX_WIDTH: "md:max-w-[110px]",
+  HOVER_BG_COLOR: "hover:!bg-[#4c4c52]",
+  ICON_MAP: {
+    User,
+    Users,
+		Plus
+  }
+} as const;
+
+
