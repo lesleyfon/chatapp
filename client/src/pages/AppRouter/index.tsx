@@ -6,8 +6,8 @@ import Header from "../../components/layout/nav";
 import Sidebar from "../../components/layout/nav/sidebar";
 import ChatRoomLayout from "../../components/layout/chat-room";
 
-export const ProtectedRoute: FC<{ isAuthenticated: boolean }> = ({ isAuthenticated }) => {
-	return isAuthenticated ? <Outlet /> : <Navigate to="/" replace />;
+export const ProtectedRoute: FC<{ isAuthenticated: () => boolean }> = ({ isAuthenticated }) => {
+	return isAuthenticated() ? <Outlet /> : <Navigate to="/" replace />;
 };
 
 const MainAppLayoutWithSidebarAndChatroom = () => (
@@ -28,7 +28,7 @@ export const AppRouter = createBrowserRouter([
 		element: <Authentication />,
 	},
 	{
-		element: <ProtectedRoute isAuthenticated={isAuthenticated()} />,
+		element: <ProtectedRoute isAuthenticated={isAuthenticated} />,
 		children: [
 			{
 				path: "/chats",
