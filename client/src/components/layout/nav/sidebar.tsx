@@ -68,7 +68,7 @@ SidebarItemLink.displayName = "SidebarLinkItem";
 function ChannelsSection({ children }: { children: React.ReactNode }) {
 	return (
 		<section aria-label="Chat channels">
-			<h1 className="text-center font-bold text-l">Channels</h1>
+			<h1 className="text-center font-bold text-l pt-4">Channels</h1>
 			<div className="grid gap-1 p-2">{children}</div>
 		</section>
 	);
@@ -78,7 +78,7 @@ ChannelsSection.displayName = "ChannelsSection";
 function PrivateMessagesSection({ children }: { children: React.ReactNode }) {
 	return (
 		<section aria-label="Private Messages">
-			<h1 className="text-center font-bold text-l">Private Message</h1>
+			<h1 className="text-center font-bold text-l pt-4">Private Message</h1>
 			<div className="grid gap-1 p-2">{children}</div>
 			<SearchPrivateRoom
 				triggerChild={
@@ -184,7 +184,7 @@ export default function SidebarWrapper({ className }: SidebarProps) {
 			<SidebarWrapperHeader />
 			<SidebarContent onClick={handleCloseDialogOnMobileView}>
 				<section className={cn("w-full", className)}>
-					<nav className="grid gap-1 p-2 grid-rows-2 h-screen">
+					<nav className="grid gap-1  grid-rows-2 h-[calc(100vh-3.5rem)]">
 						<ChannelsSection>
 							<ChatRoomList data={chatroomList} />
 						</ChannelsSection>

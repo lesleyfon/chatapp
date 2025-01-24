@@ -10,13 +10,13 @@ export const ProtectedRoute: FC<{ isAuthenticated: () => boolean }> = ({ isAuthe
 	return isAuthenticated() ? <Outlet /> : <Navigate to="/" replace />;
 };
 
-const MainAppLayoutWithSidebarAndChatroom = () => (
-	<div className="h-screen border-collapse overflow-hidden w-screen ">
+const MainLayout = () => (
+	<div className="h-screen border-collapse overflow-hidden w-screen">
 		<main className="flex-1 overflow-y-auto overflow-x-hidden bg-secondary/10 pb-1 grid md:grid-cols-[1fr_11fr]">
-			<Sidebar className="relative hidden h-full md:grid grid-rows-[62px_auto]" />
+			<Sidebar className="relative hidden h-full md:grid" />
 			<div className="grid grid-rows-[1fr_11fr] h-screen">
 				<Header />
-				<ChatRoomLayout />
+				<Outlet />
 			</div>
 		</main>
 	</div>
@@ -31,21 +31,21 @@ export const AppRouter = createBrowserRouter([
 		element: <ProtectedRoute isAuthenticated={isAuthenticated} />,
 		children: [
 			{
-				path: "/chats",
-				element: (
-					<div className="h-screen border-collapse overflow-hidden w-screen">
-						<Sidebar className="relative hidden h-full  md:grid grid-rows-[62px_auto]" />
-						<Header />
-					</div>
-				),
-			},
-			{
-				path: "/chats/:chatId",
-				element: <MainAppLayoutWithSidebarAndChatroom />,
-			},
-			{
-				path: "/private-chats/:recipientId",
-				element: <MainAppLayoutWithSidebarAndChatroom />,
+				element: <MainLayout />,
+				children: [
+					{
+						path: "/chats",
+						element: null, // Empty view when no chat is selected
+					},
+					{
+						path: "/chats/:chatId",
+						element: <ChatRoomLayout />, // OUTLET
+					},
+					{
+						path: "/private-chats/:recipientId",
+						element: <ChatRoomLayout />, // OUTLET
+					},
+				],
 			},
 		],
 	},
