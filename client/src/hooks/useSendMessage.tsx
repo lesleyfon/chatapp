@@ -1,15 +1,12 @@
-import { useNavigate } from "react-router-dom";
 import { MessageInput } from "./../types/index";
 import useAuthStorage from "../store/useAuthStorage";
 import { Socket } from "socket.io-client";
+import { useSocketAuth } from "./useSocketAuth";
 
 export const useSendMessage = () => {
-	const { token, userId } = useAuthStorage((state) => state);
-	const navigate = useNavigate();
+	const { userId } = useAuthStorage((state) => state);
 
-	if (!token || !userId) {
-		navigate("/");
-	}
+	useSocketAuth();
 
 	function sendPrivateMessage(
 		data: MessageInput & { recipientId: string },
