@@ -1,6 +1,9 @@
 import { Socket, Server as SocketIOServer } from "socket.io";
-import { QueryHandlers } from "../model/QueryHandlers.model";
+import { QueryHandlers, } from "../model/QueryHandlers.model";
 import { type ChatListType } from "../model/QueryHandlers.model";
+import { StatusCodes } from "http-status-codes";
+import { JWT_RETURN_USER } from "src/model/Auth.model";
+import { ExtendedError } from "socket.io/dist/namespace";
 
 
 type CbType = (chatList: ChatListType) => void
@@ -10,12 +13,31 @@ export class AppSocketBase extends QueryHandlers {
   constructor(socket: SocketIOServer) {
     super();
     this.io = socket;
+    this.io.use(this.socketAuthMiddleware);
   }
 
+  socketAuthMiddleware = async(socket:Socket, next:(err?: ExtendedError) => void) =>{
+    const token = socket.handshake?.auth?.token;
+    const decodedToken = await this.decodeJWT(token);
+    
+    if(decodedToken === undefined) {
+      next(new Error(JSON.stringify({
+        "message": "Unknown error. Please try again",
+        "code": StatusCodes.INTERNAL_SERVER_ERROR,
+      })));
+      return;
+    }
+
+    if ('code' in decodedToken && decodedToken.code === StatusCodes.UNAUTHORIZED){
+      next(new Error(JSON.stringify (decodedToken))); 
+      return;
+    }
+    next();
+  };
 
   async getAUserChatList(socket: Socket) {
     const token = socket.handshake.auth?.token;
-    const user = await this.decodeJWT(token);
+    const user = await this.decodeJWT(token) as JWT_RETURN_USER;
 
     if (!user) return;
     const userId = user.userId;
@@ -25,10 +47,11 @@ export class AppSocketBase extends QueryHandlers {
 
       cb(chatList);
     });
+      
   }
   async getPrivateMessageList(socket: Socket) {
     const token = socket.handshake.auth?.token;
-    const user = await this.decodeJWT(token);
+    const user = await this.decodeJWT(token) as JWT_RETURN_USER;
     if (!user) return;
     const userId = user.userId;
     socket.on("get-private-message-list", async (cb) => {
@@ -67,7 +90,7 @@ export class AppSocketBase extends QueryHandlers {
 
       const { chatName, message } = data;
       const token = socket.handshake.auth?.token;
-      const user = await this.decodeJWT(token);
+      const user = await this.decodeJWT(token) as JWT_RETURN_USER;
 
       this.io.socketsJoin(chatName);
 
