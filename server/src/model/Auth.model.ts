@@ -1,6 +1,6 @@
 import bcrypt from "bcrypt";
 
-import jwt from "jsonwebtoken";
+import jwt, { TokenExpiredError } from "jsonwebtoken";
 import { getEnvs } from "../utils/getEnvs";
 import { connectToDB } from "../db";
 import { user } from "../schema";
@@ -18,6 +18,8 @@ export interface UserInterface {
 	createdAt?: string;
 	updatedAt?: string;
 }
+
+export interface JWT_RETURN_USER { userId: string, name: string, email: string }
 
 export class UserSchema {
   db: NodePgDatabase<Record<string, never>>;
@@ -134,13 +136,28 @@ export class UserSchema {
     return token;
   }
 
-  async decodeJWT(token: string | null): Promise<undefined | { userId: string, name: string, email: string }> {
+  async decodeJWT(token: string | null): Promise<undefined | JWT_RETURN_USER | {message:string, code:number} > {
 
-    if (!token) {
-      return;
+    try {
+      if (!token) {
+        return;
+      }
+
+    
+      const response = await jwt.verify(token, JWT_SECRET) as JWT_RETURN_USER;
+      
+
+      return response;
+    }catch(err){
+      if(err instanceof TokenExpiredError){
+        return {
+          message: "Unauthorized",
+          code: StatusCodes.UNAUTHORIZED,
+        };
+
+      }
+      return undefined;
     }
-    const response = await jwt.verify(token, JWT_SECRET) as { userId: string, name: string, email: string };
-    return response;
   }
 
 
