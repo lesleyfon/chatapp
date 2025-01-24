@@ -8,6 +8,7 @@ import useAuthStorage from "../store/useAuthStorage";
 export const useGetChatList = () => {
 	const [chatroomList, setChatList] = useState<ChatListType>([]);
 	const [error, setError] = useState<Error | null>(null);
+	const authStorageLogout = useAuthStorage((state) => state.logout);
 
 	const token = useAuthStorage((authState) => authState.token);
 	const navigate = useNavigate();
@@ -35,9 +36,18 @@ export const useGetChatList = () => {
 		}
 		// If the socket is not connected, connect it
 		if (socket.connected === false) socket.connect();
-
 		try {
 			// Fetch initial chat list
+			//THOUGHT: Can this be a hook???
+			socket.on("connect_error", (err) => {
+				const errObj = JSON.parse(err.message);
+
+				if (err instanceof Error && "code" in errObj && errObj.code === 401) {
+					authStorageLogout();
+					navigate("/");
+				}
+				//TODO: is code is equal to internal server error, then we need to show a toast message to the user
+			});
 			// This socket is mean to fire only on initial render, to get the list of chatRooms for a user.
 			// THOUGHT: Would it make sense to have this be an api?
 

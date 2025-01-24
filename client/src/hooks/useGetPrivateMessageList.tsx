@@ -8,6 +8,7 @@ import useAuthStorage from "../store/useAuthStorage";
 export const useGetPrivateMessageList = () => {
 	const [privateRoomList, setPrivateRoomList] = useState<PrivateChatResultType[]>([]);
 	const navigate = useNavigate();
+	const authStorageLogout = useAuthStorage((state) => state.logout);
 	const { token, userId } = useAuthStorage((state) => state);
 	const { recipientId } = useParams();
 	const socket = useSocketInstance();
@@ -20,6 +21,16 @@ export const useGetPrivateMessageList = () => {
 		if (socket === null) return;
 
 		if (socket.connected === false) socket.connect();
+
+		socket.on("connect_error", (err) => {
+			const errObj = JSON.parse(err.message);
+
+			if (err instanceof Error && "code" in errObj && errObj.code === 401) {
+				authStorageLogout();
+				navigate("/");
+			}
+			//TODO: is code is equal to internal server error, then we need to show a toast message to the user
+		});
 
 		socket.emit("get-private-message-list", (response: PrivateChatResultType[]) => {
 			setPrivateRoomList(response);
