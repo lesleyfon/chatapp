@@ -28,9 +28,13 @@ export const useGetPrivateMessageList = ({ socket }: { socket: Socket | null }) 
 			recipient_id: string;
 			sender_id: string;
 		}): boolean => {
+			const senderIdString = String(sender_id);
+			const recipientIdString = String(recipient_id);
+			const userIdString = String(userId);
+
 			return (
-				(sender_id === userId && recipient_id === recipientId) ||
-				(sender_id === recipientId && recipient_id === userId)
+				(senderIdString === userIdString && recipientIdString === recipientId) ||
+				(senderIdString === recipientId && recipientIdString === userIdString)
 			);
 		};
 
