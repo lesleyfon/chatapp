@@ -5,6 +5,7 @@ import { PrivateMessageSection } from "./private-chat-section";
 import useRoomData from "../../../hooks/useRoomData";
 import { TriangleAlert } from "lucide-react";
 import { ErrorResponse, SuccessResponse } from "../../../api/http-methods";
+import { SocketProvider } from "../../../context/socket.context";
 
 function isErrorResponse(data: ErrorResponse | SuccessResponse): data is ErrorResponse {
 	return "error" in data;
@@ -54,4 +55,12 @@ function ChatRoomLayout() {
 	);
 }
 
-export default ChatRoomLayout;
+const ChatRoomLayoutWithSocketProvider = () => {
+	return (
+		<SocketProvider>
+			<ChatRoomLayout />
+		</SocketProvider>
+	);
+};
+
+export default ChatRoomLayoutWithSocketProvider;

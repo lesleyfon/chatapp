@@ -4,9 +4,9 @@ import { set } from "lodash";
 import { ScrollArea } from "../../ui/scroll-area";
 import { Card, CardContent } from "../../ui/card";
 import { PrivateChatResultType } from "../../../types";
-import { useSocketInstance } from "../../../api/sockets";
 import { cn, formatDate, scrollToBottom } from "../../../lib/utils";
 import useAuthStorage from "../../../store/useAuthStorage";
+import { useSocket } from "../../../hooks/useSocket";
 
 export const PrivateMessageSection = ({ data }: { data: PrivateChatResultType[] }) => {
 	const [allRoomMessages, setAllRoomMessages] = useState<PrivateChatResultType[]>([]);
@@ -24,7 +24,8 @@ export const PrivateMessageSection = ({ data }: { data: PrivateChatResultType[] 
 		scrollToBottom(messageSectionContainerRef);
 	}, [allRoomMessages.length]);
 
-	const socket = useSocketInstance();
+	const socket = useSocket();
+
 	useEffect(() => {
 		if (socket?.connected === false) socket?.connect();
 
@@ -37,9 +38,9 @@ export const PrivateMessageSection = ({ data }: { data: PrivateChatResultType[] 
 			});
 		});
 		return () => {
-			socket?.disconnect();
+			socket?.off("add-private-message-response");
 		};
-	});
+	}, [socket, userId]);
 
 	return (
 		<ScrollArea className="flex-1 px-4">

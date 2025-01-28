@@ -5,8 +5,8 @@ import { Card, CardContent } from "../../ui/card";
 import { ScrollArea } from "../../ui/scroll-area";
 import { type RoomMessagesResponse } from "../../../types";
 import { useLocation } from "react-router";
-import { useSocketInstance } from "../../../api/sockets";
 import useAuthStorage from "../../../store/useAuthStorage";
+import { useSocket } from "../../../hooks/useSocket";
 
 export const ChatRoomSection = ({ data }: { data: [] }) => {
 	const [allRoomMessages, setAllRoomMessages] = React.useState<RoomMessagesResponse[]>(data);
@@ -19,7 +19,7 @@ export const ChatRoomSection = ({ data }: { data: [] }) => {
 		scrollToBottom(messageSectionContainerRef);
 	}, [allRoomMessages.length]);
 
-	const socket = useSocketInstance();
+	const socket = useSocket();
 
 	useEffect(() => {
 		// If the socket is null, return early
@@ -45,9 +45,9 @@ export const ChatRoomSection = ({ data }: { data: [] }) => {
 		});
 
 		return () => {
-			socket.disconnect();
+			socket?.off("add-message-response");
 		};
-	});
+	}, [chatroomId, socket, userId]);
 
 	return (
 		<ScrollArea className="flex-1 px-4">

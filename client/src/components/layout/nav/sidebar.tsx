@@ -16,6 +16,8 @@ import { SearchPrivateRoom } from "../../join-room/search-private-room";
 import { Button } from "../../ui/button";
 import { SIDEBAR_CONSTANTS } from "../../constants";
 import { useMobileSidebar } from "../../../hooks/useMobileSidebar";
+import { useSocket } from "../../../hooks/useSocket";
+import { SocketProvider } from "../../../context/socket.context";
 
 export const SidebarItemLink = React.memo(({ data }: { data: SidebarItemLinkProps }) => {
 	const location = useLocation();
@@ -174,9 +176,11 @@ const ChatRoomList = memo(({ data }: { data: ChatListType }) => {
 });
 ChatRoomList.displayName = "ChatRoomList";
 
-export default function SidebarWrapper({ className }: SidebarProps) {
-	const { chatroomList } = useGetChatList();
-	const { privateRoomList } = useGetPrivateMessageList();
+function SidebarWrapper({ className }: SidebarProps) {
+	const socket = useSocket();
+
+	const { chatroomList } = useGetChatList({ socket });
+	const { privateRoomList } = useGetPrivateMessageList({ socket });
 	const { handleCloseDialogOnMobileView } = useMobileSidebar();
 
 	return (
@@ -198,3 +202,13 @@ export default function SidebarWrapper({ className }: SidebarProps) {
 		</Sidebar>
 	);
 }
+
+const SidebarWithProvider = ({ className }: { className?: string }) => {
+	return (
+		<SocketProvider>
+			<SidebarWrapper className={cn("relative hidden h-full md:grid", className)} />
+		</SocketProvider>
+	);
+};
+
+export default SidebarWithProvider;

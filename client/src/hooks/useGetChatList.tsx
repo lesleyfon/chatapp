@@ -2,14 +2,13 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { useNavigate } from "react-router-dom";
 import { ChatListType } from "./../types/index";
-import { useSocketInstance } from "../api/sockets";
+import { Socket } from "socket.io-client";
 import { useSocketAuth } from "./useSocketAuth";
 
-export const useGetChatList = () => {
+export const useGetChatList = ({ socket }: { socket: Socket | null }) => {
 	const [chatroomList, setChatList] = useState<ChatListType>([]);
 	const [error, setError] = useState<Error | null>(null);
 	const navigate = useNavigate();
-	const socket = useSocketInstance();
 
 	// Setup listener for new messages
 	const handleMessageUpdate = useCallback((response: ChatListType) => {
@@ -21,7 +20,7 @@ export const useGetChatList = () => {
 		});
 	}, []);
 
-	useSocketAuth();
+	useSocketAuth({ socket });
 
 	useEffect(() => {
 		// If the socket is null, return early
@@ -50,7 +49,6 @@ export const useGetChatList = () => {
 		// Cleanup function to avoid memory leaks
 		return () => {
 			socket.off("get-latest-chat-room-message", handleMessageUpdate);
-			socket.disconnect();
 		};
 	}, [navigate]); // Added 'navigate' to the dependency array to ensure effect runs only when it changes
 

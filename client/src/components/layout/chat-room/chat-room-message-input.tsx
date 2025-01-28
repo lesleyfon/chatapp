@@ -8,7 +8,7 @@ import { type MessageInput } from "../../../types";
 import { useSendMessage } from "../../../hooks/useSendMessage";
 import { Popover, PopoverContent, PopoverTrigger } from "../../ui/popover";
 import { cn } from "../../../lib/utils";
-import { useSocketInstance } from "../../../api/sockets";
+import { useSocket } from "../../../hooks/useSocket";
 
 interface ChatInputProps {
 	chatId: string;
@@ -17,8 +17,8 @@ interface ChatInputProps {
 }
 
 export function MessageInput({ chatId, chatName, isPrivateChat }: ChatInputProps) {
-	const { sendMessage, sendPrivateMessage } = useSendMessage();
-	const socket = useSocketInstance();
+	const socket = useSocket();
+	const { sendMessage, sendPrivateMessage } = useSendMessage({ socket });
 	const INPUT_NAME = "message_text";
 	const {
 		register,
@@ -36,6 +36,7 @@ export function MessageInput({ chatId, chatName, isPrivateChat }: ChatInputProps
 			});
 			return;
 		}
+
 		if (isPrivateChat) {
 			sendPrivateMessage(
 				{

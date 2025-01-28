@@ -2,18 +2,15 @@ import { useEffect, useState } from "react";
 
 import { useNavigate, useParams } from "react-router-dom";
 import { PrivateChatResultType } from "./../types/index";
-import { useSocketInstance } from "../api/sockets";
-import useAuthStorage from "../store/useAuthStorage";
-import { useSocketAuth } from "./useSocketAuth";
 
-export const useGetPrivateMessageList = () => {
+import useAuthStorage from "../store/useAuthStorage";
+import { Socket } from "socket.io-client";
+
+export const useGetPrivateMessageList = ({ socket }: { socket: Socket | null }) => {
 	const [privateRoomList, setPrivateRoomList] = useState<PrivateChatResultType[]>([]);
 	const navigate = useNavigate();
 	const { userId } = useAuthStorage((state) => state);
 	const { recipientId } = useParams();
-	const socket = useSocketInstance();
-
-	useSocketAuth();
 
 	useEffect(() => {
 		if (socket === null) return;
@@ -67,7 +64,7 @@ export const useGetPrivateMessageList = () => {
 
 		// Cleanup function to avoid memory leaks
 		return () => {
-			socket.disconnect();
+			socket.off("get-latest-private-message-sent", handleMessageUpdate);
 		};
 	}, [navigate]);
 
