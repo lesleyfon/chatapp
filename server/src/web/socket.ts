@@ -1,3 +1,4 @@
+import { Buffer } from "buffer";
 import { Socket, Server as SocketIOServer } from "socket.io";
 import { QueryHandlers, } from "../model/QueryHandlers.model";
 import { type ChatListType } from "../model/QueryHandlers.model";
@@ -55,7 +56,7 @@ export class AppSocketBase extends QueryHandlers {
     if (!user) return;
     const userId = user.userId;
     socket.on("get-private-message-list", async (cb) => {
-      const chatList = await this.getLatestPrivateChatMessagesSent({ userId });
+      const chatList = await this.getLatestPrivateChatMessagesSent({ userId: userId.toString() });
       cb(chatList);
     });
   }
@@ -116,14 +117,14 @@ export class AppSocketBase extends QueryHandlers {
         const chatId = insertIntoChatResponse[0].id;
 
         // Add message to the message table - refactor this
-        const messageResponse = await this.insertMessageToTable(chatId, userId, message);
+        const messageResponse = await this.insertMessageToTable(chatId.toString(), userId, message);
         const chatExist = await this.selectChatByChatName(chatName);
 
         const addMessageResponse = messageResponse.map(message => ({
           ...message,
           chats: chatExist[0],
         }));
-        const chatList = await this.getLatestChatRoomMessageSent(userId, chatId);
+        const chatList = await this.getLatestChatRoomMessageSent(userId, chatId.toString());
 
         this.io.to(chatName).emit("get-latest-chat-room-message", chatList);
         this.io.to(chatName).emit("add-message-response", addMessageResponse);
@@ -131,7 +132,7 @@ export class AppSocketBase extends QueryHandlers {
       }
 
       const chatId = chatExist[0].pk_chats_id;
-      const messageInsertResponse = await this.insertMessageToTable(chatId, userId, message);
+      const messageInsertResponse = await this.insertMessageToTable(chatId.toString(), userId, message);
       const messageResponse = await this.getMostRecentChatMessageSent(messageInsertResponse);
 
       // Emit message to other users
@@ -144,23 +145,40 @@ export class AppSocketBase extends QueryHandlers {
       // Emitter
       this.io.to(chatName).emit("add-message-response", addMessageResponse);
 
-      const chatList = await this.getLatestChatRoomMessageSent(userId, chatId);
+      const chatList = await this.getLatestChatRoomMessageSent(userId, chatId.toString());
       this.io.to(chatName).emit("get-latest-chat-room-message", chatList);
     });
   }
 
   async addPrivateMessage(socket: Socket) {
-    socket.on('add-private-message', async ({ recipientId, senderId, message
-    }: { recipientId: string, senderId: string, message: string }) => {
-
+    socket.on('add-private-message', async ({ recipientId, senderId, message, imageFile, imageName
+    }: { recipientId: string, senderId: string, message: string, imageFile?: Buffer, imageName?: string }) => {
+       
       // Ensure that you do not return the passwords when selecting users
       const [sender, receiver] = (await this.getUserByUserIds({ userIdList: [senderId, recipientId] })).flat();
 
 
       const privateChatsInsertResponse = (await this.createPrivateChatEntry(sender, receiver))[0];
 
-      const privateMessageInsertResponse = (await this.createPrivateMessage(privateChatsInsertResponse, senderId, message))[0];
+      const privateMessageInsertResponse = (await this.createPrivateMessage({
+        ...privateChatsInsertResponse,
+        pk_private_chat_id: privateChatsInsertResponse.pk_private_chat_id.toString(),
+        sender_id: privateChatsInsertResponse.sender_id.toString(),
+        recipient_id: privateChatsInsertResponse.recipient_id.toString()
+      }, 
+      senderId, 
+      message,
+      imageFile,
+      imageName))[0];
 
+      if(privateMessageInsertResponse?.image_file){
+        // Convert Buffer to base64 string only if image_file exists and is a Buffer
+        if (Buffer.isBuffer(privateMessageInsertResponse.image_file)) {
+          const base64Image = privateMessageInsertResponse.image_file.toString('base64');
+          // Cast to any to avoid type error when assigning string to Buffer type
+          (privateMessageInsertResponse as unknown as { image_file: string }).image_file = base64Image;
+        }
+      }
 
       const addPrivateMessageSocketResponse = {
         private_chat: {
@@ -181,6 +199,8 @@ export class AppSocketBase extends QueryHandlers {
           fk_user_id: privateMessageInsertResponse.fk_user_id,
           message_text: privateMessageInsertResponse.message_text,
           sent_at: privateMessageInsertResponse.sent_at,
+          image_file: privateMessageInsertResponse.image_file,
+          image_name: privateMessageInsertResponse.image_name,
         },
         recipient: {
           pk_user_id: receiver.pk_user_id,
