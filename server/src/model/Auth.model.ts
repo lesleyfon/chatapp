@@ -10,8 +10,8 @@ import { StatusCodes } from "http-status-codes";
 
 const { JWT_LIFETIME, JWT_SECRET } = getEnvs();
 export interface UserInterface {
-	pk_user_id: string;
-	id?: string;
+	pk_user_id: number;
+	id?: number;
 	name: string;
 	email: string;
 	password?: string;
@@ -19,7 +19,7 @@ export interface UserInterface {
 	updatedAt?: string;
 }
 
-export interface JWT_RETURN_USER { userId: string, name: string, email: string }
+export interface JWT_RETURN_USER { userId: number, name: string, email: string }
 
 export class UserSchema {
   db: NodePgDatabase<Record<string, never>>;
@@ -52,8 +52,8 @@ export class UserSchema {
         name,
         email,
         password: hashedPassword,
-        id: response[0].id.toString(),
-        pk_user_id: response[0].id.toString(),
+        id: response[0].id,
+        pk_user_id: response[0].id
       };
     } catch (err) {
       if (typeof err === "object" && Object.keys(err as object).length) {
@@ -96,7 +96,7 @@ export class UserSchema {
 
     const dbUser = {
       ...userExist[0],
-      pk_user_id: String(userExist[0].pk_user_id)
+      pk_user_id: userExist[0].pk_user_id
     } as UserInterface;
 
     const isPasswordCorrect = await this.comparePassword({
@@ -128,7 +128,7 @@ export class UserSchema {
   }
 
 
-  async createJWT({ name, email, userId }: { name: string; email: string, userId: string }) {
+  async createJWT({ name, email, userId }: { name: string; email: string, userId: number }) {
     const token = jwt.sign({
       userId,
       name: name,

@@ -25,6 +25,11 @@ export interface PrivateMessageType {
       image_file: Buffer | string | null;
       image_name: string | null;
   } | null;
+  chat_user: {
+    name: string | null;
+    pk_user_id: number | null;
+    email: string | null;
+  } | null;
 }
 
 export type MessageType = {
@@ -91,6 +96,26 @@ export type PrivateChatResult = {
   };
 }
 
+export interface TypedMessage {
+  chats: {
+    pk_chats_id: number;
+    chat_name: string | null;
+    createdAt: Date;
+  };
+  messages: {
+    id: number;
+    fk_chat_id: number;
+    message_text: string | null;
+    sent_at: Date;
+  } | null;
+  chat_user: {
+    pk_user_id: number;
+    name: string | null;
+    email: string | null;
+    sender?: string;
+  } | null;
+}
+
 export class QueryHandlers extends UserSchema {
   db: NodePgDatabase;
 
@@ -112,11 +137,11 @@ export class QueryHandlers extends UserSchema {
  * console.log(messageResponse);
  * // Output: { id: '...', sent_at: '...', fk_user_id: 'user456', fk_chat_id: 'chat123', message_text: 'Hello World' }
  */
-  async insertMessageToTable(chatId: string, user_id: string, message: string) {
+  async insertMessageToTable(chatId: number, user_id: number, message: string) {
 
     const [messageResponse] = await Promise.all([
       this.db.insert(messages)
-        .values({ fk_chat_id: parseInt(chatId), fk_user_id: parseInt(user_id), message_text: message })
+        .values({ fk_chat_id: chatId, fk_user_id: user_id, message_text: message })
         .returning({
           id: messages.id,
           sent_at: messages.sent_at,
@@ -128,9 +153,9 @@ export class QueryHandlers extends UserSchema {
       /** @description  Insert a new record into the chatMembers table, but only if that record does not already exist. */
       this.db.execute(sql`
         INSERT INTO ${chatMembers} (fk_chat_id, fk_user_id)
-        SELECT ${parseInt(chatId)}, ${parseInt(user_id)}
+        SELECT ${chatId}, ${user_id}
         WHERE NOT EXISTS (
-          SELECT 1 FROM ${chatMembers} WHERE fk_chat_id = ${parseInt(chatId)} AND fk_user_id = ${parseInt(user_id)}
+          SELECT 1 FROM ${chatMembers} WHERE fk_chat_id = ${chatId} AND fk_user_id = ${user_id}
         );
       `)
     ]);
@@ -150,7 +175,7 @@ export class QueryHandlers extends UserSchema {
  *     console.error(error);
  *   });
  */
-  async selectUserChatRoomsWithLastSetMessages(userId: string): Promise<ChatListType> {
+  async selectUserChatRoomsWithLastSetMessages(userId: number): Promise<ChatListType> {
     const chatList = await this.db.select({
       chat_members: {
         added_at: chatMembers.added_at,
@@ -171,8 +196,8 @@ export class QueryHandlers extends UserSchema {
       },
 
     }).from(chatMembers)
-      .where(eq(chatMembers.fk_user_id, parseInt(userId)))
-      .leftJoin(user, eq(user.pk_user_id, parseInt(userId)))
+      .where(eq(chatMembers.fk_user_id, userId))
+      .leftJoin(user, eq(user.pk_user_id, userId))
       .leftJoin(chats, eq(chats.pk_chats_id, chatMembers.fk_chat_id));
 
 
@@ -198,7 +223,7 @@ export class QueryHandlers extends UserSchema {
   }
 
 
-  async getLatestChatRoomMessageSent(userId: string, chatRoomId: string) {
+  async getLatestChatRoomMessageSent(userId: number, chatRoomId: number) {
     const chatList = await this.db
       .select({
         chats: {
@@ -221,9 +246,9 @@ export class QueryHandlers extends UserSchema {
         },
       })
       .from(chats)
-      .where(eq(chats.pk_chats_id, parseInt(chatRoomId)))
+      .where(eq(chats.pk_chats_id, chatRoomId))
       .leftJoin(messages, eq(messages.fk_chat_id, chats.pk_chats_id))
-      .leftJoin(user, eq(user.pk_user_id, parseInt(userId)))
+      .leftJoin(user, eq(user.pk_user_id, userId))
       .orderBy(desc(messages.sent_at))
       .limit(1);
     // SORT THE MESSAGES BY SENT_AT
@@ -242,29 +267,11 @@ export class QueryHandlers extends UserSchema {
   }
 
 
-  async selectChatRoomMessagesByUserId(userId: string, chatRoomId: string): Promise<{
-    chats: {
-      pk_chats_id: string,
-      chat_name: string | null,
-      createdAt: Date
-    } | null,
-    messages: {
-      id: number;
-      fk_chat_id: string;
-      message_text: string | null;
-      sent_at: Date;
-    } | null,
-    chat_user: {
-      pk_user_id: string,
-      name: string | null,
-      email: string | null,
-      sender?: string
-    } | null
-  }[] | SQLErrorType> {
+  async selectChatRoomMessagesByUserId(userId: number, chatRoomId: number): Promise<TypedMessage[] | SQLErrorType> {
     try {
 
       // IF chatRoomId does not exist, return an error
-      const chatRoomExist = await this.db.select().from(chats).where(eq(chats.pk_chats_id, parseInt(chatRoomId)));
+      const chatRoomExist = await this.db.select().from(chats).where(eq(chats.pk_chats_id, chatRoomId));
 
       if (!chatRoomExist.length) {
         return {
@@ -290,14 +297,14 @@ export class QueryHandlers extends UserSchema {
           email: user.email,
         }
       }).from(chats)
-        .where(eq(chats.pk_chats_id, parseInt(chatRoomId)))
+        .where(eq(chats.pk_chats_id, chatRoomId))
         .orderBy(asc(messages.sent_at))
         .leftJoin(messages, eq(chats.pk_chats_id, messages.fk_chat_id))
         .leftJoin(user, eq(messages.fk_user_id, user.pk_user_id));
 
 
       const mappedMessages = chatRoomMessages.map(data => {
-        const dataUserId = (data.chat_user?.pk_user_id)?.toString();
+        const dataUserId = data.chat_user?.pk_user_id;
         if (dataUserId === userId) {
           // @ts-expect-error ignore
           data.chat_user.sender = 'You';
@@ -305,38 +312,20 @@ export class QueryHandlers extends UserSchema {
         return {
           chats: {
             ...data.chats,
-            pk_chats_id: data.chats.pk_chats_id.toString()
+            pk_chats_id: data.chats.pk_chats_id
           },
           messages: data.messages && {
             ...data.messages,
-            fk_chat_id: data.messages.fk_chat_id.toString()
+            fk_chat_id: data.messages.fk_chat_id
           },
           chat_user: data.chat_user
         };
       });
-      const typedMessages: {
-        chats: {
-          pk_chats_id: string,
-          chat_name: string | null,
-          createdAt: Date
-        },
-        messages: {
-          id: number,
-          fk_chat_id: string,
-          message_text: string | null,
-          sent_at: Date
-        } | null,
-        chat_user: {
-          pk_user_id: string,
-          name: string | null,
-          email: string | null,
-          sender?: string
-        } | null
-      }[] = mappedMessages.map(msg => ({
+      const typedMessages: TypedMessage[] = mappedMessages.map(msg => ({
         ...msg,
         chat_user: msg.chat_user ? {
           ...msg.chat_user,
-          pk_user_id: msg.chat_user.pk_user_id.toString()
+          pk_user_id: msg.chat_user.pk_user_id
         } : null
       }));
       return typedMessages;
@@ -354,28 +343,11 @@ export class QueryHandlers extends UserSchema {
   }
 
 
-  async getPrivateRoomMessagesBySenderId({ userId, recipientId }: { userId: string, recipientId: string }): Promise<{
-    chats: {
-      pk_chats_id: string,
-      chat_name: string | null,
-      createdAt: Date
-    } | null,
-    messages: {
-      id: number;
-      fk_chat_id: string;
-      message_text: string | null;
-      sent_at: Date;
-    } | null,
-    chat_user: {
-      pk_user_id: string,
-      name: string | null,
-      email: string | null,
-      sender?: string
-    } | null
-  }[] | SQLErrorType> {
+  async getPrivateRoomMessagesBySenderId({ userId, recipientId }: { userId: number, recipientId: number }): Promise<PrivateMessageType[] | SQLErrorType> {
     try {
+      
       // If recipientId does not exist, return an error
-      const recipientExist = await this.db.select().from(user).where(eq(user.pk_user_id, parseInt(recipientId)));
+      const recipientExist = await this.db.select().from(user).where(eq(user.pk_user_id, recipientId));
       if (!recipientExist.length) {
         return {
           error: true,
@@ -399,10 +371,10 @@ export class QueryHandlers extends UserSchema {
           image_name: privateMessages.image_name
         },
       }).from(privateChats)
-        .where(or(and(eq(privateChats.sender_id, parseInt(userId)),
-          eq(privateChats.recipient_id, parseInt(recipientId))),
-        and(eq(privateChats.recipient_id, parseInt(userId)),
-          eq(privateChats.sender_id, parseInt(recipientId)))))
+        .where(or(and(eq(privateChats.sender_id, userId),
+          eq(privateChats.recipient_id, recipientId)),
+        and(eq(privateChats.recipient_id, userId)),
+        eq(privateChats.sender_id, recipientId)))
 
         .leftJoin(privateMessages,
           eq(privateChats.pk_private_chat_id,
@@ -415,8 +387,8 @@ export class QueryHandlers extends UserSchema {
         email: user.email,
 
       })
-        .from(user).where(or(eq(user.pk_user_id, parseInt(userId)), 
-          eq(user.pk_user_id, parseInt(recipientId))));
+        .from(user).where(or(eq(user.pk_user_id, userId), 
+          eq(user.pk_user_id, recipientId)));
 
       const usersMap = new Map([
         [String(privateUserDetails[0]?.pk_user_id), privateUserDetails[0]],
@@ -426,14 +398,7 @@ export class QueryHandlers extends UserSchema {
       const mappedMessages: PrivateMessageType[] = chatRoomMessages.map(data => {
         const user_id = data.private_messages?.fk_user_id ?? '';
         const chat_user = usersMap.get(user_id.toString());
-
-        // @ts-expect-error ignore
-        data['chat_user'] = chat_user;
-
-        if (String(data.private_messages?.fk_user_id) === userId) {
-          // @ts-expect-error ignore
-          data.chat_user.sender = 'You';
-        }
+        
         if(data.private_messages?.image_file){
           // Convert Buffer to base64 string only if image_file exists and is a Buffer
           if (Buffer.isBuffer(data.private_messages.image_file)) {
@@ -442,10 +407,18 @@ export class QueryHandlers extends UserSchema {
             (data.private_messages as unknown as { image_file: string }).image_file = base64Image;
           }
         }
-        return data;
-      }).filter(data => (data.private_messages !== null && data.private_chat !== null));
-      // @ts-expect-error error 
-      return mappedMessages;
+        return {
+          ...data,
+          chat_user: chat_user ? {
+            ...chat_user,
+            pk_user_id: chat_user.pk_user_id,
+            sender:  data.private_messages?.fk_user_id === userId ? 'You' : ''
+
+          } : null
+        };
+      });
+
+      return mappedMessages.filter(data => (data.private_messages && data.private_chat && data.chat_user));
     } catch (err) {
       if (typeof err === "object" && Object.keys(err as object).length) {
         // throw new Error(JSON.stringify(err as object));
@@ -508,7 +481,7 @@ export class QueryHandlers extends UserSchema {
     return insertIntoChatResponse;
   }
 
-  async createNewChatroomRoomNameAndByUserId(chatName: string, userId: string) {
+  async createNewChatroomRoomNameAndByUserId(chatName: string, userId: number) {
     const insertIntoChatResponse = await this.db
       .insert(chats)
       .values({ chat_name: chatName })
@@ -570,13 +543,13 @@ export class QueryHandlers extends UserSchema {
     }
   }
 
-  async getAllPrivateChatRooms({userId}:{userId:string}): Promise<unknown[] | { error: boolean; reason: string }> {
+  async getAllPrivateChatRooms({userId}:{userId:number}): Promise<unknown[] | { error: boolean; reason: string }> {
     try {
       const allUsers = await this.db.select({
         "pk_user_id": user.pk_user_id,
         "name": user.name,
         "email": user.email
-      }).from(user).where(ne(user.pk_user_id, parseInt(userId)));
+      }).from(user).where(ne(user.pk_user_id, userId));
 
       return allUsers;
     } catch (err) {
@@ -591,8 +564,7 @@ export class QueryHandlers extends UserSchema {
     }
   }
 
-  async getLatestPrivateChatMessagesSent({ userId }: { userId: string }): Promise<PrivateChatResult[]> {
-    const userIdInt = parseInt(userId);
+  async getLatestPrivateChatMessagesSent({ userId }: { userId: number }): Promise<PrivateChatResult[]> {
     const privateChatsData = await this.db.selectDistinctOn([privateChats.recipient_id, privateChats.sender_id],
       {
         private_chat: {
@@ -616,17 +588,17 @@ export class QueryHandlers extends UserSchema {
         }
       })
       .from(privateChats)
-      .where(or(eq(privateChats.sender_id, userIdInt),
-        eq(privateChats.recipient_id, userIdInt)))
+      .where(or(eq(privateChats.sender_id, userId),
+        eq(privateChats.recipient_id, userId)))
       .orderBy(privateChats.recipient_id, privateChats.sender_id, desc(privateChats.created_at))
-      .leftJoin(user, eq(user.pk_user_id, userIdInt))
+      .leftJoin(user, eq(user.pk_user_id, userId))
       .leftJoin(privateMessages, eq(privateMessages.fk_private_chat_id, privateChats.pk_private_chat_id));
 
     // Get unique recipient IDs that are not the current user
     const recipientIds = new Set(privateChatsData.map(data =>
-      String(data.private_chat.sender_id) === String(userIdInt)
-        ? String(data.private_chat.recipient_id)
-        : String(data.private_chat.sender_id)));
+      data.private_chat.sender_id === userId
+        ? data.private_chat.recipient_id
+        : data.private_chat.sender_id));
 
 
     if(recipientIds.size === 0){
@@ -640,17 +612,17 @@ export class QueryHandlers extends UserSchema {
         email: user.email,
         created_at: user.created_at,
       },
-    }).from(user).where(inArray(user.pk_user_id, Array.from(recipientIds).map(id => parseInt(id))));
+    }).from(user).where(inArray(user.pk_user_id, Array.from(recipientIds).map(id => id)));
 
     // Map privateChatsData and ensure unique recipients
     const returnData = privateChatsData.map((data) => {
       // Determine the correct recipient ID based on the current user
-      const otherUserId = String(data.private_chat.sender_id) === String(userId)
-        ? String(data.private_chat.recipient_id)
-        : String(data.private_chat.sender_id);
+      const otherUserId = data.private_chat.sender_id === userId
+        ? data.private_chat.recipient_id
+        : data.private_chat.sender_id;
 
       // Find the recipient details
-      const recipientDetails = allRecipients.find(d => String(d.recipient.pk_user_id) === otherUserId)?.recipient;
+      const recipientDetails = allRecipients.find(d => d.recipient.pk_user_id === otherUserId)?.recipient;
 
       return {
         private_chat: {
@@ -681,27 +653,27 @@ export class QueryHandlers extends UserSchema {
       [String(item.recipient?.pk_user_id), item])).values()).map(item => ({
       private_chat: {
         ...item.private_chat,
-        pk_private_chat_id: Number(item.private_chat.pk_private_chat_id),
-        sender_id: Number(item.private_chat.sender_id),
-        recipient_id: Number(item.private_chat.recipient_id),
+        pk_private_chat_id: item.private_chat.pk_private_chat_id,
+        sender_id: item.private_chat.sender_id,
+        recipient_id: item.private_chat.recipient_id,
         created_at: item.private_chat.created_at
       },
       chat_user: {
         ...item.chat_user,
-        name: item.chat_user?.name ?? '',
-        email: item.chat_user?.email ?? '',
+        name: item.chat_user?.name ?? "",
+        email: item.chat_user?.email ?? "",
         created_at: item.chat_user?.created_at ?? new Date(0),
-        pk_user_id: Number(item.chat_user?.pk_user_id) || undefined,
+        pk_user_id: item.chat_user?.pk_user_id || undefined,
       },
       private_messages: {
         ...item.private_messages,
-        id: Number(item.private_messages.id),
-        fk_private_chat_id: Number(item.private_messages.fk_private_chat_id),
-        fk_user_id: Number(item.private_messages.fk_user_id)
+        id: parseInt(item.private_messages.id),
+        fk_private_chat_id: item.private_messages.fk_private_chat_id as unknown as number,
+        fk_user_id: item.private_messages.fk_user_id as unknown as number
       },
       recipient: {
-        pk_user_id: Number(item.recipient?.pk_user_id),
-        name: item.recipient?.name ?? '',
+        pk_user_id: item.recipient?.pk_user_id ?? 0,
+        name: item.recipient?.name ?? "",
         email: item.recipient?.email ?? '',
         created_at: item.recipient?.created_at ?? new Date(0),
       }
@@ -710,14 +682,14 @@ export class QueryHandlers extends UserSchema {
     return uniqueRecipients; // Return the unique recipients
   }
 
-  async getUserByUserIds({ userIdList }: { userIdList: string[] }): Promise<{ name: string | null; pk_user_id: string; email: string | null; password: string | null; created_at: Date; updated_at: Date; }[][]> {
-    const userListPromises = userIdList.map((userId) => this.db.select().from(user).where(eq(user.pk_user_id, parseInt(userId))));
+  async getUserByUserIds({ userIdList }: { userIdList: number[] }): Promise<{ name: string | null; pk_user_id: number; email: string | null; password: string | null; created_at: Date; updated_at: Date; }[][]> {
+    const userListPromises = userIdList.map((userId) => this.db.select().from(user).where(eq(user.pk_user_id, userId)));
 
     const userListResponse = await Promise.all(userListPromises);
 
     return userListResponse.map(user => user.map(user => ({
       name: user.name,
-      pk_user_id: user.pk_user_id.toString(),
+      pk_user_id: user.pk_user_id,
       email: user.email,
       password: user.password,
       created_at: user.created_at,
@@ -725,11 +697,11 @@ export class QueryHandlers extends UserSchema {
     })));
   }
 
-  async createPrivateChatEntry(sender: { name: string | null; pk_user_id: string; email: string | null; password: string | null; created_at: Date; updated_at: Date; }, receiver: { name: string | null; pk_user_id: string; email: string | null; password: string | null; created_at: Date; updated_at: Date; }) {
+  async createPrivateChatEntry(sender: { name: string | null; pk_user_id: number; email: string | null; password: string | null; created_at: Date; updated_at: Date; }, receiver: { name: string | null; pk_user_id: number; email: string | null; password: string | null; created_at: Date; updated_at: Date; }) {
 
     return await this.db.insert(privateChats).values({
-      sender_id: parseInt(sender.pk_user_id),
-      recipient_id: parseInt(receiver.pk_user_id)
+      sender_id: sender.pk_user_id,
+      recipient_id: receiver.pk_user_id
     }).returning({
       pk_private_chat_id: privateChats.pk_private_chat_id, sender_id: privateChats.sender_id,
       recipient_id: privateChats.recipient_id,
@@ -738,10 +710,10 @@ export class QueryHandlers extends UserSchema {
   }
 
 
-  async createPrivateMessage(privateChatsInsertResponse: { pk_private_chat_id: string; sender_id: string; recipient_id: string; created_at: Date; }, senderId: string, message: string, imageFile?: Buffer, imageName?: string) {
+  async createPrivateMessage(privateChatsInsertResponse: { pk_private_chat_id: number; sender_id: number; recipient_id: number; created_at: Date; }, senderId: number, message: string, imageFile?: Buffer, imageName?: string) {
     return await this.db.insert(privateMessages).values({
-      fk_private_chat_id: parseInt(privateChatsInsertResponse.pk_private_chat_id),
-      fk_user_id: parseInt(senderId),
+      fk_private_chat_id: privateChatsInsertResponse.pk_private_chat_id,
+      fk_user_id: senderId,
       message_text: message,
       image_file: imageFile,
       image_name: imageName

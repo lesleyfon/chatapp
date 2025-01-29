@@ -82,7 +82,8 @@ export class Chat extends AuthMiddlewareMixin(QueryHandlersMixin(BaseClass)) {
     }
 
     const userId = req.user.pk_user_id;
-    const chatMessages = await this.queryHandlers.selectChatRoomMessagesByUserId(userId, chatId);
+    const chatMessages = await this.queryHandlers.selectChatRoomMessagesByUserId(userId, parseInt(chatId));
+    
     if ('error' in chatMessages) {
       return res.status(StatusCodes.BAD_REQUEST).json(chatMessages);
     }
@@ -98,8 +99,7 @@ export class Chat extends AuthMiddlewareMixin(QueryHandlersMixin(BaseClass)) {
     }
 
     const userId = req.user.pk_user_id;
-    
-    const privateMessages = await this.queryHandlers.getPrivateRoomMessagesBySenderId({userId, recipientId});
+    const privateMessages = await this.queryHandlers.getPrivateRoomMessagesBySenderId({userId, recipientId: parseInt(recipientId)});
 
     if ('error' in privateMessages) {
       return res.status(StatusCodes.BAD_REQUEST).json(privateMessages);

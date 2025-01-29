@@ -56,7 +56,7 @@ export class AppSocketBase extends QueryHandlers {
     if (!user) return;
     const userId = user.userId;
     socket.on("get-private-message-list", async (cb) => {
-      const chatList = await this.getLatestPrivateChatMessagesSent({ userId: userId.toString() });
+      const chatList = await this.getLatestPrivateChatMessagesSent({ userId });
       cb(chatList);
     });
   }
@@ -117,14 +117,14 @@ export class AppSocketBase extends QueryHandlers {
         const chatId = insertIntoChatResponse[0].id;
 
         // Add message to the message table - refactor this
-        const messageResponse = await this.insertMessageToTable(chatId.toString(), userId, message);
+        const messageResponse = await this.insertMessageToTable(chatId, userId, message);
         const chatExist = await this.selectChatByChatName(chatName);
 
         const addMessageResponse = messageResponse.map(message => ({
           ...message,
           chats: chatExist[0],
         }));
-        const chatList = await this.getLatestChatRoomMessageSent(userId, chatId.toString());
+        const chatList = await this.getLatestChatRoomMessageSent(userId, chatId);
 
         this.io.to(chatName).emit("get-latest-chat-room-message", chatList);
         this.io.to(chatName).emit("add-message-response", addMessageResponse);
@@ -132,7 +132,7 @@ export class AppSocketBase extends QueryHandlers {
       }
 
       const chatId = chatExist[0].pk_chats_id;
-      const messageInsertResponse = await this.insertMessageToTable(chatId.toString(), userId, message);
+      const messageInsertResponse = await this.insertMessageToTable(chatId, userId, message);
       const messageResponse = await this.getMostRecentChatMessageSent(messageInsertResponse);
 
       // Emit message to other users
@@ -145,14 +145,14 @@ export class AppSocketBase extends QueryHandlers {
       // Emitter
       this.io.to(chatName).emit("add-message-response", addMessageResponse);
 
-      const chatList = await this.getLatestChatRoomMessageSent(userId, chatId.toString());
+      const chatList = await this.getLatestChatRoomMessageSent(userId, chatId);
       this.io.to(chatName).emit("get-latest-chat-room-message", chatList);
     });
   }
 
   async addPrivateMessage(socket: Socket) {
     socket.on('add-private-message', async ({ recipientId, senderId, message, imageFile, imageName
-    }: { recipientId: string, senderId: string, message: string, imageFile?: Buffer, imageName?: string }) => {
+    }: { recipientId: number, senderId: number, message: string, imageFile?: Buffer, imageName?: string }) => {
        
       // Ensure that you do not return the passwords when selecting users
       const [sender, receiver] = (await this.getUserByUserIds({ userIdList: [senderId, recipientId] })).flat();
@@ -162,9 +162,9 @@ export class AppSocketBase extends QueryHandlers {
 
       const privateMessageInsertResponse = (await this.createPrivateMessage({
         ...privateChatsInsertResponse,
-        pk_private_chat_id: privateChatsInsertResponse.pk_private_chat_id.toString(),
-        sender_id: privateChatsInsertResponse.sender_id.toString(),
-        recipient_id: privateChatsInsertResponse.recipient_id.toString()
+        pk_private_chat_id: privateChatsInsertResponse.pk_private_chat_id,
+        sender_id: privateChatsInsertResponse.sender_id,
+        recipient_id: privateChatsInsertResponse.recipient_id
       }, 
       senderId, 
       message,

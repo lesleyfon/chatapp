@@ -13,7 +13,7 @@ interface UserInterface {
 	password: string;
 	createdAt?: string;
 	updatedAt?: string;
-  pk_user_id: string
+  pk_user_id: number
   userId: number
 }
 
@@ -50,7 +50,7 @@ export class AuthMiddleware extends UserSchema {
       });
     }
     req.user = {
-      pk_user_id: user.userId.toString(),
+      pk_user_id: user.userId,
       email: user.email,
       name: user.name,
     };
