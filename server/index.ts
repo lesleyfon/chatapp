@@ -4,6 +4,7 @@ import { Server as SocketIOServer } from "socket.io";
 import cors, { CorsOptions } from "cors";
 import { AppSocketBase } from "./src/web/socket";
 import { appRouter } from "./src/routes/index";
+import multer from 'multer';
 
 const CorsOptions = {
   origin: ["http://localhost:5173", "http://localhost:3010/auth/login"],
@@ -16,10 +17,15 @@ class SocketServer {
   httpServer: HTTPServer;
   appRoutes = appRouter;
   constructor(port: number, corsOptions: CorsOptions) {
+    const upload = multer({
+      dest: 'uploads/',// TODO: DO WE NEED TO CHANGE THIS?
+      limits: { fileSize: 1024 * 1024 },
+    });
     this.port = port;
     this.corsOptions = corsOptions;
     this.app = express();
     this.app.use(express.json());
+    this.app.use(upload.single('file'));
 
     this.app.use(cors());
     this.app.use((req: Request, res: Response, next: NextFunction) => {
