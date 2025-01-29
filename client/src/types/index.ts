@@ -37,6 +37,8 @@ export type PrivateMessageType = {
   fk_user_id: string;
   message_text: string;
   sent_at: Date; // Assuming it's a timestamp
+  image_file: string;
+  image_name: string;
 };
 
 export interface NavItem {
@@ -96,4 +98,5 @@ export type PrivateChatResultType = {
 
 export type MessageInput = {
 	message_text: string;
+	message_img?:string
 };
