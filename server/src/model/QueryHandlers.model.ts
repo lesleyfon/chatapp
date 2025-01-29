@@ -9,44 +9,69 @@ export type SQLErrorType = {
   reason: string
 }
 
-export interface PrivateMessageType {
-  private_chat: {
-      pk_chats_id: number;
-      createdAt: Date;
-      sender_id: number;
-      recipient_id: number;
-  };
-  private_messages: {
-      id: number;
-      fk_private_chat_id: number;
-      message_text: string | null;
-      sent_at: Date;
-      fk_user_id: number;
-      image_file: Buffer | string | null;
-      image_name: string | null;
-  } | null;
-  chat_user: {
-    name: string | null;
-    pk_user_id: number | null;
-    email: string | null;
-  } | null;
+export interface UserBase {
+  pk_user_id: number;
+  name: string | null;
+  email: string | null;
+  created_at: Date;
+  updated_at?: Date;
 }
 
-export type MessageType = {
+export interface MessageBase {
   id: number;
-  fk_chat_id: number;
   fk_user_id: number;
-  message_text: string | null;
   sent_at: Date;
+  message_text: string | null;
 }
 
-export type ChatType = {
+export interface ChatBase {
   pk_chats_id: number;
   chat_name: string | null;
   createdAt: Date;
-} | null
+}
 
-export type ChatMembersType = {
+export interface PrivateChatBase {
+  pk_private_chat_id: number;
+  sender_id: number;
+  recipient_id: number;
+  created_at: Date;
+}
+
+export interface PrivateMessageBase {
+  id: number;
+  fk_private_chat_id: number;
+  fk_user_id: number;
+  message_text: string | null;
+  sent_at: Date;
+  image_file: Buffer | string | null;
+  image_name: string | null;
+}
+
+
+export interface PrivateMessageType {
+  private_chat: PrivateChatBase | null;
+  private_messages: PrivateMessageBase | null;
+  chat_user: UserBase | null;
+}
+
+
+// Extended Types
+export interface PrivateMessageType {
+  private_chat: PrivateChatBase | null;
+  private_messages: PrivateMessageBase | null;
+  chat_user: UserBase | null;
+}
+export interface MessageType extends MessageBase {
+  fk_chat_id: number;
+}
+
+export interface ChatType extends ChatBase {
+  chat_members?: ChatMembersType[];
+  messages?: MessageType;
+}
+
+
+export interface ChatMembersType {
   id: number;
   fk_chat_id: number;
   fk_user_id: number;
@@ -59,61 +84,22 @@ export type ChatListType = {
   messages?: MessageType
 }[]
 
-export type DBUserInterface = {
-  name: string | null;
+export interface DBUserInterface extends UserBase {
   password: string | null;
-  email: string | null;
-    pk_user_id: number;
-  created_at: Date;
-  updated_at: Date;
 }
 
-export type PrivateChatResult = {
-  private_chat: {
-    pk_private_chat_id: number;
-    sender_id: number;
-    recipient_id: number;
-    created_at: Date;
-  };
-  chat_user: {
-    pk_user_id: number | undefined;
-    name: string;
-    email: string;
-    created_at: Date;
-  };
-  private_messages: {
-    id: number;
-    fk_private_chat_id: number;
-    fk_user_id: number;
-    message_text: string;
-    sent_at: Date;
-  };
-  recipient?: {
-    pk_user_id: number;
-    name: string;
-    email: string;
-    created_at: Date;
-  };
+
+export interface PrivateChatResult {
+  private_chat: PrivateChatBase;
+  chat_user: UserBase;
+  private_messages: PrivateMessageBase;
+  recipient?: UserBase;
 }
 
 export interface TypedMessage {
-  chats: {
-    pk_chats_id: number;
-    chat_name: string | null;
-    createdAt: Date;
-  };
-  messages: {
-    id: number;
-    fk_chat_id: number;
-    message_text: string | null;
-    sent_at: Date;
-  } | null;
-  chat_user: {
-    pk_user_id: number;
-    name: string | null;
-    email: string | null;
-    sender?: string;
-  } | null;
+  chats: ChatBase;
+  messages: MessageBase | null;
+  chat_user: UserBase | null;
 }
 
 export class QueryHandlers extends UserSchema {
@@ -175,7 +161,7 @@ export class QueryHandlers extends UserSchema {
  *     console.error(error);
  *   });
  */
-  async selectUserChatRoomsWithLastSetMessages(userId: number): Promise<ChatListType> {
+  async selectUserChatRoomsWithLastSetMessages(userId: number): Promise<ChatListType[]> {
     const chatList = await this.db.select({
       chat_members: {
         added_at: chatMembers.added_at,
@@ -212,17 +198,23 @@ export class QueryHandlers extends UserSchema {
       };
     });
 
-
+  
     const updatedChatList = await Promise.all(chatListPromises);
     const response = updatedChatList.filter(chat => chat.messages);
     response.sort((a, b) => {
       return a.messages.sent_at > b.messages.sent_at ? -1 : 1;
     });
 
-    return response.slice(0, 5);
+
+    return response.slice(0, 5) as unknown as ChatListType[];
   }
 
-
+  /**
+   * @description Retrieves the latest message sent in a specific chat room.
+   * @param {number} userId - The ID of the user.
+   * @param {number} chatRoomId - The ID of the chat room.
+   * @returns {Promise<TypedMessage[]>} - An array of messages.
+   */
   async getLatestChatRoomMessageSent(userId: number, chatRoomId: number) {
     const chatList = await this.db
       .select({
@@ -261,12 +253,23 @@ export class QueryHandlers extends UserSchema {
 
     return response;
   }
+
+  /**
+   * @description Retrieves a chat room by its name.
+   * @param {string} chatName - The name of the chat room.
+   * @returns {Promise<ChatType | null>} - The chat room or null if it does not exist.
+   */
   async selectChatByChatName(chatName: string) {
     const chatExist = await this.db.select().from(chats).where(eq(chats.chat_name, chatName));
     return chatExist;
   }
 
-
+  /**
+   * @description Retrieves all messages for a specific chat room by user ID.
+   * @param {number} userId - The ID of the user.
+   * @param {number} chatRoomId - The ID of the chat room.
+   * @returns {Promise<TypedMessage[] | SQLErrorType>} - An array of messages or an error object.
+   */
   async selectChatRoomMessagesByUserId(userId: number, chatRoomId: number): Promise<TypedMessage[] | SQLErrorType> {
     try {
 
@@ -295,6 +298,7 @@ export class QueryHandlers extends UserSchema {
           pk_user_id: user.pk_user_id,
           name: user.name,
           email: user.email,
+          created_at: user.created_at,
         }
       }).from(chats)
         .where(eq(chats.pk_chats_id, chatRoomId))
@@ -323,6 +327,11 @@ export class QueryHandlers extends UserSchema {
       });
       const typedMessages: TypedMessage[] = mappedMessages.map(msg => ({
         ...msg,
+
+        messages: msg.messages ? {
+          ...msg.messages,
+          fk_user_id: msg.chat_user?.pk_user_id ?? 0
+        } : null,
         chat_user: msg.chat_user ? {
           ...msg.chat_user,
           pk_user_id: msg.chat_user.pk_user_id
@@ -342,7 +351,12 @@ export class QueryHandlers extends UserSchema {
     }
   }
 
-
+  /**
+   * @description Retrieves private messages for a specific chat room by sender ID.
+   * @param {number} userId - The ID of the user.
+   * @param {number} recipientId - The ID of the recipient.
+   * @returns {Promise<PrivateMessageType[] | SQLErrorType>} - An array of private messages or an error object.
+   */
   async getPrivateRoomMessagesBySenderId({ userId, recipientId }: { userId: number, recipientId: number }): Promise<PrivateMessageType[] | SQLErrorType> {
     try {
       
@@ -385,7 +399,7 @@ export class QueryHandlers extends UserSchema {
         pk_user_id: user.pk_user_id,
         name: user.name,
         email: user.email,
-
+        created_at: user.created_at,
       })
         .from(user).where(or(eq(user.pk_user_id, userId), 
           eq(user.pk_user_id, recipientId)));
@@ -398,7 +412,7 @@ export class QueryHandlers extends UserSchema {
       const mappedMessages: PrivateMessageType[] = chatRoomMessages.map(data => {
         const user_id = data.private_messages?.fk_user_id ?? '';
         const chat_user = usersMap.get(user_id.toString());
-        
+
         if(data.private_messages?.image_file){
           // Convert Buffer to base64 string only if image_file exists and is a Buffer
           if (Buffer.isBuffer(data.private_messages.image_file)) {
@@ -408,12 +422,17 @@ export class QueryHandlers extends UserSchema {
           }
         }
         return {
-          ...data,
+          private_chat: {
+            pk_private_chat_id: data.private_chat.pk_chats_id,
+            created_at: data.private_chat.createdAt,
+            sender_id: data.private_chat.sender_id,
+            recipient_id: data.private_chat.recipient_id,
+          },
+          private_messages: data.private_messages,
           chat_user: chat_user ? {
             ...chat_user,
             pk_user_id: chat_user.pk_user_id,
-            sender:  data.private_messages?.fk_user_id === userId ? 'You' : ''
-
+            sender: data.private_messages?.fk_user_id === userId ? 'You' : ''
           } : null
         };
       });
@@ -481,6 +500,12 @@ export class QueryHandlers extends UserSchema {
     return insertIntoChatResponse;
   }
 
+  /**
+   * @description Creates a new chat room with the specified name and user ID.
+   * @param {string} chatName - The name of the chat room.
+   * @param {number} userId - The ID of the user.
+   * @returns {Promise<{ id: number }>} - The ID of the newly created chat room.
+   */
   async createNewChatroomRoomNameAndByUserId(chatName: string, userId: number) {
     const insertIntoChatResponse = await this.db
       .insert(chats)
@@ -543,6 +568,11 @@ export class QueryHandlers extends UserSchema {
     }
   }
 
+  /**
+   * @description Retrieves all private chat rooms for a specific user.
+   * @param {number} userId - The ID of the user.
+   * @returns {Promise<unknown[] | { error: boolean; reason: string }>} - An array of private chat rooms or an error object.
+   */
   async getAllPrivateChatRooms({userId}:{userId:number}): Promise<unknown[] | { error: boolean; reason: string }> {
     try {
       const allUsers = await this.db.select({
@@ -564,6 +594,11 @@ export class QueryHandlers extends UserSchema {
     }
   }
 
+  /**
+   * @description Retrieves the latest private chat messages sent by a user.
+   * @param {number} userId - The ID of the user.
+   * @returns {Promise<PrivateChatResult[]>} - An array of private chat messages.
+   */
   async getLatestPrivateChatMessagesSent({ userId }: { userId: number }): Promise<PrivateChatResult[]> {
     const privateChatsData = await this.db.selectDistinctOn([privateChats.recipient_id, privateChats.sender_id],
       {
@@ -679,9 +714,14 @@ export class QueryHandlers extends UserSchema {
       }
     }));
 
-    return uniqueRecipients; // Return the unique recipients
+    return uniqueRecipients as unknown as PrivateChatResult[]; 
   }
 
+  /**
+   * @description Retrieves user details by a list of user IDs.
+   * @param {number[]} userIdList - An array of user IDs.
+   * @returns {Promise<{ name: string | null; pk_user_id: number; email: string | null; password: string | null; created_at: Date; updated_at: Date; }[][]>} - An array of user details.
+   */
   async getUserByUserIds({ userIdList }: { userIdList: number[] }): Promise<{ name: string | null; pk_user_id: number; email: string | null; password: string | null; created_at: Date; updated_at: Date; }[][]> {
     const userListPromises = userIdList.map((userId) => this.db.select().from(user).where(eq(user.pk_user_id, userId)));
 
@@ -697,6 +737,12 @@ export class QueryHandlers extends UserSchema {
     })));
   }
 
+  /**
+   * @description Creates a new private chat entry.
+   * @param {UserBase} sender - The sender of the chat.
+   * @param {UserBase} receiver - The receiver of the chat.
+   * @returns {Promise<{ pk_private_chat_id: number; sender_id: number; recipient_id: number; created_at: Date; }>} - The created chat entry.
+   */
   async createPrivateChatEntry(sender: { name: string | null; pk_user_id: number; email: string | null; password: string | null; created_at: Date; updated_at: Date; }, receiver: { name: string | null; pk_user_id: number; email: string | null; password: string | null; created_at: Date; updated_at: Date; }) {
 
     return await this.db.insert(privateChats).values({
@@ -710,6 +756,15 @@ export class QueryHandlers extends UserSchema {
   }
 
 
+  /**
+   * @description Creates a new private message.
+   * @param {PrivateChatsInsertResponse} privateChatsInsertResponse - The response from creating a private chat.
+   * @param {number} senderId - The ID of the sender.
+   * @param {string} message - The message to be sent.
+   * @param {Buffer | undefined} imageFile - The image file to be sent.
+   * @param {string | undefined} imageName - The name of the image file.
+   * @returns {Promise<{ id: number; fk_private_chat_id: number; fk_user_id: number; message_text: string; sent_at: Date; image_file: Buffer | null; image_name: string | null; }>} - The created message.
+   */
   async createPrivateMessage(privateChatsInsertResponse: { pk_private_chat_id: number; sender_id: number; recipient_id: number; created_at: Date; }, senderId: number, message: string, imageFile?: Buffer, imageName?: string) {
     return await this.db.insert(privateMessages).values({
       fk_private_chat_id: privateChatsInsertResponse.pk_private_chat_id,

@@ -7,7 +7,7 @@ import { JWT_RETURN_USER } from "src/model/Auth.model";
 import { ExtendedError } from "socket.io/dist/namespace";
 
 
-type CbType = (chatList: ChatListType) => void
+type CbType = (chatList: ChatListType[]) => void
 
 export class AppSocketBase extends QueryHandlers {
   io: SocketIOServer;
@@ -44,7 +44,7 @@ export class AppSocketBase extends QueryHandlers {
     const userId = user.userId;
     socket.on("get-chat-list", async (cb: CbType) => {
 
-      const chatList: ChatListType = await this.selectUserChatRoomsWithLastSetMessages(userId);
+      const chatList: ChatListType[] = await this.selectUserChatRoomsWithLastSetMessages(userId);
 
       cb(chatList);
     });
