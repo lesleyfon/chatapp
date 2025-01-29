@@ -1,9 +1,74 @@
 {
-  "id": "e5f58ebd-f566-4480-93a5-a4112e2245bc",
-  "prevId": "8a91ed23-d3f8-45af-8df2-edca1bf608b4",
+  "id": "f2b979b0-5915-47d2-a559-765a83bab087",
+  "prevId": "5a9233f9-c01c-4864-8ced-6f113da97fb2",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
+    "public.chat_members": {
+      "name": "chat_members",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "fk_chat_id": {
+          "name": "fk_chat_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fk_user_id": {
+          "name": "fk_user_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "added_at": {
+          "name": "added_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "chat_members_fk_chat_id_chats_pk_chats_id_fk": {
+          "name": "chat_members_fk_chat_id_chats_pk_chats_id_fk",
+          "tableFrom": "chat_members",
+          "tableTo": "chats",
+          "columnsFrom": [
+            "fk_chat_id"
+          ],
+          "columnsTo": [
+            "pk_chats_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "chat_members_fk_user_id_chat_user_pk_user_id_fk": {
+          "name": "chat_members_fk_user_id_chat_user_pk_user_id_fk",
+          "tableFrom": "chat_members",
+          "tableTo": "chat_user",
+          "columnsFrom": [
+            "fk_user_id"
+          ],
+          "columnsTo": [
+            "pk_user_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.chats": {
       "name": "chats",
       "schema": "",
@@ -30,6 +95,77 @@
       },
       "indexes": {},
       "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.messages": {
+      "name": "messages",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "fk_chat_id": {
+          "name": "fk_chat_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fk_user_id": {
+          "name": "fk_user_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "message_text": {
+          "name": "message_text",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sent_at": {
+          "name": "sent_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "messages_fk_chat_id_chats_pk_chats_id_fk": {
+          "name": "messages_fk_chat_id_chats_pk_chats_id_fk",
+          "tableFrom": "messages",
+          "tableTo": "chats",
+          "columnsFrom": [
+            "fk_chat_id"
+          ],
+          "columnsTo": [
+            "pk_chats_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "messages_fk_user_id_chat_user_pk_user_id_fk": {
+          "name": "messages_fk_user_id_chat_user_pk_user_id_fk",
+          "tableFrom": "messages",
+          "tableTo": "chat_user",
+          "columnsFrom": [
+            "fk_user_id"
+          ],
+          "columnsTo": [
+            "pk_user_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},

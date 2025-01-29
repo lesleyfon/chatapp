@@ -5,15 +5,43 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1723581013756,
-      "tag": "0000_cold_turbo",
+      "when": 1738125088063,
+      "tag": "0000_perfect_oracle",
       "breakpoints": true
     },
     {
       "idx": 1,
       "version": "7",
-      "when": 1726962847206,
-      "tag": "0001_nasty_mercury",
+      "when": 1738125244684,
+      "tag": "0001_curious_ben_urich",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1738125361355,
+      "tag": "0002_futuristic_exiles",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1738125432808,
+      "tag": "0003_rapid_lyja",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1738125499003,
+      "tag": "0004_last_captain_marvel",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1738132594374,
+      "tag": "0005_robust_excalibur",
       "breakpoints": true
     }
   ]

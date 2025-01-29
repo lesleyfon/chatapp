@@ -1,0 +1,1 @@
+ALTER TABLE "private_messages" ALTER COLUMN "id" SET DATA TYPE serial;
