@@ -40,7 +40,7 @@ export function MessageInput({ chatId, chatName, isPrivateChat }: ChatInputProps
 			});
 			return;
 		}
-		const message_img = data.message_img?.[0] as unknown as HTMLImageElement;
+		const message_img = data?.message_img?.[0] as unknown as HTMLImageElement;
 
 		if (isPrivateChat) {
 			sendPrivateMessage(
@@ -48,7 +48,7 @@ export function MessageInput({ chatId, chatName, isPrivateChat }: ChatInputProps
 					message_text: data.message_text,
 					recipientId: chatId,
 					imageFile: message_img,
-					imageName: message_img.name,
+					imageName: message_img?.name,
 				},
 				socket
 			);
