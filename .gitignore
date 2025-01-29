@@ -11,3 +11,6 @@ build/
 *.csv
 package-lock.json
 .env
+backup.sql
+db-structure.sql
+terminal-commands.txt
