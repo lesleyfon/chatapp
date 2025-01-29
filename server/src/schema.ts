@@ -1,31 +1,32 @@
 import { sql } from "drizzle-orm";
 import { primaryKey } from "drizzle-orm/mysql-core";
 
-import { serial, text, timestamp, pgTable, uuid } from "drizzle-orm/pg-core";
+import { text, timestamp, pgTable, integer, customType, serial } from "drizzle-orm/pg-core";
+
+
+const bytea = customType<{ data: Buffer; notNull: false; default: false }>({
+  dataType() {
+    return "bytea";
+  },
+});
 
 /**
  * @description This is the schema for the chat application
  */
 export const chats = pgTable("chats", {
-  pk_chats_id: uuid("pk_chats_id").primaryKey().defaultRandom(),
+  pk_chats_id: serial("pk_chats_id").primaryKey(),
   chat_name: text("chat_name"),
-  createdAt: timestamp("created_at")
-    .notNull()
-    .default(sql`now()`),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
 });
 
 // User Table
 export const user = pgTable("chat_user", {
-  pk_user_id: uuid("pk_user_id").primaryKey().defaultRandom(),
+  pk_user_id: serial("pk_user_id").primaryKey(),
   name: text("name"),
   email: text("email"),
   password: text("password"),
-  created_at: timestamp("created_at")
-    .notNull()
-    .default(sql`now()`),
-  updated_at: timestamp("updated_at")
-    .notNull()
-    .default(sql`now()`),
+  created_at: timestamp("created_at").notNull().default(sql`now()`),
+  updated_at: timestamp("updated_at").notNull().default(sql`now()`),
 });
 
 /**
@@ -42,20 +43,20 @@ export const user = pgTable("chat_user", {
  * - `createdAt`: The timestamp when the chat message was created. Defaults to the current time.
  */
 export const privateChats = pgTable("private_chat", {
-  pk_private_chat_id: uuid("pk_private_chat_id").primaryKey().defaultRandom(), // Assuming UUID is your primary key type
-  sender_id: uuid("sender_id").references(() => user.pk_user_id, { onDelete: "cascade" }).notNull(), // Use uuid if user_id is also UUID
-  recipient_id: uuid("recipient_id").references(() => user.pk_user_id, { onDelete: "cascade" }).notNull(), // Use uuid for consistency
-  created_at: timestamp("created_at").notNull().default(sql`now()`), // Use snake_case for consistency
+  pk_private_chat_id: serial("pk_private_chat_id").primaryKey(),
+  sender_id: integer("sender_id").references(() => user.pk_user_id, { onDelete: "cascade" }).notNull(),
+  recipient_id: integer("recipient_id").references(() => user.pk_user_id, { onDelete: "cascade" }).notNull(),
+  created_at: timestamp("created_at").notNull().default(sql`now()`),
 });
 
 
 export const chatMembers = pgTable("chat_members",
   {
-    id: uuid('id').defaultRandom(),
-    fk_chat_id: text("fk_chat_id")
+    id: serial("id").primaryKey(),
+    fk_chat_id: integer("fk_chat_id")
       .references(() => chats.pk_chats_id, { onDelete: "cascade" })
       .notNull(),
-    fk_user_id: text("fk_user_id")
+    fk_user_id: integer("fk_user_id")
       .references(() => user.pk_user_id, { onDelete: "cascade" })
       .notNull(),
     added_at: timestamp("added_at")
@@ -69,10 +70,10 @@ export const chatMembers = pgTable("chat_members",
 
 export const messages = pgTable("messages", {
   id: serial("id").primaryKey(),
-  fk_chat_id: text("fk_chat_id")
+  fk_chat_id: integer("fk_chat_id")
     .references(() => chats.pk_chats_id, { onDelete: "cascade" })
     .notNull(),
-  fk_user_id: text("fk_user_id")
+  fk_user_id: integer("fk_user_id")
     .references(() => user.pk_user_id, { onDelete: "cascade" })
     .notNull(),
   message_text: text("message_text"),
@@ -83,13 +84,15 @@ export const messages = pgTable("messages", {
 
 
 export const privateMessages = pgTable("private_messages", {
-  id: serial("id").primaryKey(),
-  fk_private_chat_id: text("fk_private_chat_id")
+  id: serial("id").primaryKey().notNull(),
+  fk_private_chat_id: integer("fk_private_chat_id")
     .references(() => privateChats.pk_private_chat_id, { onDelete: "cascade" }).notNull(),
-  fk_user_id: text("fk_user_id")
+  fk_user_id: integer("fk_user_id")
     .references(() => user.pk_user_id, { onDelete: "cascade" })
     .notNull(),
   message_text: text("message_text"),
+  image_name: text("image_name"),
+  image_file: bytea("image_file"), 
   sent_at: timestamp("sent_at")
     .notNull()
     .default(sql`now()`),
