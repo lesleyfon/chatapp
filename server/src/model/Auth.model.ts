@@ -52,8 +52,8 @@ export class UserSchema {
         name,
         email,
         password: hashedPassword,
-        id: response[0].id,
-        pk_user_id: response[0].id,
+        id: response[0].id.toString(),
+        pk_user_id: response[0].id.toString(),
       };
     } catch (err) {
       if (typeof err === "object" && Object.keys(err as object).length) {
@@ -94,7 +94,10 @@ export class UserSchema {
       return { code: StatusCodes.NOT_FOUND, message: "User does not exist" };
     }
 
-    const dbUser = userExist[0] as UserInterface;
+    const dbUser = {
+      ...userExist[0],
+      pk_user_id: String(userExist[0].pk_user_id)
+    } as UserInterface;
 
     const isPasswordCorrect = await this.comparePassword({
       password,
