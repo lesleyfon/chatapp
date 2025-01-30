@@ -5,10 +5,16 @@ import cors, { CorsOptions } from "cors";
 import { AppSocketBase } from "./src/web/socket";
 import { appRouter } from "./src/routes/index";
 import multer from 'multer';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const CorsOptions = {
   origin: ["http://localhost:5173", "http://localhost:3010/auth/login"],
 };
+
+const port = process.env.PORT ? parseInt(process.env.PORT) : 3010;
+const url = process.env.ENVIRONMENT === "development" ? "http://localhost:3010": "" ;
 
 class SocketServer {
   port: number;
@@ -57,7 +63,7 @@ class SocketServer {
   start() {
     this.httpServer.listen(this.port, () => {
       // eslint-disable-next-line no-console
-      console.log(`Server listening to http://localhost:${this.port}`);
+      console.log(`Server listening to ${url}`);
     });
   }
 }
@@ -67,5 +73,5 @@ const corsOptions = {
   origin: ["http://localhost:5173"],
 };
 
-const socketServer = new SocketServer(3010, corsOptions);
+const socketServer = new SocketServer(port, corsOptions);
 socketServer.start();
