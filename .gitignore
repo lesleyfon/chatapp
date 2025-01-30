@@ -1,6 +1,5 @@
 # Directories to ignore
 node_modules/
-dist/
 build/
 .idea/
 .vscode/
