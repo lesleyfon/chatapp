@@ -13,3 +13,4 @@ package-lock.json
 backup.sql
 db-structure.sql
 terminal-commands.txt
+.vercel
