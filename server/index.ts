@@ -8,10 +8,16 @@ import multer from 'multer';
 import dotenv from 'dotenv';
 
 dotenv.config();
+const origin: string[] = [];
 
+if(process.env.ENVIRONMENT === "development"){
+  const tempOrigin:string[] = JSON.parse(process.env.APP_ENV as string).CORS_ORIGIN;
+  origin.push(...tempOrigin);
+}
 const CorsOptions = {
-  origin: ["http://localhost:5173", "http://localhost:3010/auth/login"],
+  origin,
 };
+
 
 const port = process.env.PORT ? parseInt(process.env.PORT) : 3010;
 const url = process.env.ENVIRONMENT === "development" ? "http://localhost:3010": "" ;
@@ -36,7 +42,7 @@ class SocketServer {
     this.app.use(cors());
     this.app.use((req: Request, res: Response, next: NextFunction) => {
 
-      res.header("Access-Control-Allow-Origin", "http://localhost:5173");
+      res.header("Access-Control-Allow-Origin", origin?.[0] ?? '');
       res.header("Access-Control-Allow-Credentials", "true");
       res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
       res.header("Access-Control-Allow-Headers", "Origin, Content-Type, Accept");
@@ -69,9 +75,7 @@ class SocketServer {
 }
 
 // Usage
-const corsOptions = {
-  origin: ["http://localhost:5173"],
-};
+const corsOptions = { origin };
 
 const socketServer = new SocketServer(port, corsOptions);
 socketServer.start();
