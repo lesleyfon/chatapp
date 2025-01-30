@@ -8,7 +8,7 @@ import { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { eq } from "drizzle-orm";
 import { StatusCodes } from "http-status-codes";
 
-const { JWT_LIFETIME, JWT_SECRET } = getEnvs();
+const { JWT_SECRET } = getEnvs();
 export interface UserInterface {
 	pk_user_id: number;
 	id?: number;
@@ -133,9 +133,10 @@ export class UserSchema {
       userId,
       name: name,
       email: email,
-    },
-    JWT_SECRET,
-    { expiresIn: JWT_LIFETIME });
+    }, JWT_SECRET, { 
+      expiresIn: '24h',
+      algorithm: 'HS256'
+    });
     return token;
   }
 

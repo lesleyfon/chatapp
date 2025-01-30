@@ -34,7 +34,7 @@ const db_1 = require("../db");
 const schema_1 = require("../schema");
 const drizzle_orm_1 = require("drizzle-orm");
 const http_status_codes_1 = require("http-status-codes");
-const { JWT_LIFETIME, JWT_SECRET } = (0, getEnvs_1.getEnvs)();
+const { JWT_SECRET } = (0, getEnvs_1.getEnvs)();
 class UserSchema {
     constructor() {
         this.db = (0, db_1.connectToDB)();
@@ -118,7 +118,10 @@ class UserSchema {
             userId,
             name: name,
             email: email,
-        }, JWT_SECRET, { expiresIn: JWT_LIFETIME });
+        }, JWT_SECRET, {
+            expiresIn: '24h',
+            algorithm: 'HS256'
+        });
         return token;
     }
     async decodeJWT(token) {
