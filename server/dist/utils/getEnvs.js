@@ -41,7 +41,8 @@ function getEnvs() {
             DB_URL,
         };
     }
-    console.log("Line 40: After if(process.env.ENVIRONMENT === 'development')");
+    console.log("Line 41: process.env.ENVIRONMENT ", process.env.ENVIRONMENT);
+    console.log("Line 42: MONGO_CONNECTION_URL", MONGO_CONNECTION_URL);
     return {
         MONGO_CONNECTION_URL,
         PORT,
