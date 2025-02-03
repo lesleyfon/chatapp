@@ -25,6 +25,7 @@ export function getEnvs() {
   }: ENV_VARS = JSON.parse(process.env.APP_ENV as string);
 
   if(process.env.ENVIRONMENT === "development"){
+    console.log("Line 28:in the conditional if(process.env.ENVIRONMENT === 'development')");
     return {
       MONGO_CONNECTION_URL,
       PORT,
@@ -36,6 +37,8 @@ export function getEnvs() {
       DB_URL,
     };
   }
+
+  console.log("Line 40: After if(process.env.ENVIRONMENT === 'development')");
   return {
     MONGO_CONNECTION_URL,
     PORT,

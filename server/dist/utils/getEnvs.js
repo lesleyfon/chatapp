@@ -28,6 +28,20 @@ const dotenv = __importStar(require("dotenv"));
 dotenv.config();
 function getEnvs() {
     const { MONGO_CONNECTION_URL, PORT, JWT_SECRET, JWT_LIFETIME, DATABASE_HOST, DATABASE_USERNAME, DATABASE_PASSWORD, DB_URL, } = JSON.parse(process.env.APP_ENV);
+    if (process.env.ENVIRONMENT === "development") {
+        console.log("Line 28:in the conditional if(process.env.ENVIRONMENT === 'development')");
+        return {
+            MONGO_CONNECTION_URL,
+            PORT,
+            JWT_SECRET,
+            JWT_LIFETIME,
+            DATABASE_HOST,
+            DATABASE_USERNAME,
+            DATABASE_PASSWORD,
+            DB_URL,
+        };
+    }
+    console.log("Line 40: After if(process.env.ENVIRONMENT === 'development')");
     return {
         MONGO_CONNECTION_URL,
         PORT,
@@ -36,7 +50,6 @@ function getEnvs() {
         DATABASE_HOST,
         DATABASE_USERNAME,
         DATABASE_PASSWORD,
-        DB_URL,
     };
 }
 //# sourceMappingURL=getEnvs.js.map
