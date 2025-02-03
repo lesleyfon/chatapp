@@ -1,3 +1,4 @@
+import fs from 'fs';
 import { drizzle } from "drizzle-orm/node-postgres";
 import { getEnvs } from "./utils/getEnvs";
 import { Client } from "pg";
@@ -12,11 +13,29 @@ export const client: ClientType | Connection = new Client({
 client.connect();
 
 export const connectToDB = () => {
-  const client: ClientType | Connection = new Client({
-    connectionString: DB_URL,
-  });
+  let client:ClientType | Connection;
+  if(process.env.ENVIRONMENT === "production"){;
+    client = new Client({
+      connectionString: DB_URL,
+      ssl: {
+        rejectUnauthorized: false,
+        key: fs.readFileSync("./example.test-key.pem"),
+        cert: fs.readFileSync("./example.test.pem"),
+      },
+    });
+  }else{
+    client = new Client({
+      connectionString: DB_URL,
+    });
+  }
 
-  client.connect();
+  client.connect(err =>{
+    if(err){
+      console.log("Error connecting to DB: ", err);
+    }else{
+      console.log("Connected to DB successfully");
+    }
+  });
 
   const db = drizzle(client as unknown as never);
   return db;
