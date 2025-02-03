@@ -39,7 +39,7 @@ export function getEnvs() {
   }
 
   console.log("Line 41: process.env.ENVIRONMENT ", process.env.ENVIRONMENT);
-  console.log("Line 42: MONGO_CONNECTION_URL", MONGO_CONNECTION_URL);
+  console.log("Line 42: DB_URL", DB_URL);
   return {
     MONGO_CONNECTION_URL,
     PORT,
@@ -48,6 +48,7 @@ export function getEnvs() {
     DATABASE_HOST,
     DATABASE_USERNAME,
     DATABASE_PASSWORD,
+    DB_URL
   };
 }
 
