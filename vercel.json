@@ -2,7 +2,7 @@
   "version": 2,
   "builds": [
     {
-      "src": "server/package.json",
+      "src": "server/dist/index.js",
       "use": "@vercel/node",
       "config": {
         "includeFiles": [
@@ -15,6 +15,12 @@
     {
       "src": "/(.*)",
       "dest": "/server/dist/index.js"
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/server/dist/(.*)",
+      "destination": "/server/$1"
     }
   ]
 }
