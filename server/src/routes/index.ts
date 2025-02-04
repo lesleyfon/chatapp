@@ -6,10 +6,10 @@ class App_Routes {
   router = Router();
   constructor() {
     // Base Routes
-    this.router.use("/auth", authRouter);
-    this.router.use("/chats", chatRouter);
+    this.router.use("/api/auth", authRouter);
+    this.router.use("/api/chats", chatRouter);
     
-    this.router.get("/", this.baseRoute);
+    this.router.get("/api", this.baseRoute);
   }
 
   baseRoute(_req: Request, res: Response) {
