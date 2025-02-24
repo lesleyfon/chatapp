@@ -11,6 +11,8 @@ dotenv.config();
 const origin: string[] = [];
 
 if(process.env.ENVIRONMENT === "development"){
+  // eslint-disable-next-line no-console
+  console.log("Running app in dev mode");
   const tempOrigin:string[] = JSON.parse(process.env.APP_ENV as string).CORS_ORIGIN;
   origin.push(...tempOrigin);
 }
@@ -20,6 +22,8 @@ const CorsOptions = {
 // CONSOLE LOG PORT TO SEE WHAT VERCEL IS SETTING AS PORT.
 const port = process.env.PORT ? parseInt(process.env.PORT) : 3010;
 const url = process.env.ENVIRONMENT === "development" ? "http://localhost:3010": "" ;
+// eslint-disable-next-line no-console
+console.log("URL to listen too: ", url);
 
 class SocketServer {
   port: number;

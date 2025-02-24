@@ -14,6 +14,7 @@ const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
 const origin = [];
 if (process.env.ENVIRONMENT === "development") {
+    console.log("Running app in dev mode");
     const tempOrigin = JSON.parse(process.env.APP_ENV).CORS_ORIGIN;
     origin.push(...tempOrigin);
 }
@@ -22,6 +23,7 @@ const CorsOptions = {
 };
 const port = process.env.PORT ? parseInt(process.env.PORT) : 3010;
 const url = process.env.ENVIRONMENT === "development" ? "http://localhost:3010" : "";
+console.log("URL to listen too: ", url);
 class SocketServer {
     constructor(port, corsOptions) {
         this.appRoutes = index_1.appRouter;
