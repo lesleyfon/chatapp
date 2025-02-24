@@ -7,6 +7,9 @@ const chats_1 = require("./chats");
 class App_Routes {
     constructor() {
         this.router = (0, express_1.Router)();
+        this.router.get("/", (_req, res) => {
+            res.send("Hello world");
+        });
         this.router.use("/api/auth", auth_1.authRouter);
         this.router.use("/api/chats", chats_1.chatRouter);
         this.router.get("/api", this.baseRoute);

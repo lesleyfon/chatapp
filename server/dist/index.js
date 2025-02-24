@@ -49,8 +49,9 @@ class SocketServer {
             next();
         });
         this.app.use(index_1.appRouter);
-        this.app.use((_, res) => {
-            res.send("Error");
+        this.app.use((req, res) => {
+            const requestPath = req.path;
+            res.send("Error, UNEXPECTED ROUTE: " + requestPath);
         });
         this.httpServer = (0, http_1.createServer)(this.app);
         this.setupAppSocketConnection(new socket_io_1.Server(this.httpServer));

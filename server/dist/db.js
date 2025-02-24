@@ -10,9 +10,6 @@ const connectToDB = () => {
     if (process.env.ENVIRONMENT === "production") {
         client = new pg_1.Client({
             connectionString: DB_URL,
-            ssl: {
-                rejectUnauthorized: false
-            }
         });
     }
     else {
