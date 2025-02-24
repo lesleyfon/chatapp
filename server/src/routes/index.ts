@@ -5,6 +5,9 @@ import { chatRouter } from "./chats";
 class App_Routes {
   router = Router();
   constructor() {
+    this.router.get("/", (_req: Request, res: Response) =>{
+      res.send("Hello world");
+    });
     // Base Routes
     this.router.use("/api/auth", authRouter);
     this.router.use("/api/chats", chatRouter);

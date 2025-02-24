@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import express, { NextFunction, Response, Request } from "express";
 import { createServer, Server as HTTPServer } from "http";
 import { Server as SocketIOServer } from "socket.io";
@@ -11,7 +12,7 @@ dotenv.config();
 const origin: string[] = [];
 
 if(process.env.ENVIRONMENT === "development"){
-  // eslint-disable-next-line no-console
+   
   console.log("Running app in dev mode");
   const tempOrigin:string[] = JSON.parse(process.env.APP_ENV as string).CORS_ORIGIN;
   origin.push(...tempOrigin);
@@ -22,7 +23,7 @@ const CorsOptions = {
 // CONSOLE LOG PORT TO SEE WHAT VERCEL IS SETTING AS PORT.
 const port = process.env.PORT ? parseInt(process.env.PORT) : 3010;
 const url = process.env.ENVIRONMENT === "development" ? "http://localhost:3010": "" ;
-// eslint-disable-next-line no-console
+ 
 console.log("URL to listen too: ", url);
 
 class SocketServer {
@@ -58,8 +59,9 @@ class SocketServer {
       next();
     });
     this.app.use(appRouter);
-    this.app.use((_, res: Response) => {
-      res.send("Error");
+    this.app.use((req:Request, res: Response) => {
+      const requestPath = req.path;
+      res.send("Error, UNEXPECTED ROUTE: " + requestPath);
     });
     this.httpServer = createServer(this.app);
     this.setupAppSocketConnection(new SocketIOServer(this.httpServer));
@@ -71,7 +73,6 @@ class SocketServer {
 
   start() {
     this.httpServer.listen(this.port, () => {
-      // eslint-disable-next-line no-console
       console.log(`Server listening to ${url}`);
     });
   }

@@ -11,9 +11,6 @@ export const connectToDB = () => {
   if (process.env.ENVIRONMENT === "production") {
     client = new Client({
       connectionString: DB_URL,
-      ssl: {
-        rejectUnauthorized: false // This allows self-signed certificates
-      }
     });
   } else {
     client = new Client({
