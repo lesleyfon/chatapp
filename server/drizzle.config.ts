@@ -13,19 +13,28 @@ interface ENV_VARS {
   DB_HOST: string;
   DB_PORT: string;
 }
-const { DB_ACCOUNT_ID, DB_DATABASE_ID, DB_TOKEN, DB_HOST, DB_PORT }: ENV_VARS = JSON.parse(dotenvVars);
-if(!DB_ACCOUNT_ID || !DB_DATABASE_ID || !DB_TOKEN || !DB_HOST || !DB_PORT) {
-  throw new Error("DB_ACCOUNT_ID, DB_DATABASE_ID, DB_TOKEN, DB_HOST, DB_PORT are required", {cause: JSON.stringify({
-    DB_ACCOUNT_ID,
-    DB_DATABASE_ID,
-    DB_TOKEN,
-    DB_HOST,
-    DB_PORT
-  })
-  });
-}
 
-const DB_URL = `postgres://${DB_ACCOUNT_ID}:${DB_TOKEN}@${DB_HOST}:${DB_PORT}/${DB_DATABASE_ID}`;
+const isDevEnv = process.env.ENVIRONMENT === "development";
+let DB_URL = "";
+
+if(isDevEnv){
+  const { DB_ACCOUNT_ID, DB_DATABASE_ID, DB_TOKEN, DB_HOST, DB_PORT }: ENV_VARS = JSON.parse(dotenvVars);
+  if(!DB_ACCOUNT_ID || !DB_DATABASE_ID || !DB_TOKEN || !DB_HOST || !DB_PORT) {
+    throw new Error("DB_ACCOUNT_ID, DB_DATABASE_ID, DB_TOKEN, DB_HOST, DB_PORT are required", {cause: JSON.stringify({
+      DB_ACCOUNT_ID,
+      DB_DATABASE_ID,
+      DB_TOKEN,
+      DB_HOST,
+      DB_PORT
+    })
+    });
+  }
+  
+  DB_URL = `postgres://${DB_ACCOUNT_ID}:${DB_TOKEN}@${DB_HOST}:${DB_PORT}/${DB_DATABASE_ID}`;
+}else{
+  const { DB_URL:ENV_DB_URL }: ENV_VARS = JSON.parse(dotenvVars);
+  DB_URL = ENV_DB_URL;
+}
 
 export default {
   schema: "./src/schema.ts",  
