@@ -8,13 +8,13 @@ import { SidebarProvider } from "./components/ui/sidebar";
 const queryClient = new QueryClient();
 
 function App() {
-	return (
-		<QueryClientProvider client={queryClient}>
-			<SidebarProvider>
-				<RouterProvider router={AppRouter} />
-			</SidebarProvider>
-		</QueryClientProvider>
-	);
+  return (
+    <QueryClientProvider client={queryClient}>
+      <SidebarProvider>
+        <RouterProvider router={AppRouter} />
+      </SidebarProvider>
+    </QueryClientProvider>
+  );
 }
 
 export default App;
