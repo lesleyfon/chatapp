@@ -22,7 +22,7 @@ type AuthFormDataType = Pick<UserInterface,  "password" | "email" > & { "name"?:
 
 
 class HttpServer {
-	apiBasePath = 'http://localhost:3010';
+	apiBasePath = 'http://localhost:3010/api';
 	apiHeaders = new Headers({ 'Content-Type': 'application/json'});
 	INPUT_NAME = "new-chat-name";
 	async login(userCredential: AuthFormDataType) {
