@@ -109,6 +109,10 @@ export class QueryHandlers extends UserSchema {
     super();
     this.db = connectToDB();
   }
+  // Private helper methods
+  private isValidInput(...args: (string | number)[]): boolean {
+    return args.every(arg => (typeof arg === 'string' && arg.trim() !== '') || typeof arg === 'number');
+  }
 
 
   /**
@@ -516,26 +520,16 @@ export class QueryHandlers extends UserSchema {
     message?: string;
     userId?: number;
   }> {
-    
-    
-    if(userId === undefined){
+  
+    if(!this.isValidInput(chatName, userId)){
+      // TODO: ADD logging to the repo
       return {
         error: true,
-        message: 'User ID is required. Logout and login again',
+        message: 'Invalid input',
         userId
       };
     }
-    if(chatName === undefined){
-      return {
-        error: true,
-        message: 'Chat name is required',
-        userId
-      };
-    }
-
-    const chatroomExist = await this.db.select()
-      .from(chats)
-      .where(eq(chats.chat_name, chatName));
+    const chatroomExist = await this.selectChatByChatName(chatName);
 
     if(chatroomExist.length > 0){
       return {
@@ -545,12 +539,7 @@ export class QueryHandlers extends UserSchema {
       };
     }
     try{
-      const insertIntoChatResponse = await this.db
-        .insert(chats)
-        .values({ chat_name: chatName })
-        .returning({
-          id: chats.pk_chats_id,
-        });
+      const insertIntoChatResponse = await this.createNewChatRoom(chatName);
 
       const chatResponse = insertIntoChatResponse[0];
       const chatId = chatResponse.id;
