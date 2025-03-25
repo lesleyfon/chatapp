@@ -1,11 +1,11 @@
+import { TriangleAlert } from "lucide-react";
+import { ErrorResponse, SuccessResponse } from "../../../api/http-methods";
+import { SocketProvider } from "../../../context/socket.context";
+import useRoomData from "../../../hooks/useRoomData";
 import { Loader } from "../../loader";
 import { MessageInput } from "./chat-room-message-input";
 import { ChatRoomSection } from "./chat-room-section";
 import { PrivateMessageSection } from "./private-chat-section";
-import useRoomData from "../../../hooks/useRoomData";
-import { TriangleAlert } from "lucide-react";
-import { ErrorResponse, SuccessResponse } from "../../../api/http-methods";
-import { SocketProvider } from "../../../context/socket.context";
 
 function isErrorResponse(
   data: ErrorResponse | SuccessResponse,
@@ -16,9 +16,11 @@ function isErrorResponse(
 function ChatRoomLayout() {
   const { loadingState, chatData, recipientData, chatId, recipientId } =
     useRoomData();
+
   if (loadingState) {
     return <Loader />;
   }
+
   if (
     (chatData && isErrorResponse(chatData)) ||
     (recipientData && isErrorResponse(recipientData))
