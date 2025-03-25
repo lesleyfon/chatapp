@@ -53,6 +53,8 @@ class HttpServer {
     }
   }
 
+  
+
   async register(userCredential: AuthFormDataType) {
     try {
       const raw = JSON.stringify(userCredential);

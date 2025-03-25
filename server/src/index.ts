@@ -29,6 +29,10 @@ if(process.env.ENVIRONMENT === "production"){
 
 const CorsOptions = {
   origin,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'],
+  exposedHeaders: ['Authorization'],
 };
 // CONSOLE LOG PORT TO SEE WHAT VERCEL IS SETTING AS PORT.
 const port = process.env.PORT ? parseInt(process.env.PORT) : 3010;
