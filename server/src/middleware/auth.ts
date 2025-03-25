@@ -111,11 +111,10 @@ export class AuthMiddleware extends UserSchema {
     req.user = {
       name,
       email,
-      password: userObj?.password as string,
       userId: userObj?.id,
     };
     // @ts-expect-error Description: Ignoring type error because user is not recognized by TypeScript.
-    req.token = await this.createJWT({ name, email });
+    req.token = await this.createJWT({ name, email, userId: userObj?.id });
     return next();
   }
 }

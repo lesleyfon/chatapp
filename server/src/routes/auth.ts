@@ -31,7 +31,8 @@ export class AuthRouter extends AuthMiddleware {
 
   async register(req: RequestWithUser, res: Response) {
     const user = req.user;
-    const token = req.token; // TODO: WHY ARE YOU GETTING THE TOKEN
+    const token = req.token; 
+    
     res.status(StatusCodes.CREATED).json({ user, token, userId: req.user.pk_user_id });
   }
 
