@@ -13,15 +13,17 @@ const origin: string[] = [];
 
 if(process.env.ENVIRONMENT === "development"){
 
-  console.log("Running app in dev mode");
+  console.info("Running app in dev mode. Setting CORS options");
   const tempOrigin:string[] = JSON.parse(process.env.APP_ENV as string).CORS_ORIGIN;
+  console.info(`CORS options: ${JSON.stringify(tempOrigin)}`);
   origin.push(...tempOrigin);
 }
 
 if(process.env.ENVIRONMENT === "production"){
-  console.log("Running app in production mode");
+  console.info("Running app in production mode. Setting CORS options");
 
   const tempOrigin:string[] = JSON.parse(process.env.APP_ENV as string).CORS_ORIGIN;
+  console.info(`CORS options: ${JSON.stringify(tempOrigin)}`);
   origin.push(...tempOrigin);
 }
 
