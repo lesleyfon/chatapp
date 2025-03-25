@@ -11,7 +11,9 @@ export const useGetChatList = ({ socket }: { socket: Socket | null }) => {
   const navigate = useNavigate();
 
   // Setup listener for new messages
-  const handleMessageUpdate = useCallback((response: ChatListType) => {
+  const handleMessageUpdate = useCallback((response?: ChatListType) => {
+    if (!response || response?.length === 0) return;
+
     setChatList((prevChatList) => {
       const updatedChatList = prevChatList.map((chat) =>
         chat.chats?.pk_chats_id === response[0].chats?.pk_chats_id
@@ -32,13 +34,17 @@ export const useGetChatList = ({ socket }: { socket: Socket | null }) => {
     }
     // If the socket is not connected, connect it
     if (socket.connected === false) socket.connect();
-    
+
     try {
       // Fetch initial chat list
       // This socket is mean to fire only on initial render, to get the list of chatRooms for a user.
       // THOUGHT: Would it make sense to have this be an api?
 
-      socket.emit("get-chat-list", (response: ChatListType) => {
+      socket.emit("get-chat-list", (response?: ChatListType) => {
+        if (!response || response.length == 0) {
+          setChatList([]);
+          return;
+        }
         setChatList(response);
       });
 
@@ -55,7 +61,7 @@ export const useGetChatList = ({ socket }: { socket: Socket | null }) => {
     return () => {
       socket.off("get-latest-chat-room-message", handleMessageUpdate);
     };
-  }, [navigate]); // Added 'navigate' to the dependency array to ensure effect runs only when it changes
+  }, [handleMessageUpdate, navigate, socket]); // Added 'navigate' to the dependency array to ensure effect runs only when it changes
 
   // Sort the chatroom list by the last message sent
   const sortedChatroomList = useMemo(() => {

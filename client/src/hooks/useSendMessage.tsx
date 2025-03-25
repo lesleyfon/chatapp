@@ -25,7 +25,7 @@ export const useSendMessage = ({ socket }: { socket: Socket | null }) => {
       recipientId: data.recipientId,
       senderId: userId,
       message: data.message_text,
-      imageFile: data?.imageFile, // TODO: WE ARE SENDING THE IMAGE AS A BUFFER. Look again into this.?
+      imageFile: data?.imageFile,
       imageName: data?.imageName,
     });
 

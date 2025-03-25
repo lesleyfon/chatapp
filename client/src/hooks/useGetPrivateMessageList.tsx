@@ -80,7 +80,7 @@ export const useGetPrivateMessageList = ({
     return () => {
       socket.off("get-latest-private-message-sent", handleMessageUpdate);
     };
-  }, [navigate]);
+  }, [socket, userId, recipientId, navigate]);
 
   return { privateRoomList };
 };
