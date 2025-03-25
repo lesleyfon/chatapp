@@ -3,6 +3,17 @@ import { useNavigate } from "react-router";
 import { Socket } from "socket.io-client";
 import useAuthStorage from "../store/useAuthStorage";
 
+/**
+ * Manages socket authentication and connection for a Socket.IO client.
+ *
+ * This hook verifies that both an authentication token and user ID exist. If either is missing,
+ * it redirects to the root path. When a valid socket instance is provided, the hook connects
+ * the socket (if not already connected) and registers an event listener for connection errors.
+ * A connection error with a 401 code triggers a logout and redirect, whereas a 500 code is reserved
+ * for future handling of internal server errors.
+ *
+ * @param socket - A Socket.IO client instance or null.
+ */
 export function useSocketAuth({ socket }: { socket: Socket | null }) {
   const navigate = useNavigate();
 
