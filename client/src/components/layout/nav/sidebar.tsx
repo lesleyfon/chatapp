@@ -151,7 +151,7 @@ PrivateChatList.displayName = "PrivateChatList";
 const ChatRoomList = memo(({ data }: { data: ChatListType }) => {
 	if (data.length === 0) {
 		return (
-			<div className="flex flex-col items-center gap-4 p-4">
+			<div className="flex items-center gap-2 p-4">
 				<h3 className="text-muted-foreground">No channels joined yet</h3>
 				<JoinRoom />
 			</div>
