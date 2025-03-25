@@ -113,11 +113,11 @@ export class QueryHandlers extends UserSchema {
 
   /**
  * Inserts a message into the `messages` table and ensures the user is a member of the chat.
- * 
+ *
  * This function performs two operations:
  * 1. Inserts a new message into the `messages` table.
  * 2. Ensures that the user is added to the `chatMembers` table if they are not already a member.
- * 
+ *
  * @example
  * const messageResponse = await insertMessageToTable('chat123', 'user456', 'Hello World');
  * console.log(messageResponse);
@@ -198,7 +198,7 @@ export class QueryHandlers extends UserSchema {
       };
     });
 
-  
+
     const updatedChatList = await Promise.all(chatListPromises);
     const response = updatedChatList.filter(chat => chat.messages);
     response.sort((a, b) => {
@@ -244,7 +244,7 @@ export class QueryHandlers extends UserSchema {
       .orderBy(desc(messages.sent_at))
       .limit(1);
     // SORT THE MESSAGES BY SENT_AT
-    
+
 
     const response = chatList.filter(chat => chat.messages);
     response.sort((a, b) => {
@@ -359,7 +359,7 @@ export class QueryHandlers extends UserSchema {
    */
   async getPrivateRoomMessagesBySenderId({ userId, recipientId }: { userId: number, recipientId: number }): Promise<PrivateMessageType[] | SQLErrorType> {
     try {
-      
+
       // If recipientId does not exist, return an error
       const recipientExist = await this.db.select().from(user).where(eq(user.pk_user_id, recipientId));
       if (!recipientExist.length) {
@@ -401,7 +401,7 @@ export class QueryHandlers extends UserSchema {
         email: user.email,
         created_at: user.created_at,
       })
-        .from(user).where(or(eq(user.pk_user_id, userId), 
+        .from(user).where(or(eq(user.pk_user_id, userId),
           eq(user.pk_user_id, recipientId)));
 
       const usersMap = new Map([
@@ -453,9 +453,9 @@ export class QueryHandlers extends UserSchema {
 
 
   /**
- * @description Retrieves the most recent chat message sent along with the user information. 
+ * @description Retrieves the most recent chat message sent along with the user information.
     This method takes an array of message responses, selects the first one, and then queries
-    the database to get the user details of the sender of that message. It returns the message 
+    the database to get the user details of the sender of that message. It returns the message
     along with the sender's information.
  * @example
  * const recentMessage = await getMostRecentChatMessageSent(messageResponse);
@@ -506,41 +506,82 @@ export class QueryHandlers extends UserSchema {
    * @param {number} userId - The ID of the user.
    * @returns {Promise<{ id: number }>} - The ID of the newly created chat room.
    */
-  async createNewChatroomRoomNameAndByUserId(chatName: string, userId: number) {
-    const insertIntoChatResponse = await this.db
-      .insert(chats)
-      .values({ chat_name: chatName })
-      .returning({
-        id: chats.pk_chats_id,
-      });
+  async createNewChatroomRoomNameAndByUserId(chatName: string, userId: number): Promise<{
+    chats?: {
+      pk_chats_id: number;
+      chat_name: string | null;
+      createdAt: Date;
+    }[];
+    error?: boolean;
+    message?: string;
+    userId?: number;
+  }> {
+    
+    
+    if(userId === undefined){
+      return {
+        error: true,
+        message: 'User ID is required. Logout and login again',
+        userId
+      };
+    }
+    if(chatName === undefined){
+      return {
+        error: true,
+        message: 'Chat name is required',
+        userId
+      };
+    }
 
-    const chatResponse = insertIntoChatResponse[0];
-    const chatId = chatResponse.id;
+    const chatroomExist = await this.db.select()
+      .from(chats)
+      .where(eq(chats.chat_name, chatName));
+
+    if(chatroomExist.length > 0){
+      return {
+        error: true,
+        message: 'Chatroom already exists',
+        userId
+      };
+    }
+    try{
+      const insertIntoChatResponse = await this.db
+        .insert(chats)
+        .values({ chat_name: chatName })
+        .returning({
+          id: chats.pk_chats_id,
+        });
+
+      const chatResponse = insertIntoChatResponse[0];
+      const chatId = chatResponse.id;
 
 
-    await this.db.execute(sql`
-        INSERT INTO ${chatMembers} (fk_chat_id, fk_user_id)
-        SELECT ${chatId}, ${userId}
-        WHERE NOT EXISTS (
-          SELECT 1 FROM ${chatMembers} WHERE fk_chat_id = ${chatId} AND fk_user_id = ${userId}
-        );
-      `);
+      await this.db.execute(sql`
+          INSERT INTO ${chatMembers} (fk_chat_id, fk_user_id)
+          SELECT ${chatId}, ${userId}
+          WHERE NOT EXISTS (
+            SELECT 1 FROM ${chatMembers} WHERE fk_chat_id = ${chatId} AND fk_user_id = ${userId}
+          );
+        `);
 
 
-    const chatRoom = await this.db.select({
-      chats: {
+      const chatRoom = await this.db.select({
         pk_chats_id: chats.pk_chats_id,
         chat_name: chats.chat_name,
         createdAt: chats.createdAt
-      },
-    }).from(chats).where(eq(chats.pk_chats_id, chatId));
+      }).from(chats).where(eq(chats.pk_chats_id, chatId));
 
 
-    return {
-      chats: chatRoom,
-      chat_user: chatResponse,
-      messages: []
-    };
+      return {
+        chats: chatRoom,
+      };
+    } catch(err){
+      return {
+        error: true,
+        reason: err.message,
+        ...err
+      };
+    }
   }
 
   /**
@@ -560,7 +601,7 @@ export class QueryHandlers extends UserSchema {
       if (typeof err === "object" && Object.keys(err as object).length) {
         return {
           error: true,
-          reason: err.message,
+          message: err.message,
           ...err
         };
       }
@@ -714,7 +755,7 @@ export class QueryHandlers extends UserSchema {
       }
     }));
 
-    return uniqueRecipients as unknown as PrivateChatResult[]; 
+    return uniqueRecipients as unknown as PrivateChatResult[];
   }
 
   /**
