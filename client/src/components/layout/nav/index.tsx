@@ -61,9 +61,7 @@ function Desktop({ roomName }: { roomName: string }): ReactNode {
 				<div className="font-semibold">{roomName}</div>
 				<div className="text-xs text-muted-foreground">
 					<span className="inline-flex bg-green-400 rounded-full w-2 h-2"></span>
-					<span className="ml-1">
-						Online <strong>9</strong>
-					</span>
+					<span className="ml-1">Online</span>
 				</div>
 			</div>
 			<NavActions />
@@ -72,18 +70,32 @@ function Desktop({ roomName }: { roomName: string }): ReactNode {
 }
 
 function Header(): ReactNode {
-	const { chatId } = useParams();
+	const { chatId, recipientId } = useParams();
 
 	const { isPending, data, isFetching } = useQuery({
 		queryKey: [chatId], // Makes another call when chatId changes
 		queryFn: chatId ? () => api.fetchChatListsDataFromChatId(chatId) : undefined,
 	});
 
-	if ((isFetching || isPending) && chatId) {
+	const {
+		isPending: isRecipientPending,
+		data: recipientData,
+		isFetching: isRecipientFetching,
+	} = useQuery({
+		queryKey: [recipientId], // Makes another call when recipientId changes
+		queryFn: recipientId
+			? () => api.fetchPrivateMessageListsDataFromRecipientId(recipientId)
+			: undefined,
+	});
+
+	if (
+		(chatId && (isFetching || isPending)) ||
+		(recipientId && (isRecipientFetching || isRecipientPending))
+	) {
 		return <Desktop roomName="FETCHING DATA" />;
 	}
 
-	if (data?.error) {
+	if (data?.error || (recipientData && "error" in recipientData)) {
 		return (
 			<>
 				<MobileNav />
@@ -96,8 +108,16 @@ function Header(): ReactNode {
 			</>
 		);
 	}
+	// Default Nav Name
+	let userName = "Chat App";
 
-	const roomName = data?.msg?.[0]?.chats?.chat_name ?? "Chat App";
+	if (recipientData && "msg" in recipientData) {
+		userName =
+			recipientData.msg.find(
+				(item) => Number(item.chat_user.pk_user_id) === Number(recipientId)
+			)?.chat_user?.name ?? "Chat App";
+	}
+	const roomName = data?.msg?.[0]?.chats?.chat_name ?? userName;
 
 	return (
 		<header className="supports-backdrop-blur:bg-background/60 left-0 right-0 top-0 z-20 bg-background/95 backdrop-blur">
