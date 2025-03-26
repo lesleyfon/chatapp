@@ -75,13 +75,13 @@ export class UserSchema {
 			code?: StatusCodes;
 			message?: string;
 		})
-		| { code: StatusCodes; message: string }
+		| { code: StatusCodes; reason: string }
 	> {
     const userExist = await this.db.select().from(user).where(eq(user.email, email));
     
     
     if (userExist.length === 0) {
-      return { code: StatusCodes.NOT_FOUND, message: "User does not exist" };
+      return { code: StatusCodes.NOT_FOUND, reason: "User does not exist" };
     }
 
     const dbUser = {
@@ -96,7 +96,7 @@ export class UserSchema {
 
     if (!isPasswordCorrect) {
       return {
-        message: "Incorrect password",
+        reason: "Incorrect password",
         code: StatusCodes.UNAUTHORIZED,
       };
     }
@@ -130,7 +130,7 @@ export class UserSchema {
     return token;
   }
 
-  async decodeJWT(token: string | null): Promise<undefined | JWT_RETURN_USER | {message:string, code:number} > {
+  async decodeJWT(token: string | null): Promise<undefined | JWT_RETURN_USER | {reason:string, code:number} > {
 
     try {
       if (!token) {
@@ -145,7 +145,7 @@ export class UserSchema {
     }catch(err){
       if(err instanceof TokenExpiredError){
         return {
-          message: "Unauthorized",
+          reason: "Unauthorized",
           code: StatusCodes.UNAUTHORIZED,
         };
 

@@ -38,7 +38,7 @@ export function Register() {
 
     if ("code" in parseResponse) {
       return setError("root", {
-        message: parseResponse.message,
+        message: parseResponse.reason,
         type: "custom",
       });
     }

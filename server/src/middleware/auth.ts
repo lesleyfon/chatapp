@@ -24,7 +24,7 @@ export class AuthMiddleware extends UserSchema {
     const authorization = req.headers["authorization"];
     if (!authorization || !authorization.includes("Bearer")) {
       return res.status(StatusCodes.UNAUTHORIZED).json({
-        message: "Unauthorized",
+        reason: "Unauthorized",
         code: StatusCodes.UNAUTHORIZED,
       });
     }
@@ -33,7 +33,7 @@ export class AuthMiddleware extends UserSchema {
 
     if (!user) {
       return res.status(StatusCodes.UNAUTHORIZED).json({
-        message: "Unauthorized",
+        reason: "Unauthorized",
         code: StatusCodes.UNAUTHORIZED,
       });
     }
@@ -42,7 +42,7 @@ export class AuthMiddleware extends UserSchema {
 
     if (userExist === undefined) {
       return res.status(StatusCodes.UNAUTHORIZED).json({
-        message: "Unauthorized",
+        reason: "Unauthorized",
         code: StatusCodes.UNAUTHORIZED,
       });
     }
@@ -67,7 +67,7 @@ export class AuthMiddleware extends UserSchema {
     const { email, password } = req.body;
     if (!email || !password) {
       return res.status(StatusCodes.BAD_REQUEST).json({
-        message: `Bad Request email and password are required`,
+        reason: `Bad Request email and password are required`,
         code: StatusCodes.BAD_REQUEST,
       });
     }
@@ -89,13 +89,13 @@ export class AuthMiddleware extends UserSchema {
     const { email, password, name } = req.body;
     if (!email || !password || !name) {
       return res.status(StatusCodes.BAD_REQUEST).json({
-        message: `Bad Request email name, and password are required to register`,
+        reason: `Bad Request email name, and password are required to register`,
       });
     }
     const userExist = await this.db.select().from(user).where(eq(user.email, email));
     if (userExist.length > 0) {
       return res.status(StatusCodes.FORBIDDEN).json({
-        message: "User with email already exist. Try another email",
+        reason: "User with email already exist. Try another email",
         code: StatusCodes.FORBIDDEN,
       });
     }
@@ -107,7 +107,7 @@ export class AuthMiddleware extends UserSchema {
     });
     if (!userExist) {
       return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-        message: "Error occurred while creating a new user",
+        reason: "Error occurred while creating a new user",
         code: StatusCodes.INTERNAL_SERVER_ERROR,
       });
     }
