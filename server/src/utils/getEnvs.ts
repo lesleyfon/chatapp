@@ -1,16 +1,6 @@
 import * as dotenv from "dotenv";
 dotenv.config();
-
-interface ENV_VARS {
-	MONGO_CONNECTION_URL: string;
-	PORT: string;
-	JWT_SECRET: string;
-	JWT_LIFETIME: string;
-	DATABASE_HOST: string;
-	DATABASE_USERNAME: string;
-	DATABASE_PASSWORD: string;
-	DB_URL: string;
-}
+import { ENV_VARS } from "../types";
 
 export function getEnvs() {
   const {
@@ -25,7 +15,7 @@ export function getEnvs() {
   }: ENV_VARS = JSON.parse(process.env.APP_ENV as string);
 
   if(process.env.ENVIRONMENT === "development"){
-    console.log("Line 28:in the conditional if(process.env.ENVIRONMENT === 'development')");
+
     return {
       MONGO_CONNECTION_URL,
       PORT,
@@ -38,8 +28,6 @@ export function getEnvs() {
     };
   }
 
-  console.log("Line 41: process.env.ENVIRONMENT ", process.env.ENVIRONMENT);
-  console.log("Line 42: DB_URL", DB_URL);
   return {
     MONGO_CONNECTION_URL,
     PORT,

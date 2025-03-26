@@ -7,19 +7,9 @@ import { user } from "../schema";
 import { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { eq } from "drizzle-orm";
 import { StatusCodes } from "http-status-codes";
+import { UserInterface, JWT_RETURN_USER } from "../types";
 
 const { JWT_SECRET } = getEnvs();
-export interface UserInterface {
-	pk_user_id: number;
-	id?: number;
-	name: string;
-	email: string;
-	password?: string;
-	createdAt?: string;
-	updatedAt?: string;
-}
-
-export interface JWT_RETURN_USER { userId: number, name: string, email: string }
 
 export class UserSchema {
   db: NodePgDatabase<Record<string, never>>;
@@ -35,7 +25,7 @@ export class UserSchema {
     name: string;
     password: string;
     email: string;
-  }): Promise<UserInterface | undefined> {
+  }): Promise< Omit<UserInterface, "created_at"> | undefined> {
 
     try {
       const hashedPassword = await this.hashPassword({ password });
@@ -75,23 +65,23 @@ export class UserSchema {
       if (typeof err === "object" && Object.keys(err as object).length) {
         throw new Error(JSON.stringify(err as object));
       }
-      return err; 
+      return { reason: "Failed to retrieve user", code: StatusCodes.INTERNAL_SERVER_ERROR };
     }
   }
 
 
   async getAuthUser({ email, password }: { email: string; password: string }): Promise<
-		| ({ user: UserInterface; token: string } & {
+		| ({ user: Omit<UserInterface, "created_at">; token: string } & {
 			code?: StatusCodes;
 			message?: string;
 		})
-		| { code: StatusCodes; message: string }
+		| { code: StatusCodes; reason: string }
 	> {
     const userExist = await this.db.select().from(user).where(eq(user.email, email));
     
     
     if (userExist.length === 0) {
-      return { code: StatusCodes.NOT_FOUND, message: "User does not exist" };
+      return { code: StatusCodes.NOT_FOUND, reason: "User does not exist" };
     }
 
     const dbUser = {
@@ -106,7 +96,7 @@ export class UserSchema {
 
     if (!isPasswordCorrect) {
       return {
-        message: "Incorrect password",
+        reason: "Incorrect password",
         code: StatusCodes.UNAUTHORIZED,
       };
     }
@@ -140,7 +130,7 @@ export class UserSchema {
     return token;
   }
 
-  async decodeJWT(token: string | null): Promise<undefined | JWT_RETURN_USER | {message:string, code:number} > {
+  async decodeJWT(token: string | null): Promise<undefined | JWT_RETURN_USER | {reason:string, code:number} > {
 
     try {
       if (!token) {
@@ -155,7 +145,7 @@ export class UserSchema {
     }catch(err){
       if(err instanceof TokenExpiredError){
         return {
-          message: "Unauthorized",
+          reason: "Unauthorized",
           code: StatusCodes.UNAUTHORIZED,
         };
 

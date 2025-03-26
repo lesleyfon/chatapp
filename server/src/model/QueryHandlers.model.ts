@@ -3,104 +3,7 @@ import { connectToDB } from "../db";
 import { chatMembers, messages, chats, user, privateChats, privateMessages } from "../schema";
 import { UserSchema } from "./Auth.model";
 import { sql, desc, eq, asc, and, or, inArray, ne, } from "drizzle-orm";
-
-export type SQLErrorType = {
-  error: boolean,
-  reason: string
-}
-
-export interface UserBase {
-  pk_user_id: number;
-  name: string | null;
-  email: string | null;
-  created_at: Date;
-  updated_at?: Date;
-}
-
-export interface MessageBase {
-  id: number;
-  fk_user_id: number;
-  sent_at: Date;
-  message_text: string | null;
-}
-
-export interface ChatBase {
-  pk_chats_id: number;
-  chat_name: string | null;
-  createdAt: Date;
-}
-
-export interface PrivateChatBase {
-  pk_private_chat_id: number;
-  sender_id: number;
-  recipient_id: number;
-  created_at: Date;
-}
-
-export interface PrivateMessageBase {
-  id: number;
-  fk_private_chat_id: number;
-  fk_user_id: number;
-  message_text: string | null;
-  sent_at: Date;
-  image_file: Buffer | string | null;
-  image_name: string | null;
-}
-
-
-export interface PrivateMessageType {
-  private_chat: PrivateChatBase | null;
-  private_messages: PrivateMessageBase | null;
-  chat_user: UserBase | null;
-}
-
-
-// Extended Types
-export interface PrivateMessageType {
-  private_chat: PrivateChatBase | null;
-  private_messages: PrivateMessageBase | null;
-  chat_user: UserBase | null;
-}
-export interface MessageType extends MessageBase {
-  fk_chat_id: number;
-}
-
-export interface ChatType extends ChatBase {
-  chat_members?: ChatMembersType[];
-  messages?: MessageType;
-}
-
-
-export interface ChatMembersType {
-  id: number;
-  fk_chat_id: number;
-  fk_user_id: number;
-  added_at: Date;
-}
-
-export type ChatListType = {
-  chat_members: ChatMembersType
-  chats: ChatType
-  messages?: MessageType
-}[]
-
-export interface DBUserInterface extends UserBase {
-  password: string | null;
-}
-
-
-export interface PrivateChatResult {
-  private_chat: PrivateChatBase;
-  chat_user: UserBase;
-  private_messages: PrivateMessageBase;
-  recipient?: UserBase;
-}
-
-export interface TypedMessage {
-  chats: ChatBase;
-  messages: MessageBase | null;
-  chat_user: UserBase | null;
-}
+import { ChatListType, ChatType, PrivateMessageType, PrivateChatResult, TypedMessage, MessageType, SQLErrorType } from "../types";
 
 export class QueryHandlers extends UserSchema {
   db: NodePgDatabase;
@@ -109,15 +12,19 @@ export class QueryHandlers extends UserSchema {
     super();
     this.db = connectToDB();
   }
+  // Private helper methods
+  private isValidInput(...args: (string | number)[]): boolean {
+    return args.every(arg => (typeof arg === 'string' && arg.trim() !== '') || typeof arg === 'number');
+  }
 
 
   /**
  * Inserts a message into the `messages` table and ensures the user is a member of the chat.
- * 
+ *
  * This function performs two operations:
  * 1. Inserts a new message into the `messages` table.
  * 2. Ensures that the user is added to the `chatMembers` table if they are not already a member.
- * 
+ *
  * @example
  * const messageResponse = await insertMessageToTable('chat123', 'user456', 'Hello World');
  * console.log(messageResponse);
@@ -198,7 +105,7 @@ export class QueryHandlers extends UserSchema {
       };
     });
 
-  
+
     const updatedChatList = await Promise.all(chatListPromises);
     const response = updatedChatList.filter(chat => chat.messages);
     response.sort((a, b) => {
@@ -244,7 +151,7 @@ export class QueryHandlers extends UserSchema {
       .orderBy(desc(messages.sent_at))
       .limit(1);
     // SORT THE MESSAGES BY SENT_AT
-    
+
 
     const response = chatList.filter(chat => chat.messages);
     response.sort((a, b) => {
@@ -340,11 +247,10 @@ export class QueryHandlers extends UserSchema {
       return typedMessages;
     } catch (err) {
       if (typeof err === "object" && Object.keys(err as object).length) {
-        // throw new Error(JSON.stringify(err as object));
         return {
+          ...err,
           error: true,
-          reason: err.message,
-          ...err
+          reason: err.message
         };
       }
       return err;
@@ -359,7 +265,7 @@ export class QueryHandlers extends UserSchema {
    */
   async getPrivateRoomMessagesBySenderId({ userId, recipientId }: { userId: number, recipientId: number }): Promise<PrivateMessageType[] | SQLErrorType> {
     try {
-      
+
       // If recipientId does not exist, return an error
       const recipientExist = await this.db.select().from(user).where(eq(user.pk_user_id, recipientId));
       if (!recipientExist.length) {
@@ -401,7 +307,7 @@ export class QueryHandlers extends UserSchema {
         email: user.email,
         created_at: user.created_at,
       })
-        .from(user).where(or(eq(user.pk_user_id, userId), 
+        .from(user).where(or(eq(user.pk_user_id, userId),
           eq(user.pk_user_id, recipientId)));
 
       const usersMap = new Map([
@@ -442,9 +348,9 @@ export class QueryHandlers extends UserSchema {
       if (typeof err === "object" && Object.keys(err as object).length) {
         // throw new Error(JSON.stringify(err as object));
         return {
+          ...err,
           error: true,
           reason: err.message,
-          ...err
         };
       }
       return err;
@@ -453,9 +359,9 @@ export class QueryHandlers extends UserSchema {
 
 
   /**
- * @description Retrieves the most recent chat message sent along with the user information. 
+ * @description Retrieves the most recent chat message sent along with the user information.
     This method takes an array of message responses, selects the first one, and then queries
-    the database to get the user details of the sender of that message. It returns the message 
+    the database to get the user details of the sender of that message. It returns the message
     along with the sender's information.
  * @example
  * const recentMessage = await getMostRecentChatMessageSent(messageResponse);
@@ -506,41 +412,67 @@ export class QueryHandlers extends UserSchema {
    * @param {number} userId - The ID of the user.
    * @returns {Promise<{ id: number }>} - The ID of the newly created chat room.
    */
-  async createNewChatroomRoomNameAndByUserId(chatName: string, userId: number) {
-    const insertIntoChatResponse = await this.db
-      .insert(chats)
-      .values({ chat_name: chatName })
-      .returning({
-        id: chats.pk_chats_id,
-      });
+  async createNewChatroomRoomNameAndByUserId(chatName: string, userId: number): Promise<{
+    chats?: {
+      pk_chats_id: number;
+      chat_name: string | null;
+      createdAt: Date;
+    }[];
+    error?: boolean;
+    reason?: string;
+    userId?: number;
+  }> {
+  
+    if(!this.isValidInput(chatName, userId)){
+      // TODO: ADD logging to the repo
+      return {
+        error: true,
+        reason: 'Invalid input',
+        userId
+      };
+    }
+    const chatroomExist = await this.selectChatByChatName(chatName);
 
-    const chatResponse = insertIntoChatResponse[0];
-    const chatId = chatResponse.id;
+    if(chatroomExist.length > 0){
+      return {
+        error: true,
+        reason: 'Chatroom already exists',
+        userId
+      };
+    }
+    try{
+      const insertIntoChatResponse = await this.createNewChatRoom(chatName);
+
+      const chatResponse = insertIntoChatResponse[0];
+      const chatId = chatResponse.id;
 
 
-    await this.db.execute(sql`
-        INSERT INTO ${chatMembers} (fk_chat_id, fk_user_id)
-        SELECT ${chatId}, ${userId}
-        WHERE NOT EXISTS (
-          SELECT 1 FROM ${chatMembers} WHERE fk_chat_id = ${chatId} AND fk_user_id = ${userId}
-        );
-      `);
+      await this.db.execute(sql`
+          INSERT INTO ${chatMembers} (fk_chat_id, fk_user_id)
+          SELECT ${chatId}, ${userId}
+          WHERE NOT EXISTS (
+            SELECT 1 FROM ${chatMembers} WHERE fk_chat_id = ${chatId} AND fk_user_id = ${userId}
+          );
+        `);
 
 
-    const chatRoom = await this.db.select({
-      chats: {
+      const chatRoom = await this.db.select({
         pk_chats_id: chats.pk_chats_id,
         chat_name: chats.chat_name,
         createdAt: chats.createdAt
-      },
-    }).from(chats).where(eq(chats.pk_chats_id, chatId));
+      }).from(chats).where(eq(chats.pk_chats_id, chatId));
 
 
-    return {
-      chats: chatRoom,
-      chat_user: chatResponse,
-      messages: []
-    };
+      return {
+        chats: chatRoom,
+      };
+    } catch(err){
+      return {
+        ...err,
+        error: true,
+        reason: err.message,
+      };
+    }
   }
 
   /**
@@ -559,9 +491,9 @@ export class QueryHandlers extends UserSchema {
     } catch (err) {
       if (typeof err === "object" && Object.keys(err as object).length) {
         return {
+          ...err,
           error: true,
           reason: err.message,
-          ...err
         };
       }
       return err;
@@ -585,9 +517,9 @@ export class QueryHandlers extends UserSchema {
     } catch (err) {
       if (typeof err === "object" && Object.keys(err as object).length) {
         return {
+          ...err,
           error: true,
           reason: err.message,
-          ...err
         };
       }
       return err;
@@ -714,7 +646,7 @@ export class QueryHandlers extends UserSchema {
       }
     }));
 
-    return uniqueRecipients as unknown as PrivateChatResult[]; 
+    return uniqueRecipients as unknown as PrivateChatResult[];
   }
 
   /**

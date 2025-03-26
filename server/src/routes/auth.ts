@@ -1,12 +1,9 @@
 import { Request, Response, Router } from "express";
-import { UserInterface, UserSchema } from "../model/Auth.model";
+import { UserSchema } from "../model/Auth.model";
+import { type RequestWithUser } from "../types";
 import { StatusCodes } from "http-status-codes";
 import AuthMiddleware from "../middleware/auth";
 
-export type RequestWithUser = Request & {
-	user: UserInterface;
-	token: string;
-};
 
 export class AuthRouter extends AuthMiddleware {
   router = Router();
@@ -31,7 +28,8 @@ export class AuthRouter extends AuthMiddleware {
 
   async register(req: RequestWithUser, res: Response) {
     const user = req.user;
-    const token = req.token; // TODO: WHY ARE YOU GETTING THE TOKEN
+    const token = req.token; 
+    
     res.status(StatusCodes.CREATED).json({ user, token, userId: req.user.pk_user_id });
   }
 

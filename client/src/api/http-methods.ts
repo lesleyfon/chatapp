@@ -53,8 +53,6 @@ class HttpServer {
     }
   }
 
-  
-
   async register(userCredential: AuthFormDataType) {
     try {
       const raw = JSON.stringify(userCredential);
@@ -148,15 +146,24 @@ class HttpServer {
   createNewRoomMutationFn = async (data: { [key: string]: string }) => {
     const bearer = getBearer();
     if (!bearer) {
-      throw new Error("No authorization token found");
+      throw new Error("No authorization token found. Logout and login again.");
     }
-    return fetch(`${this.apiBasePath}/chats/chat/new-chatroom`, {
-      method: "POST",
-      headers: this.apiHeaders,
-      body: JSON.stringify({
-        chat_name: data?.[this.INPUT_NAME],
-      }),
-    });
+    const response = await fetch(
+      `${this.apiBasePath}/chats/chat/new-chatroom`,
+      {
+        method: "POST",
+        headers: this.apiHeaders,
+        body: JSON.stringify({
+          chat_name: data?.[this.INPUT_NAME],
+        }),
+      },
+    );
+
+    if (!response.ok) {
+      const errorResponse = await response.json();
+      throw new Error(JSON.stringify(errorResponse));
+    }
+    return response;
   };
 }
 

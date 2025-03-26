@@ -89,6 +89,13 @@ export type RoomMessagesResponse = {
 	chat_user: ChatUserType
 };
 
+export type ChatResponse = {
+	chats?: ChatRoomType[];
+	message?: string;
+	error?: boolean;
+	userId?: number;
+}
+
 export type PrivateChatResultType = {
   private_chat: PrivateChatType;
   chat_user: ChatUserType;
