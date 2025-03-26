@@ -1,6 +1,8 @@
 import * as dotenv from "dotenv";
-dotenv.config();
+
 import { ENV_VARS } from "../types";
+
+dotenv.config();
 
 export function getEnvs() {
   const {
@@ -14,8 +16,7 @@ export function getEnvs() {
     DB_URL,
   }: ENV_VARS = JSON.parse(process.env.APP_ENV as string);
 
-  if(process.env.ENVIRONMENT === "development"){
-
+  if (process.env.ENVIRONMENT === "development") {
     return {
       MONGO_CONNECTION_URL,
       PORT,
@@ -36,7 +37,6 @@ export function getEnvs() {
     DATABASE_HOST,
     DATABASE_USERNAME,
     DATABASE_PASSWORD,
-    DB_URL
+    DB_URL,
   };
 }
-

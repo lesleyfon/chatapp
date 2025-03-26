@@ -1,13 +1,11 @@
-
-import { Router, Response, Request } from "express";
+import { Request, Response, Router } from "express";
 import { StatusCodes } from "http-status-codes";
 
 import AuthMiddleware from "../middleware/auth";
 import QueryHandlers from "../model/QueryHandlers.model";
 import { type RequestWithUser } from "../types";
 
-export type ClassType = new (...args: unknown[]) => object
-
+export type ClassType = new (...args: unknown[]) => object;
 
 export const AuthMiddlewareMixin = (Base: ClassType) =>
   class extends Base {
@@ -27,10 +25,9 @@ export const QueryHandlersMixin = (Base: ClassType) =>
       super(...args);
       this.queryHandlers = new QueryHandlers();
     }
-
   };
 
-class BaseClass { }
+class BaseClass {}
 
 export class Chat extends AuthMiddlewareMixin(QueryHandlersMixin(BaseClass)) {
   router = Router();
@@ -38,79 +35,91 @@ export class Chat extends AuthMiddlewareMixin(QueryHandlersMixin(BaseClass)) {
   constructor() {
     super();
 
-
     // Method Binding
     this.getChatMessagesById = this.getChatMessagesById.bind(this);
     this.getPrivateMessagesById = this.getPrivateMessagesById.bind(this);
     this.getAllChatRooms = this.getAllChatRooms.bind(this);
     this.createChatRoom = this.createChatRoom.bind(this);
-    
 
     // Middlewares
-    this.router.get('/', this.baseRoute);
-    this.router.get('/:chatId',
+    this.router.get("/", this.baseRoute);
+    this.router.get(
+      "/:chatId",
       // @ts-expect-error desc
       this.authMiddleware.authenticateRequests,
-      this.getChatMessagesById);
-    this.router.get('/private-message/:recipientId',
+      this.getChatMessagesById,
+    );
+    this.router.get(
+      "/private-message/:recipientId",
       // @ts-expect-error desc
       this.authMiddleware.authenticateRequests,
-      this.getPrivateMessagesById);
-    this.router.get('/all/chat-rooms',
+      this.getPrivateMessagesById,
+    );
+    this.router.get(
+      "/all/chat-rooms",
       // @ts-expect-error desc
       this.authMiddleware.authenticateRequests,
-      this.getAllChatRooms);
+      this.getAllChatRooms,
+    );
     // Get all private chat rooms
-    this.router.get('/all/private-chat-rooms',
+    this.router.get(
+      "/all/private-chat-rooms",
       // @ts-expect-error desc
       this.authMiddleware.authenticateRequests,
-      this.getAllPrivateChatRooms);
-    this.router.post('/chat/new-chatroom',
+      this.getAllPrivateChatRooms,
+    );
+    this.router.post(
+      "/chat/new-chatroom",
       // @ts-expect-error desc
       this.authMiddleware.authenticateRequests,
-      this.createChatRoom);
-
+      this.createChatRoom,
+    );
   }
 
   async getChatMessagesById(req: RequestWithUser, res: Response) {
-
     const { chatId } = req.params;
     if (!chatId) {
       res.status(StatusCodes.BAD_REQUEST).json({
-        messages: `Bad Request: chatId is required chatId = ${chatId}`
+        messages: `Bad Request: chatId is required chatId = ${chatId}`,
       });
     }
 
     const userId = req.user.pk_user_id;
-    const chatMessages = await this.queryHandlers.selectChatRoomMessagesByUserId(userId, parseInt(chatId));
-    
-    if ('error' in chatMessages) {
+    const chatMessages =
+      await this.queryHandlers.selectChatRoomMessagesByUserId(
+        userId,
+        parseInt(chatId),
+      );
+
+    if ("error" in chatMessages) {
       return res.status(StatusCodes.BAD_REQUEST).json(chatMessages);
     }
     return res.status(StatusCodes.OK).json({ msg: chatMessages });
   }
   async getPrivateMessagesById(req: RequestWithUser, res: Response) {
-
     const { recipientId } = req.params;
     if (!recipientId) {
       res.status(StatusCodes.BAD_REQUEST).json({
-        messages: `Bad Request: recipientId is required: recipientId = ${recipientId}`
+        messages: `Bad Request: recipientId is required: recipientId = ${recipientId}`,
       });
     }
 
     const userId = req.user.pk_user_id;
-    const privateMessages = await this.queryHandlers.getPrivateRoomMessagesBySenderId({userId, recipientId: parseInt(recipientId)});
+    const privateMessages =
+      await this.queryHandlers.getPrivateRoomMessagesBySenderId({
+        userId,
+        recipientId: parseInt(recipientId),
+      });
 
-    if ('error' in privateMessages) {
+    if ("error" in privateMessages) {
       return res.status(StatusCodes.BAD_REQUEST).json(privateMessages);
     }
     return res.status(StatusCodes.OK).json({ msg: privateMessages });
   }
 
   async getAllChatRooms(_req: Request, res: Response) {
-
     const chatRooms = await this.queryHandlers.getAllChatRooms();
-    if ('error' in chatRooms) {
+    if ("error" in chatRooms) {
       return res.status(StatusCodes.BAD_REQUEST).json(chatRooms);
     }
     return res.status(StatusCodes.OK).json(chatRooms);
@@ -119,9 +128,11 @@ export class Chat extends AuthMiddlewareMixin(QueryHandlersMixin(BaseClass)) {
   getAllPrivateChatRooms = async (req: RequestWithUser, res: Response) => {
     try {
       const userId = req.user?.pk_user_id;
-      const privateChatRooms = await this.queryHandlers.getAllPrivateChatRooms({userId});
-  
-      if ('error' in privateChatRooms) {
+      const privateChatRooms = await this.queryHandlers.getAllPrivateChatRooms({
+        userId,
+      });
+
+      if ("error" in privateChatRooms) {
         return res.status(StatusCodes.BAD_REQUEST).json(privateChatRooms);
       }
 
@@ -129,39 +140,40 @@ export class Chat extends AuthMiddlewareMixin(QueryHandlersMixin(BaseClass)) {
     } catch (error) {
       if (error instanceof Error) {
         return res.status(StatusCodes.BAD_REQUEST).json({
-          msg: error.message
+          msg: error.message,
         });
       }
       return res.status(StatusCodes.BAD_REQUEST).json({
-        msg: "An unknown error occurred"
+        msg: "An unknown error occurred",
       });
     }
   };
 
   async createChatRoom(req: RequestWithUser, res: Response) {
-
     const { chat_name } = req.body;
     const userId = req.user.pk_user_id;
 
-    if(chat_name?.length === 0){
+    if (chat_name?.length === 0) {
       return res.status(StatusCodes.BAD_REQUEST).json({
-        msg: "Room name cant be a falsy value"
+        msg: "Room name cant be a falsy value",
       });
     }
-    const chatRooms = await this.queryHandlers.createNewChatroomRoomNameAndByUserId(chat_name, userId);
+    const chatRooms =
+      await this.queryHandlers.createNewChatroomRoomNameAndByUserId(
+        chat_name,
+        userId,
+      );
 
-    if ('error' in chatRooms) {
+    if ("error" in chatRooms) {
       return res.status(StatusCodes.BAD_REQUEST).json(chatRooms);
     }
 
     return res.status(StatusCodes.OK).json(chatRooms);
   }
 
-
   baseRoute(_req: Request, res: Response) {
-    res.json({ 'Base': "Routes" });
+    res.json({ Base: "Routes" });
   }
 }
-
 
 export const chatRouter = new Chat().router;

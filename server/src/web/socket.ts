@@ -1,10 +1,9 @@
 import { Buffer } from "buffer";
-import { Socket, Server as SocketIOServer } from "socket.io";
-import { QueryHandlers, } from "../model/QueryHandlers.model";
-import { type ChatListType, type CbType, type JWT_RETURN_USER } from "../types";
 import { StatusCodes } from "http-status-codes";
+import { Socket, Server as SocketIOServer } from "socket.io";
 import { ExtendedError } from "socket.io/dist/namespace";
-
+import { QueryHandlers } from "../model/QueryHandlers.model";
+import { type CbType, type ChatListType, type JWT_RETURN_USER } from "../types";
 
 export class AppSocketBase extends QueryHandlers {
   io: SocketIOServer;
@@ -14,20 +13,30 @@ export class AppSocketBase extends QueryHandlers {
     this.io.use(this.socketAuthMiddleware);
   }
 
-  socketAuthMiddleware = async(socket:Socket, next:(err?: ExtendedError) => void) =>{
+  socketAuthMiddleware = async (
+    socket: Socket,
+    next: (err?: ExtendedError) => void,
+  ) => {
     const token = socket.handshake?.auth?.token;
     const decodedToken = await this.decodeJWT(token);
-    
-    if(decodedToken === undefined) {
-      next(new Error(JSON.stringify({
-        "message": "Unknown error. Please try again",
-        "code": StatusCodes.INTERNAL_SERVER_ERROR,
-      })));
+
+    if (decodedToken === undefined) {
+      next(
+        new Error(
+          JSON.stringify({
+            message: "Unknown error. Please try again",
+            code: StatusCodes.INTERNAL_SERVER_ERROR,
+          }),
+        ),
+      );
       return;
     }
 
-    if ('code' in decodedToken && decodedToken.code === StatusCodes.UNAUTHORIZED){
-      next(new Error(JSON.stringify (decodedToken))); 
+    if (
+      "code" in decodedToken &&
+      decodedToken.code === StatusCodes.UNAUTHORIZED
+    ) {
+      next(new Error(JSON.stringify(decodedToken)));
       return;
     }
     next();
@@ -35,21 +44,20 @@ export class AppSocketBase extends QueryHandlers {
 
   async getAUserChatList(socket: Socket) {
     const token = socket.handshake.auth?.token;
-    const user = await this.decodeJWT(token) as JWT_RETURN_USER;
+    const user = (await this.decodeJWT(token)) as JWT_RETURN_USER;
 
     if (!user) return;
     const userId = user.userId;
     socket.on("get-chat-list", async (cb: CbType) => {
-
-      const chatList: ChatListType[] = await this.selectUserChatRoomsWithLastSetMessages(userId);
+      const chatList: ChatListType[] =
+        await this.selectUserChatRoomsWithLastSetMessages(userId);
 
       cb(chatList);
     });
-      
   }
   async getPrivateMessageList(socket: Socket) {
     const token = socket.handshake.auth?.token;
-    const user = await this.decodeJWT(token) as JWT_RETURN_USER;
+    const user = (await this.decodeJWT(token)) as JWT_RETURN_USER;
     if (!user) return;
     const userId = user.userId;
     socket.on("get-private-message-list", async (cb) => {
@@ -68,12 +76,15 @@ export class AppSocketBase extends QueryHandlers {
    * a string that represents the error message to be included in the response object. This message will
    * be sent back to the client when emitting the "add-message-response" event.
    */
-  private emitAddMessageErrorResponse(chatName: string | null, message: string) {
+  private emitAddMessageErrorResponse(
+    chatName: string | null,
+    message: string,
+  ) {
     const response = {
       data: null,
       error: true,
       message: message,
-      chats: { chatName }
+      chats: { chatName },
     };
     if (chatName) {
       this.io.to(chatName).emit("add-message-response", response);
@@ -82,134 +93,184 @@ export class AppSocketBase extends QueryHandlers {
     }
   }
 
-
   addMessageToRoom(socket: Socket) {
-    socket.on("add-message", async (data: { chatName: string; message: string, senderId: string }) => {
+    socket.on(
+      "add-message",
+      async (data: { chatName: string; message: string; senderId: string }) => {
+        const { chatName, message } = data;
+        const token = socket.handshake.auth?.token;
+        const user = (await this.decodeJWT(token)) as JWT_RETURN_USER;
 
-      const { chatName, message } = data;
-      const token = socket.handshake.auth?.token;
-      const user = await this.decodeJWT(token) as JWT_RETURN_USER;
+        this.io.socketsJoin(chatName);
 
-      this.io.socketsJoin(chatName);
+        if (!chatName) {
+          return this.emitAddMessageErrorResponse(
+            null,
+            "Chat name cannot be empty",
+          );
+        }
+        if (!message) {
+          return this.emitAddMessageErrorResponse(
+            chatName,
+            "Message cannot be empty",
+          );
+        }
+        if (!user) {
+          return this.emitAddMessageErrorResponse(chatName, "User not found");
+        }
 
-      if (!chatName) {
-        return this.emitAddMessageErrorResponse(null, "Chat name cannot be empty");
-      }
-      if (!message) {
-        return this.emitAddMessageErrorResponse(chatName, "Message cannot be empty");
+        const userId = user.userId;
 
-      }
-      if (!user) {
-        return this.emitAddMessageErrorResponse(chatName, "User not found");
-      }
-
-      const userId = user.userId;
-
-      const chatExist = await this.selectChatByChatName(chatName);
-
-      if (chatExist.length === 0) {
-        // Create a new room
-        const insertIntoChatResponse = await this.createNewChatRoom(chatName);
-
-        const chatId = insertIntoChatResponse[0].id;
-
-        // Add message to the message table - refactor this
-        const messageResponse = await this.insertMessageToTable(chatId, userId, message);
         const chatExist = await this.selectChatByChatName(chatName);
 
-        const addMessageResponse = messageResponse.map(message => ({
+        if (chatExist.length === 0) {
+          // Create a new room
+          const insertIntoChatResponse = await this.createNewChatRoom(chatName);
+
+          const chatId = insertIntoChatResponse[0].id;
+
+          // Add message to the message table - refactor this
+          const messageResponse = await this.insertMessageToTable(
+            chatId,
+            userId,
+            message,
+          );
+          const chatExist = await this.selectChatByChatName(chatName);
+
+          const addMessageResponse = messageResponse.map((message) => ({
+            ...message,
+            chats: chatExist[0],
+          }));
+          const chatList = await this.getLatestChatRoomMessageSent(
+            userId,
+            chatId,
+          );
+
+          this.io.to(chatName).emit("get-latest-chat-room-message", chatList);
+          this.io.to(chatName).emit("add-message-response", addMessageResponse);
+          return;
+        }
+
+        const chatId = chatExist[0].pk_chats_id;
+        const messageInsertResponse = await this.insertMessageToTable(
+          chatId,
+          userId,
+          message,
+        );
+        const messageResponse = await this.getMostRecentChatMessageSent(
+          messageInsertResponse,
+        );
+
+        // Emit message to other users
+        const addMessageResponse = messageResponse.map((message) => ({
           ...message,
           chats: chatExist[0],
         }));
-        const chatList = await this.getLatestChatRoomMessageSent(userId, chatId);
 
-        this.io.to(chatName).emit("get-latest-chat-room-message", chatList);
+        // Emitter
         this.io.to(chatName).emit("add-message-response", addMessageResponse);
-        return;
-      }
 
-      const chatId = chatExist[0].pk_chats_id;
-      const messageInsertResponse = await this.insertMessageToTable(chatId, userId, message);
-      const messageResponse = await this.getMostRecentChatMessageSent(messageInsertResponse);
-
-      // Emit message to other users
-      const addMessageResponse = messageResponse.map(message => ({
-        ...message,
-        chats: chatExist[0],
-      }));
-
-      
-      // Emitter
-      this.io.to(chatName).emit("add-message-response", addMessageResponse);
-
-      const chatList = await this.getLatestChatRoomMessageSent(userId, chatId);
-      this.io.to(chatName).emit("get-latest-chat-room-message", chatList);
-    });
+        const chatList = await this.getLatestChatRoomMessageSent(
+          userId,
+          chatId,
+        );
+        this.io.to(chatName).emit("get-latest-chat-room-message", chatList);
+      },
+    );
   }
 
   async addPrivateMessage(socket: Socket) {
-    socket.on('add-private-message', async ({ recipientId, senderId, message, imageFile, imageName
-    }: { recipientId: number, senderId: number, message: string, imageFile?: Buffer, imageName?: string }) => {
-       
-      // Ensure that you do not return the passwords when selecting users
-      const [sender, receiver] = (await this.getUserByUserIds({ userIdList: [senderId, recipientId] })).flat();
+    socket.on(
+      "add-private-message",
+      async ({
+        recipientId,
+        senderId,
+        message,
+        imageFile,
+        imageName,
+      }: {
+        recipientId: number;
+        senderId: number;
+        message: string;
+        imageFile?: Buffer;
+        imageName?: string;
+      }) => {
+        // Ensure that you do not return the passwords when selecting users
+        const [sender, receiver] = (
+          await this.getUserByUserIds({ userIdList: [senderId, recipientId] })
+        ).flat();
 
+        const privateChatsInsertResponse = (
+          await this.createPrivateChatEntry(sender, receiver)
+        )[0];
 
-      const privateChatsInsertResponse = (await this.createPrivateChatEntry(sender, receiver))[0];
+        const privateMessageInsertResponse = (
+          await this.createPrivateMessage(
+            {
+              ...privateChatsInsertResponse,
+              pk_private_chat_id: privateChatsInsertResponse.pk_private_chat_id,
+              sender_id: privateChatsInsertResponse.sender_id,
+              recipient_id: privateChatsInsertResponse.recipient_id,
+            },
+            senderId,
+            message,
+            imageFile,
+            imageName,
+          )
+        )[0];
 
-      const privateMessageInsertResponse = (await this.createPrivateMessage({
-        ...privateChatsInsertResponse,
-        pk_private_chat_id: privateChatsInsertResponse.pk_private_chat_id,
-        sender_id: privateChatsInsertResponse.sender_id,
-        recipient_id: privateChatsInsertResponse.recipient_id
-      }, 
-      senderId, 
-      message,
-      imageFile,
-      imageName))[0];
-
-      if(privateMessageInsertResponse?.image_file){
-        // Convert Buffer to base64 string only if image_file exists and is a Buffer
-        if (Buffer.isBuffer(privateMessageInsertResponse.image_file)) {
-          const base64Image = privateMessageInsertResponse.image_file.toString('base64');
-          // Cast to any to avoid type error when assigning string to Buffer type
-          (privateMessageInsertResponse as unknown as { image_file: string }).image_file = base64Image;
+        if (privateMessageInsertResponse?.image_file) {
+          // Convert Buffer to base64 string only if image_file exists and is a Buffer
+          if (Buffer.isBuffer(privateMessageInsertResponse.image_file)) {
+            const base64Image =
+              privateMessageInsertResponse.image_file.toString("base64");
+            // Cast to any to avoid type error when assigning string to Buffer type
+            (
+              privateMessageInsertResponse as unknown as { image_file: string }
+            ).image_file = base64Image;
+          }
         }
-      }
 
-      const addPrivateMessageSocketResponse = {
-        private_chat: {
-          pk_private_chat_id: privateChatsInsertResponse.pk_private_chat_id,
-          sender_id: privateChatsInsertResponse.sender_id,
-          recipient_id: privateChatsInsertResponse.recipient_id,
-          created_at: privateChatsInsertResponse.created_at,
-        },
-        chat_user: {
-          pk_user_id: sender.pk_user_id,
-          name: sender.name,
-          email: sender.email,
-          created_at: sender.created_at,
-        },
-        private_messages: {
-          id: privateMessageInsertResponse.id,
-          fk_private_chat_id: privateMessageInsertResponse.fk_private_chat_id,
-          fk_user_id: privateMessageInsertResponse.fk_user_id,
-          message_text: privateMessageInsertResponse.message_text,
-          sent_at: privateMessageInsertResponse.sent_at,
-          image_file: privateMessageInsertResponse.image_file,
-          image_name: privateMessageInsertResponse.image_name,
-        },
-        recipient: {
-          pk_user_id: receiver.pk_user_id,
-          name: receiver.name,
-          email: receiver.email,
-        }
-      };
-      
-      this.io.emit("add-private-message-response", addPrivateMessageSocketResponse);
-      // Emits an event to display the most recent message sent
-      this.io.emit("get-latest-private-message-sent", addPrivateMessageSocketResponse);
-    });
+        const addPrivateMessageSocketResponse = {
+          private_chat: {
+            pk_private_chat_id: privateChatsInsertResponse.pk_private_chat_id,
+            sender_id: privateChatsInsertResponse.sender_id,
+            recipient_id: privateChatsInsertResponse.recipient_id,
+            created_at: privateChatsInsertResponse.created_at,
+          },
+          chat_user: {
+            pk_user_id: sender.pk_user_id,
+            name: sender.name,
+            email: sender.email,
+            created_at: sender.created_at,
+          },
+          private_messages: {
+            id: privateMessageInsertResponse.id,
+            fk_private_chat_id: privateMessageInsertResponse.fk_private_chat_id,
+            fk_user_id: privateMessageInsertResponse.fk_user_id,
+            message_text: privateMessageInsertResponse.message_text,
+            sent_at: privateMessageInsertResponse.sent_at,
+            image_file: privateMessageInsertResponse.image_file,
+            image_name: privateMessageInsertResponse.image_name,
+          },
+          recipient: {
+            pk_user_id: receiver.pk_user_id,
+            name: receiver.name,
+            email: receiver.email,
+          },
+        };
+
+        this.io.emit(
+          "add-private-message-response",
+          addPrivateMessageSocketResponse,
+        );
+        // Emits an event to display the most recent message sent
+        this.io.emit(
+          "get-latest-private-message-sent",
+          addPrivateMessageSocketResponse,
+        );
+      },
+    );
   }
   socketEvents() {
     this.io.on("connection", (socket) => {

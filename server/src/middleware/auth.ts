@@ -11,7 +11,8 @@ export class AuthMiddleware extends UserSchema {
   constructor() {
     super();
     this.authenticateRequests = this.authenticateRequests.bind(this);
-    this.authenticateUserLoginMiddleware = this.authenticateUserLoginMiddleware.bind(this);
+    this.authenticateUserLoginMiddleware =
+      this.authenticateUserLoginMiddleware.bind(this);
   }
   /**
    * @description Authenticates the request by checking the authorization header.
@@ -20,7 +21,11 @@ export class AuthMiddleware extends UserSchema {
    * @param {NextFunction} next - The next function.
    * @returns {Promise<void>} - A promise that resolves to void.
    */
-  async authenticateRequests(req: RequestWithUser, res: Response, next: NextFunction) {
+  async authenticateRequests(
+    req: RequestWithUser,
+    res: Response,
+    next: NextFunction,
+  ) {
     const authorization = req.headers["authorization"];
     if (!authorization || !authorization.includes("Bearer")) {
       return res.status(StatusCodes.UNAUTHORIZED).json({
@@ -46,14 +51,15 @@ export class AuthMiddleware extends UserSchema {
         code: StatusCodes.UNAUTHORIZED,
       });
     }
+
     req.user = {
       pk_user_id: user.userId,
       email: user.email,
       name: user.name,
     };
-    
+
     next();
-    return; 
+    return;
   }
 
   /**
@@ -61,9 +67,13 @@ export class AuthMiddleware extends UserSchema {
    * @param {Request} req - The request object.
    * @param {Response} res - The response object.
    * @param {NextFunction} next - The next function.
-   * @returns {Promise<void>} - A promise that resolves to void.
+   * @returns {Promise<Response<any, Record<string, any>> | void>} - A promise that resolves to void.
    */
-  async authenticateUserLoginMiddleware(req: Request, res: Response, next: NextFunction) {
+  async authenticateUserLoginMiddleware(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<Response<any, Record<string, any>>  | void> {
     const { email, password } = req.body;
     if (!email || !password) {
       return res.status(StatusCodes.BAD_REQUEST).json({
@@ -85,14 +95,28 @@ export class AuthMiddleware extends UserSchema {
     return next();
   }
 
-  async authenticateUserRegisterMiddleware(req: Request, res: Response, next: NextFunction) {
+  /**
+   * @description Authenticates the user register by checking the email, password, and name.
+   * @param {Request} req - The request object.
+   * @param {Response} res - The response object.
+   * @param {NextFunction} next - The next function.
+   * @returns {Promise<Response<any, Record<string, any>> | void>} - A promise that resolves to void.
+   */
+  async authenticateUserRegisterMiddleware(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<Response<any, Record<string, any>> | void> {
     const { email, password, name } = req.body;
     if (!email || !password || !name) {
       return res.status(StatusCodes.BAD_REQUEST).json({
         reason: `Bad Request email name, and password are required to register`,
       });
     }
-    const userExist = await this.db.select().from(user).where(eq(user.email, email));
+    const userExist = await this.db
+      .select()
+      .from(user)
+      .where(eq(user.email, email));
     if (userExist.length > 0) {
       return res.status(StatusCodes.FORBIDDEN).json({
         reason: "User with email already exist. Try another email",
@@ -105,6 +129,7 @@ export class AuthMiddleware extends UserSchema {
       password,
       name,
     });
+    
     if (!userExist) {
       return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
         reason: "Error occurred while creating a new user",

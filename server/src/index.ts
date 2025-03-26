@@ -1,42 +1,43 @@
-/* eslint-disable no-console */
-import express, { NextFunction, Response, Request } from "express";
-import { createServer, Server as HTTPServer } from "http";
-import { Server as SocketIOServer } from "socket.io";
 import cors, { CorsOptions } from "cors";
-import { AppSocketBase } from "./web/socket";
+import dotenv from "dotenv";
+import express, { NextFunction, Request, Response } from "express";
+import { createServer, Server as HTTPServer } from "http";
+import multer from "multer";
+import { Server as SocketIOServer } from "socket.io";
 import { appRouter } from "./routes/index";
-import multer from 'multer';
-import dotenv from 'dotenv';
+import { AppSocketBase } from "./web/socket";
 
 dotenv.config();
+
 const origin: string[] = [];
 
-if(process.env.ENVIRONMENT === "development"){
-
+if (process.env.ENVIRONMENT === "development") {
   console.info("Running app in dev mode. Setting CORS options");
-  const tempOrigin:string[] = JSON.parse(process.env.APP_ENV as string).CORS_ORIGIN;
-  console.info(`CORS options: ${JSON.stringify(tempOrigin)}`);
-  origin.push(...tempOrigin);
+  origin.push(...(JSON.parse(process.env.APP_ENV as string).CORS_ORIGIN ?? []));
 }
 
-if(process.env.ENVIRONMENT === "production"){
+if (process.env.ENVIRONMENT === "production") {
   console.info("Running app in production mode. Setting CORS options");
-
-  const tempOrigin:string[] = JSON.parse(process.env.APP_ENV as string).CORS_ORIGIN;
-  console.info(`CORS options: ${JSON.stringify(tempOrigin)}`);
-  origin.push(...tempOrigin);
+  origin.push(...(JSON.parse(process.env.APP_ENV as string).CORS_ORIGIN ?? []));
 }
 
 const CorsOptions = {
   origin,
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'],
-  exposedHeaders: ['Authorization'],
+  exposedHeaders: ["Authorization"],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: [
+    "Origin",
+    "X-Requested-With",
+    "Content-Type",
+    "Accept",
+    "Authorization",
+  ],
 };
 // CONSOLE LOG PORT TO SEE WHAT VERCEL IS SETTING AS PORT.
 const port = process.env.PORT ? parseInt(process.env.PORT) : 3010;
-const url = process.env.ENVIRONMENT === "development" ? "http://localhost:3010": "" ;
+const url =
+  process.env.ENVIRONMENT === "development" ? "http://localhost:3010" : "";
 
 console.log("URL to listen too: ", url);
 
@@ -46,37 +47,45 @@ class SocketServer {
   app: express.Application;
   httpServer: HTTPServer;
   appRoutes = appRouter;
+
   constructor(port: number, corsOptions: CorsOptions) {
     const upload = multer({
-      dest: 'uploads/',// TODO: DO WE NEED TO CHANGE THIS?
+      dest: "uploads/", // TODO: DO WE NEED TO CHANGE THIS?
       limits: { fileSize: 1024 * 1024 },
     });
+
     this.port = port;
     this.corsOptions = corsOptions;
     this.app = express();
     this.app.use(express.json());
-    this.app.use(upload.single('file'));
+    this.app.use(upload.single("file"));
 
+    // Middlewares
     this.app.use(cors());
-    this.app.use((req: Request, res: Response, next: NextFunction): void | Response => {
+    this.app.use(
+      (req: Request, res: Response, next: NextFunction): void | Response => {
+        res.header("Access-Control-Allow-Origin", origin?.[0] ?? "");
+        res.header("Access-Control-Allow-Credentials", "true");
+        res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+        res.header(
+          "Access-Control-Allow-Headers",
+          "Origin, Content-Type, Accept",
+        );
 
-      res.header("Access-Control-Allow-Origin", origin?.[0] ?? '');
-      res.header("Access-Control-Allow-Credentials", "true");
-      res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-      res.header("Access-Control-Allow-Headers", "Origin, Content-Type, Accept");
+        // Handle preflight requests
+        if (req.method === "OPTIONS") {
+          return res.sendStatus(200);
+        }
 
-      // Handle preflight requests
-      if (req.method === "OPTIONS") {
-        return res.sendStatus(200);
-      }
-
-      next();
-    });
+        next();
+      },
+    );
     this.app.use(appRouter);
-    this.app.use((req:Request, res: Response) => {
+    this.app.use((req: Request, res: Response) => {
       const requestPath = req.path;
       res.send("Error, UNEXPECTED ROUTE: " + requestPath);
     });
+
     this.httpServer = createServer(this.app);
     this.setupAppSocketConnection(new SocketIOServer(this.httpServer));
   }
