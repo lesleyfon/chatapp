@@ -46,3 +46,14 @@ export const REGISTRATION_DEFAULT_VALUES = {
   email: "",
   password: "",
 };
+
+
+/**
+ * @description - The input name for the new chat room.
+ */
+export const INPUT_NAME = "new-chat-name";
+
+/**
+ * @description - The error field names for the new chat room.
+ */
+export const ERROR_FIELD_NAMES = [INPUT_NAME, "new-chat-name-error", "new-chat-name-internal-error"];
