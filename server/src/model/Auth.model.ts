@@ -65,7 +65,7 @@ export class UserSchema {
       if (typeof err === "object" && Object.keys(err as object).length) {
         throw new Error(JSON.stringify(err as object));
       }
-      return err; 
+      return { reason: "Failed to retrieve user", code: StatusCodes.INTERNAL_SERVER_ERROR };
     }
   }
 
