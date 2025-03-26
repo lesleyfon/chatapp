@@ -300,21 +300,12 @@ export class QueryHandlers extends UserSchema {
    * @returns {Promise<PrivateMessageType[] | SQLErrorType>} - An array of private messages or an error object.
    */
   async getPrivateRoomMessagesBySenderId({
-    // userId,
-    // recipientId,
+    userId,
+    recipientId,
   }: {
-    // userId: number;
-    // recipientId: number;
+    userId: number;
+    recipientId: number;
   }): Promise<PrivateMessageType[] | SQLErrorType> {
-  // async getPrivateRoomMessagesBySenderId({
-  //   userId,
-  //   recipientId,
-  // }: {
-  //   userId: number;
-  //   recipientId: number;
-  // }): Promise<PrivateMessageType[] | SQLErrorType> {
-    const userId = 30;
-    const recipientId = 5;
     try {
       // If recipientId does not exist, return an error
       const recipientExist = await this.db
