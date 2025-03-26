@@ -4,18 +4,8 @@ import { UserSchema } from "../model/Auth.model";
 import { user } from "../schema";
 import { eq } from "drizzle-orm";
 import jwt from "jsonwebtoken";
-import { RequestWithUser } from "src/routes/auth";
-
-interface UserInterface {
-	id: number;
-	name: string;
-	email: string;
-	password: string;
-	createdAt?: string;
-	updatedAt?: string;
-  pk_user_id: number
-  userId: number
-}
+import { type RequestWithUser } from "../types";
+import { type UserInterface, type JWT_RETURN_USER } from "../types";
 
 export class AuthMiddleware extends UserSchema {
   constructor() {
@@ -23,6 +13,13 @@ export class AuthMiddleware extends UserSchema {
     this.authenticateRequests = this.authenticateRequests.bind(this);
     this.authenticateUserLoginMiddleware = this.authenticateUserLoginMiddleware.bind(this);
   }
+  /**
+   * @description Authenticates the request by checking the authorization header.
+   * @param {RequestWithUser} req - The request object.
+   * @param {Response} res - The response object.
+   * @param {NextFunction} next - The next function.
+   * @returns {Promise<void>} - A promise that resolves to void.
+   */
   async authenticateRequests(req: RequestWithUser, res: Response, next: NextFunction) {
     const authorization = req.headers["authorization"];
     if (!authorization || !authorization.includes("Bearer")) {
@@ -32,7 +29,7 @@ export class AuthMiddleware extends UserSchema {
       });
     }
     const token = authorization.split(" ")[1];
-    const user = jwt.decode(token) as UserInterface;
+    const user = jwt.decode(token) as JWT_RETURN_USER;
 
     if (!user) {
       return res.status(StatusCodes.UNAUTHORIZED).json({
@@ -59,6 +56,13 @@ export class AuthMiddleware extends UserSchema {
     return; 
   }
 
+  /**
+   * @description Authenticates the user login by checking the email and password.
+   * @param {Request} req - The request object.
+   * @param {Response} res - The response object.
+   * @param {NextFunction} next - The next function.
+   * @returns {Promise<void>} - A promise that resolves to void.
+   */
   async authenticateUserLoginMiddleware(req: Request, res: Response, next: NextFunction) {
     const { email, password } = req.body;
     if (!email || !password) {

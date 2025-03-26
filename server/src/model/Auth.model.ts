@@ -7,19 +7,9 @@ import { user } from "../schema";
 import { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { eq } from "drizzle-orm";
 import { StatusCodes } from "http-status-codes";
+import { UserInterface, JWT_RETURN_USER } from "../types";
 
 const { JWT_SECRET } = getEnvs();
-export interface UserInterface {
-	pk_user_id: number;
-	id?: number;
-	name: string;
-	email: string;
-	password?: string;
-	createdAt?: string;
-	updatedAt?: string;
-}
-
-export interface JWT_RETURN_USER { userId: number, name: string, email: string }
 
 export class UserSchema {
   db: NodePgDatabase<Record<string, never>>;
@@ -35,7 +25,7 @@ export class UserSchema {
     name: string;
     password: string;
     email: string;
-  }): Promise<UserInterface | undefined> {
+  }): Promise< Omit<UserInterface, "created_at"> | undefined> {
 
     try {
       const hashedPassword = await this.hashPassword({ password });
@@ -81,7 +71,7 @@ export class UserSchema {
 
 
   async getAuthUser({ email, password }: { email: string; password: string }): Promise<
-		| ({ user: UserInterface; token: string } & {
+		| ({ user: Omit<UserInterface, "created_at">; token: string } & {
 			code?: StatusCodes;
 			message?: string;
 		})

@@ -1,13 +1,10 @@
 import { Buffer } from "buffer";
 import { Socket, Server as SocketIOServer } from "socket.io";
 import { QueryHandlers, } from "../model/QueryHandlers.model";
-import { type ChatListType } from "../model/QueryHandlers.model";
+import { type ChatListType, type CbType, type JWT_RETURN_USER } from "../types";
 import { StatusCodes } from "http-status-codes";
-import { JWT_RETURN_USER } from "src/model/Auth.model";
 import { ExtendedError } from "socket.io/dist/namespace";
 
-
-type CbType = (chatList: ChatListType[]) => void
 
 export class AppSocketBase extends QueryHandlers {
   io: SocketIOServer;

@@ -1,12 +1,9 @@
 import { Request, Response, Router } from "express";
-import { UserInterface, UserSchema } from "../model/Auth.model";
+import { UserSchema } from "../model/Auth.model";
+import { type RequestWithUser } from "../types";
 import { StatusCodes } from "http-status-codes";
 import AuthMiddleware from "../middleware/auth";
 
-export type RequestWithUser = Request & {
-	user: UserInterface;
-	token: string;
-};
 
 export class AuthRouter extends AuthMiddleware {
   router = Router();

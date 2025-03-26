@@ -4,7 +4,7 @@ import { StatusCodes } from "http-status-codes";
 
 import AuthMiddleware from "../middleware/auth";
 import QueryHandlers from "../model/QueryHandlers.model";
-import { RequestWithUser } from "./auth";
+import { type RequestWithUser } from "../types";
 
 export type ClassType = new (...args: unknown[]) => object
 
