@@ -420,7 +420,7 @@ export class QueryHandlers extends UserSchema {
       createdAt: Date;
     }[];
     error?: boolean;
-    message?: string;
+    reason?: string;
     userId?: number;
   }> {
   
@@ -428,7 +428,7 @@ export class QueryHandlers extends UserSchema {
       // TODO: ADD logging to the repo
       return {
         error: true,
-        message: 'Invalid input',
+        reason: 'Invalid input',
         userId
       };
     }
@@ -437,7 +437,7 @@ export class QueryHandlers extends UserSchema {
     if(chatroomExist.length > 0){
       return {
         error: true,
-        message: 'Chatroom already exists',
+        reason: 'Chatroom already exists',
         userId
       };
     }
@@ -493,7 +493,7 @@ export class QueryHandlers extends UserSchema {
       if (typeof err === "object" && Object.keys(err as object).length) {
         return {
           error: true,
-          message: err.message,
+          reason: err.message,
           ...err
         };
       }
