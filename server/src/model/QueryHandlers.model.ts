@@ -247,11 +247,10 @@ export class QueryHandlers extends UserSchema {
       return typedMessages;
     } catch (err) {
       if (typeof err === "object" && Object.keys(err as object).length) {
-        // throw new Error(JSON.stringify(err as object));
         return {
+          ...err,
           error: true,
-          reason: err.message,
-          ...err
+          reason: err.message
         };
       }
       return err;
@@ -349,9 +348,9 @@ export class QueryHandlers extends UserSchema {
       if (typeof err === "object" && Object.keys(err as object).length) {
         // throw new Error(JSON.stringify(err as object));
         return {
+          ...err,
           error: true,
           reason: err.message,
-          ...err
         };
       }
       return err;
@@ -469,9 +468,9 @@ export class QueryHandlers extends UserSchema {
       };
     } catch(err){
       return {
+        ...err,
         error: true,
         reason: err.message,
-        ...err
       };
     }
   }
@@ -492,9 +491,9 @@ export class QueryHandlers extends UserSchema {
     } catch (err) {
       if (typeof err === "object" && Object.keys(err as object).length) {
         return {
+          ...err,
           error: true,
           reason: err.message,
-          ...err
         };
       }
       return err;
@@ -518,9 +517,9 @@ export class QueryHandlers extends UserSchema {
     } catch (err) {
       if (typeof err === "object" && Object.keys(err as object).length) {
         return {
+          ...err,
           error: true,
           reason: err.message,
-          ...err
         };
       }
       return err;
