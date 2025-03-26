@@ -3,6 +3,7 @@ node_modules/
 build/
 .idea/
 .vscode/
+.zed/
 
 # Files to ignore
 *.log

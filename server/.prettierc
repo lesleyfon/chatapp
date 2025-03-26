@@ -6,4 +6,5 @@ module.exports = {
 	tabWidth: 2,
 	arrowParens: "always",
 	bracketSpacing: true,
+	parser: "typescript"
 };
