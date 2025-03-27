@@ -81,7 +81,7 @@ export const PrivateMessageSection = ({ data }: { data: PrivateChatResultType[] 
 
 	useEffect(() => {
 		if (!data?.length) {
-			return;
+			return setAllRoomMessages([]);
 		}
 		setAllRoomMessages(data);
 	}, [data]);
