@@ -59,7 +59,7 @@ function ConversationCard({ data, isSender }: { data: PrivateChatResultType; isS
 								isSender ? "text-primary-foreground" : "text-secondary-foreground"
 							)}
 						>
-							{data?.chat_user.name}
+							{isSender ? "You" : data?.chat_user.name}
 						</div>
 						<p>{data?.private_messages?.message_text as string}</p>
 						<div className="text-[10px] text-muted-foreground mt-1">
@@ -122,12 +122,15 @@ export const PrivateMessageSection = ({ data }: { data: PrivateChatResultType[] 
 			) {
 				return;
 			}
+
 			setAllRoomMessages((previousRoomMessages) => {
+				const responseCopy = { ...response };
 				if (String(response.chat_user.pk_user_id) === String(userId)) {
-					set(response, "responseData?.chat_user?.pk_user_id", "You");
+					set(responseCopy, "chat_user.name", "You");
 				}
-				return [...previousRoomMessages, response];
+				return previousRoomMessages.concat(responseCopy);
 			});
+
 			if (vListRef.current) {
 				// Scroll to bottom after new message is added
 				vListRef.current.scrollToIndex(allRoomMessages.length, {
