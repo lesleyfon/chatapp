@@ -1,16 +1,22 @@
 import { ReactNode, createContext, useEffect, useState } from "react";
+import { useNavigate } from "react-router";
 import { Socket, io } from "socket.io-client";
+
+import { handleConnectError } from "../hooks/useSocketAuth";
 import useAuthStorage from "../store/useAuthStorage";
 
 const SocketContext = createContext<Socket | null>(null);
 
 function SocketProvider({ children }: { children: ReactNode }) {
 	const [socket, setSocket] = useState<Socket | null>(null);
-	const token = useAuthStorage((state) => state.token);
 	const [isConnected, setIsConnected] = useState(false);
 
+	const navigate = useNavigate();
+	const { token, logout } = useAuthStorage((state) => state);
+	const APP_ENV = import.meta.env.VITE_APP_ENV;
+	const { API_BASE_PATH } = JSON.parse(APP_ENV) as { API_BASE_PATH: string };
 	useEffect(() => {
-		const socketInstance = io("http://localhost:3010/", {
+		const socketInstance = io(API_BASE_PATH, {
 			reconnectionDelay: 10000,
 			timestampRequests: true,
 			auth: { token },
@@ -22,20 +28,25 @@ function SocketProvider({ children }: { children: ReactNode }) {
 			setIsConnected(true);
 			setSocket(socketInstance);
 		}
+
 		socketInstance.on("connect", handleConnect);
 
-		socketInstance.on("disconnect", (reason) => {
-			// eslint-disable-next-line no-console
-			console.log("Socket disconnected:", reason);
-			setIsConnected(false);
-		});
+		// Logo
+		socketInstance.on("connect_error", (err: Error) =>
+			handleConnectError({ err, logout, navigate })
+		);
 
 		return () => {
 			socketInstance.removeAllListeners();
 			socketInstance.disconnect();
+			socketInstance.off("connect_error", (err: Error) =>
+				handleConnectError({ err, logout, navigate })
+			);
+
 			setIsConnected(false);
 			setSocket(null);
 		};
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [token]);
 
 	if (!isConnected) {
@@ -45,4 +56,4 @@ function SocketProvider({ children }: { children: ReactNode }) {
 	return <SocketContext.Provider value={socket}>{children}</SocketContext.Provider>;
 }
 
-export { SocketProvider, SocketContext };
+export { SocketContext, SocketProvider };

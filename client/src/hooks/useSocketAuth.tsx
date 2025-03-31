@@ -1,7 +1,33 @@
 import { useEffect } from "react";
-import { useNavigate } from "react-router";
+import { NavigateFunction, useNavigate } from "react-router";
 import { Socket } from "socket.io-client";
 import useAuthStorage from "../store/useAuthStorage";
+
+export function handleConnectError({
+  err,
+  logout,
+  navigate,
+}: {
+  err: Error;
+  logout: () => void;
+  navigate: NavigateFunction;
+}) {
+  try {
+    const errObj = JSON.parse(err.message);
+
+    if (err instanceof Error && "code" in errObj) {
+      if (errObj.code === 401) {
+        logout();
+        navigate("/");
+      } else if (errObj.code === 500) {
+        // TODO: Implement toast message for internal server error
+      }
+    }
+  } catch (parseError) {
+    // eslint-disable-next-line no-console
+    console.error("Failed to parse socket error message:", err.message);
+  }
+}
 
 /**
  * Manages socket authentication and connection for a Socket.IO client.
@@ -18,29 +44,11 @@ export function useSocketAuth({ socket }: { socket: Socket | null }) {
   const navigate = useNavigate();
 
   const { token, userId, logout } = useAuthStorage((state) => state);
-
   useEffect(() => {
     if (!token || !userId) {
       navigate("/");
       return;
     }
-    const handleConnectError = (err: Error) => {
-      try {
-        const errObj = JSON.parse(err.message);
-
-        if (err instanceof Error && "code" in errObj) {
-          if (errObj.code === 401) {
-            logout();
-            navigate("/");
-          } else if (errObj.code === 500) {
-            // TODO: Implement toast message for internal server error
-          }
-        }
-      } catch (parseError) {
-        // eslint-disable-next-line no-console
-        console.error("Failed to parse socket error message:", err.message);
-      }
-    };
 
     if (socket === null) return;
 
@@ -49,10 +57,14 @@ export function useSocketAuth({ socket }: { socket: Socket | null }) {
       return;
     }
 
-    socket.on("connect_error", handleConnectError);
+    socket.on("connect_error", (err: Error) =>
+      handleConnectError({ err, logout, navigate }),
+    );
 
     return () => {
-      socket.off("connect_error", handleConnectError);
+      socket.off("connect_error", (err) =>
+        handleConnectError({ err, logout, navigate }),
+      );
     };
   }, [token, userId, navigate, socket, logout]);
 }
