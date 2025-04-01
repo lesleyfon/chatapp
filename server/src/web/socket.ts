@@ -21,6 +21,7 @@ export class AppSocketBase extends QueryHandlers {
     const decodedToken = await this.decodeJWT(token);
 
     if (decodedToken === undefined) {
+      socket.disconnect();
       next(
         new Error(
           JSON.stringify({
