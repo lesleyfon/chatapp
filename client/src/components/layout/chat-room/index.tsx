@@ -36,13 +36,10 @@ function ChatRoomLayout() {
 
 	if (recipientData?.msg && recipientData.msg.length >= 0 && recipientId) {
 		const data = recipientData?.msg ?? [];
-		const recipientsName =
-			data.find(({ chat_user }) => String(chat_user?.pk_user_id) === "4")?.chat_user?.name ??
-			"";
 		return (
 			<section className="overflow-y-hidden grid grid-rows-[12fr_1fr] md:grid-rows-[11fr_1fr] ">
 				<PrivateMessageSection data={data ?? []} />
-				<MessageInput chatId={recipientId} chatName={recipientsName} isPrivateChat />
+				<MessageInput chatId={recipientId} chatName={""} isPrivateChat />
 			</section>
 		);
 	}
