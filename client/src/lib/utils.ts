@@ -14,8 +14,6 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-
-
 /**
  * Replaces the 'Z' UTC indicator in an ISO 8601 datetime string with the CST (-06:00) offset
  * @param {string} utcDateTimeString - The datetime string with 'Z' indicating UTC
@@ -23,14 +21,13 @@ export function cn(...inputs: ClassValue[]) {
  */
 function replaceZWithCSTOffset(utcDateTimeString: string) {
   // Check if the string ends with 'Z'
-  if (!utcDateTimeString.endsWith('Z')) {
-    throw new Error('Input string must be in UTC format ending with Z');
+  if (!utcDateTimeString.endsWith("Z")) {
+    throw new Error("Input string must be in UTC format ending with Z");
   }
-  
-  // Remove the 'Z' and append the CST offset
-  return utcDateTimeString.slice(0, -1) + '-06:00';
-}
 
+  // Remove the 'Z' and append the CST offset
+  return utcDateTimeString.slice(0, -1) + "-07:00";
+}
 
 /**
  * The function calculates the time difference between a given date and the current date in days,
@@ -42,20 +39,24 @@ function replaceZWithCSTOffset(utcDateTimeString: string) {
  * function returns a string representing the time difference in the largest applicable unit (days,
  * hours, minutes, or seconds) rounded down to the nearest whole number.
  */
-export function timeDifference(date: string ) {
+export function timeDifference(date: string) {
   // Convert the input UTC date to CST
   const inputDate = new Date(replaceZWithCSTOffset(date));
-  const cstDate = new Date(inputDate.toLocaleString('en-US', { timeZone: 'America/Chicago' }));
+  const cstDate = new Date(
+    inputDate.toLocaleString("en-US", { timeZone: "America/Chicago" }),
+  );
 
   // Get current time in CST
   const now = new Date();
-  const currentCST = new Date(now.toLocaleString('en-US', { timeZone: 'America/Chicago' }));
+  const currentCST = new Date(
+    now.toLocaleString("en-US", { timeZone: "America/Chicago" }),
+  );
 
   const daysDifference = dayjs(currentCST).diff(dayjs(cstDate), "day");
   const hoursDifference = dayjs(currentCST).diff(dayjs(cstDate), "hour");
   const minutesDifference = dayjs(currentCST).diff(dayjs(cstDate), "minute");
   const secondsDifference = dayjs(currentCST).diff(dayjs(cstDate), "second");
-
+  
   if (daysDifference > 7) {
     return cstDate.toLocaleDateString();
   } else if (daysDifference > 1) {
@@ -75,25 +76,24 @@ export function timeDifference(date: string ) {
  */
 export function getCurrentDateTimeWithTimezone() {
   const now = new Date();
-  
+
   // Get timezone offset in minutes
   const timezoneOffsetMinutes = now.getTimezoneOffset();
 
   // Format the date part: YYYY-MM-DD
   const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
-  
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+
   // Format the time part: HH:MM:SS.sss
-  const hours = String(now.getHours()).padStart(2, '0');
-  const minutes = String(now.getMinutes()).padStart(2, '0');
-  const seconds = String(now.getSeconds()).padStart(2, '0');
-  const milliseconds = String(now.getMilliseconds()).padStart(3, '0');
-  
+  const hours = String(now.getHours()).padStart(2, "0");
+  const minutes = String(now.getMinutes()).padStart(2, "0");
+  const seconds = String(now.getSeconds()).padStart(2, "0");
+  const milliseconds = String(now.getMilliseconds()).padStart(3, "0");
+
   // Build the base datetime string
-  const dateTimeBase = 
-    `${year}-${month}-${day}T${hours}:${minutes}:${seconds}.${milliseconds}`;
-  
+  const dateTimeBase = `${year}-${month}-${day}T${hours}:${minutes}:${seconds}.${milliseconds}`;
+
   // Handle timezone format
   if (timezoneOffsetMinutes === 0) {
     // UTC time (Zulu time)
@@ -101,24 +101,27 @@ export function getCurrentDateTimeWithTimezone() {
   } else {
     // Convert timezone offset to ISO format (+/-HH:MM)
     // Note: getTimezoneOffset() returns minutes WEST of UTC, so we need to flip the sign
-    const offsetSign = timezoneOffsetMinutes > 0 ? '-' : '+';
+    const offsetSign = timezoneOffsetMinutes > 0 ? "-" : "+";
     const absoluteOffset = Math.abs(timezoneOffsetMinutes);
-    const offsetHours = String(Math.floor(absoluteOffset / 60)).padStart(2, '0');
-    const offsetMinutes = String(absoluteOffset % 60).padStart(2, '0');
-    
+    const offsetHours = String(Math.floor(absoluteOffset / 60)).padStart(
+      2,
+      "0",
+    );
+    const offsetMinutes = String(absoluteOffset % 60).padStart(2, "0");
+
     return `${dateTimeBase}${offsetSign}${offsetHours}:${offsetMinutes}`;
   }
 }
 
-export function formatDate(date: Date) {
-  const timeStamps = new Date(date);
-  return timeStamps.toLocaleDateString("en-US", {
+export function formatDate(date: Date | string) {
+  const inputDate = new Date(replaceZWithCSTOffset(date as string));
+  return inputDate.toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
     year: "numeric",
     hour: "numeric",
     minute: "numeric",
-    timeZone: "UTC",
+    timeZone: "America/Chicago",
   });
 }
 
