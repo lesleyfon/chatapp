@@ -16,14 +16,14 @@ const useRoomData = () => {
     queryKey: [chatId],
     queryFn: chatId
       ? () => api.fetchChatListsDataFromChatId(chatId)
-      : undefined,
+      : async () => null,
   });
 
   const { isPending: isRecipientPending, data: recipientData } = useQuery({
     queryKey: [recipientId],
     queryFn: recipientId
       ? () => api.fetchPrivateMessageListsDataFromRecipientId(recipientId)
-      : undefined,
+      : async () => null,
   });
 
   const loadingState = [
