@@ -33,6 +33,50 @@ export const useGetPrivateMessageList = ({ socket }: { socket: Socket | null }) 
 	const { userId } = useAuthStorage((state) => state);
 	const { recipientId } = useParams();
 
+	const handleMessageUpdate = (response: PrivateChatResultType) => {
+		const { sender_id: responseSenderId, recipient_id: responseRecipientId } =
+			response.private_chat;
+
+		// If we're in a specific chat, only update that chat
+		if (recipientId) {
+			const isSameChat = isPrivateChatBetweenTwoUsers({
+				responseSenderId,
+				responseRecipientId,
+				userId,
+				recipientId,
+			});
+
+			if (!isSameChat) {
+				return;
+			}
+		}
+
+		setPrivateRoomList((prevList) => {
+			// Check if this chat already exists
+			const existingChatIndex = prevList.filter((chat) => {
+				const { sender_id: charSenderId, recipient_id: chatRecipientId } =
+					chat.private_chat;
+
+				const isSameChat = isPrivateChatBetweenTwoUsers({
+					responseSenderId: String(charSenderId),
+					responseRecipientId: String(chatRecipientId),
+					userId: String(userId),
+					recipientId: String(recipientId),
+				});
+				return isSameChat === false;
+			});
+
+			if (existingChatIndex.length === 0) {
+				// This is a new chat, add it to the list
+				return [response];
+			}
+
+			// Update existing chat
+			const updatedList = existingChatIndex.concat(response);
+			return updatedList;
+		});
+	};
+
 	useEffect(() => {
 		if (socket === null) return;
 
@@ -43,51 +87,17 @@ export const useGetPrivateMessageList = ({ socket }: { socket: Socket | null }) 
 		});
 
 		// Setup listener for new messages
-		const handleMessageUpdate = (response: PrivateChatResultType) => {
-			const { sender_id: responseSenderId, recipient_id: responseRecipientId } =
-				response.private_chat;
-
-			if (
-				isPrivateChatBetweenTwoUsers({
-					responseSenderId,
-					responseRecipientId,
-					userId,
-					recipientId,
-				})
-			) {
-				setPrivateRoomList((previousPrivateRoomData) => {
-					return previousPrivateRoomData.map((data) => {
-						if (
-							isPrivateChatBetweenTwoUsers({
-								responseSenderId: data.private_chat.sender_id,
-								responseRecipientId: data.private_chat.recipient_id,
-								userId,
-								recipientId,
-							})
-						) {
-							// This Updates the most recent message sent
-							return {
-								...data, // Create a new object
-								private_messages: {
-									...data.private_messages, // Preserve existing messages
-									message_text: response.private_messages.message_text, // Update the message
-								},
-							};
-						}
-
-						return data; // Return unchanged data if not the same chat
-					});
-				});
-			}
-		};
-
 		socket.on("get-latest-private-message-sent", handleMessageUpdate);
 
 		// Cleanup function to avoid memory leaks
 		return () => {
 			socket.off("get-latest-private-message-sent", handleMessageUpdate);
 		};
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [socket, userId, recipientId, navigate]);
 
-	return { privateRoomList };
+	return {
+		privateRoomList,
+		handleMessageUpdate,
+	};
 };
