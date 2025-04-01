@@ -34,4 +34,6 @@ export default {
 - [ ] Create an error Page
 - [ ] Sidebar has a scroll. And fix to enable no scroll for elements on sidebar
 - [ ] BUG: Clicking on `New Private Chat` on mobile closes the modal for selecting a new chat
-- [ ] BUG: singing into a new session causes an infinite rerender. 
+- [ ] BUG: singing into a new session causes an infinite rerender.
+- [ ] BUG: SORT MESSAGES BY DATE SENT NOT WORKING CORRECTLY
+- [ ] FEAT: Implement saving timezones to the DB and the current time a message or chat was sent at.
