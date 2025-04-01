@@ -6,6 +6,7 @@ import { Loader } from "../../loader";
 import { MessageInput } from "./chat-room-message-input";
 import { ChatRoomSection } from "./chat-room-section";
 import { PrivateMessageSection } from "./private-chat-section";
+import { useLocation } from "react-router";
 
 function isErrorResponse(data: ErrorResponse | SuccessResponse): data is ErrorResponse {
 	return "error" in data;
@@ -13,7 +14,8 @@ function isErrorResponse(data: ErrorResponse | SuccessResponse): data is ErrorRe
 
 function ChatRoomLayout() {
 	const { loadingState, chatData, recipientData, chatId, recipientId } = useRoomData();
-
+	const { pathname } = useLocation();
+	const isPrivateChatRoute = pathname.startsWith("/private-chats");
 	if (loadingState) {
 		return <Loader />;
 	}
@@ -22,13 +24,14 @@ function ChatRoomLayout() {
 		(chatData && isErrorResponse(chatData)) ||
 		(recipientData && isErrorResponse(recipientData))
 	) {
+		const ERROR_MESSAGE = isPrivateChatRoute ? "Private Chat Not Found" : "Chat Room Not Found";
 		return (
 			<div className="flex flex-col items-center justify-center h-full">
 				<h2 className="flex items-center justify-center text-red-500 text-8xl">
 					404 <TriangleAlert className="w-24 h-24" />
 				</h2>
 				<p className="flex items-center justify-center text-red-500 text-2xl">
-					Chat Room Not Found
+					{ERROR_MESSAGE}
 				</p>
 			</div>
 		);
