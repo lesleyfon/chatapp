@@ -18,13 +18,14 @@ import { SIDEBAR_CONSTANTS } from "../../constants";
 import { useMobileSidebar } from "../../../hooks/useMobileSidebar";
 import { useSocket } from "../../../hooks/useSocket";
 import { SocketProvider } from "../../../context/socket.context";
+import useAuthStorage from "../../../store/useAuthStorage";
 
 export const SidebarItemLink = React.memo(({ data }: { data: SidebarItemLinkProps }) => {
 	const location = useLocation();
 	const currentPath = location.pathname;
 	const isActivePathLinkItem = currentPath === data.to;
 	const Icon = SIDEBAR_CONSTANTS.ICON_MAP[data.itemType];
-
+	const sentAt = timeDifference(data?.message?.sent_at?.toString());
 	return (
 		<Link
 			to={data.to}
@@ -56,9 +57,7 @@ export const SidebarItemLink = React.memo(({ data }: { data: SidebarItemLinkProp
 						>
 							{data.message.message_text}
 						</p>
-						<p className="text-[10px] text-muted-foreground text-right ">
-							{timeDifference(data.message.sent_at)}
-						</p>
+						<p className="text-[10px] text-muted-foreground text-right ">{sentAt}</p>
 					</div>
 				) : null}
 			</div>
@@ -117,24 +116,31 @@ function SidebarWrapperHeader() {
 	);
 }
 
+const EmptyStateMessage = () => (
+	<div className="flex flex-col items-center gap-2 p-4">
+		<h3 className="text-muted-foreground">No direct messages yet</h3>
+		<p className="text-xs text-center text-muted-foreground">
+			Use the button below to start a conversation
+		</p>
+	</div>
+);
+
 const PrivateChatList = memo(({ data }: { data: PrivateChatResultType[] }) => {
+	const userId = useAuthStorage((state) => state.userId);
 	if (data?.length === 0) {
-		return (
-			<div className="flex flex-col items-center gap-2 p-4">
-				<h3 className="text-muted-foreground">No direct messages yet</h3>
-				<p className="text-xs text-center text-muted-foreground">
-					Use the button below to start a conversation
-				</p>
-			</div>
-		);
+		return <EmptyStateMessage />;
 	}
-	return data.map(
-		(d) =>
-			d.private_messages && (
+
+	return data.slice(0, 5).map((d) => {
+		if (d.private_messages) {
+			const isRecipient = d.recipient.pk_user_id === userId;
+			const targetUser = isRecipient ? d.chat_user : d.recipient;
+
+			return (
 				<SidebarItemLink
 					data={{
-						to: `/private-chats/${d.recipient.pk_user_id}`,
-						linkTitle: d.recipient.name as string,
+						to: `/private-chats/${targetUser.pk_user_id}`,
+						linkTitle: targetUser.name as string,
 						message: {
 							message_text: d.private_messages.message_text as string,
 							sent_at: d.private_messages.sent_at,
@@ -143,8 +149,9 @@ const PrivateChatList = memo(({ data }: { data: PrivateChatResultType[] }) => {
 					}}
 					key={d.private_chat.pk_private_chat_id}
 				/>
-			)
-	);
+			);
+		}
+	});
 });
 PrivateChatList.displayName = "PrivateChatList";
 
