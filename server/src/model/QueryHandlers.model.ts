@@ -603,6 +603,62 @@ export class QueryHandlers extends UserSchema {
       return err;
     }
   }
+/**
+   * @description [WIP]Retrieves private chat rooms for a specific user.
+   * @param {number} userId - The ID of the user.
+   * @returns {Promise<PrivateChatResult[]>} - An array of private chat rooms.
+   */
+  async getPrivateChatsForUser(userId: number) {
+    // Subquery to get the latest message for each chat
+    const latestMessages = await this.db.$with('latest_messages').as(
+        this.db
+        .select({
+          fkPrivateChatId: privateMessages.fk_private_chat_id,
+          maxSentAt: sql`MAX(${privateMessages.sent_at})`.as('latest_sent_at'),
+        })
+        .from(privateMessages)
+        .groupBy(privateMessages.fk_private_chat_id)
+    );
+
+    // Main query
+    const privateChatsData = await this.db
+      .with(latestMessages)
+      .select({
+        chatId: privateChats.pk_private_chat_id,
+        senderId: privateChats.sender_id,
+        recipientId: privateChats.recipient_id,
+        chatCreatedAt: privateChats.created_at,
+        messageId: privateMessages.id,
+        messageSenderId: privateMessages.fk_user_id,
+        messageText: privateMessages.message_text,
+        imageName: privateMessages.image_name,
+        sentAt: privateMessages.sent_at,
+        userName: user.name,
+        userEmail: user.email,
+      })
+      .from(privateChats)
+      .innerJoin(
+        latestMessages,
+        eq(privateChats.pk_private_chat_id, latestMessages.fkPrivateChatId)
+      )
+      .innerJoin(
+        privateMessages,
+        sql`${privateMessages.fk_private_chat_id} = ${privateChats.pk_private_chat_id} AND ${privateMessages.sent_at} = ${latestMessages.maxSentAt}`
+      )
+      .innerJoin(
+        user,
+        eq(user.pk_user_id, userId)
+      )
+      .where(
+        or(
+          eq(privateChats.sender_id, userId),
+          eq(privateChats.recipient_id, userId)
+        )
+      )
+      .orderBy(desc(privateMessages.sent_at));
+
+      return privateChatsData;
+  }
 
   /**
    * @description Retrieves the latest private chat messages sent by a user.
@@ -646,7 +702,7 @@ export class QueryHandlers extends UserSchema {
       .orderBy(
         privateChats.recipient_id,
         privateChats.sender_id,
-        desc(privateChats.created_at),
+        desc(privateMessages.sent_at),
       )
       .leftJoin(user, eq(user.pk_user_id, userId))
       .leftJoin(
@@ -654,9 +710,17 @@ export class QueryHandlers extends UserSchema {
         eq(privateMessages.fk_private_chat_id, privateChats.pk_private_chat_id),
       );
 
+    // THIS GETS THE LATEST MESSAGE SENT AND DOES NOT SORT THE QUERIED DATA.
+    const sortedPrivateChatData = [...privateChatsData].sort((chatA, chatB) => {
+      return new Date(chatA.private_messages?.sent_at || 0) >
+        new Date(chatB.private_messages?.sent_at || 0)
+        ? -1
+        : 1;
+    });
+    
     // Get unique recipient IDs that are not the current user
     const recipientIds = new Set(
-      privateChatsData.map((data) =>
+      sortedPrivateChatData.map((data) =>
         data.private_chat.sender_id === userId
           ? data.private_chat.recipient_id
           : data.private_chat.sender_id,
@@ -685,7 +749,7 @@ export class QueryHandlers extends UserSchema {
       );
 
     // Map privateChatsData and ensure unique recipients
-    const returnData = privateChatsData.map((data) => {
+    const returnData = sortedPrivateChatData.map((data) => {
       // Determine the correct recipient ID based on the current user
       const otherUserId =
         data.private_chat.sender_id === userId
