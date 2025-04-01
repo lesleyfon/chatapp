@@ -33,7 +33,7 @@ class HttpServer {
     if (!API_BASE_PATH) {
       throw Error(`No API_BASE_PATH value: API_BASE_PATH: ${API_BASE_PATH}`);
     }
-    this.apiBasePath = API_BASE_PATH;
+    this.apiBasePath = API_BASE_PATH + "/api";
   }
 
   async login(userCredential: AuthFormDataType) {
