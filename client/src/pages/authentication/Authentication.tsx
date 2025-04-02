@@ -1,8 +1,8 @@
 import { useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs";
 
-import { Login } from "./login/Login";
-import { Register } from "./registration/Registration";
+import { Login } from "./login";
+import { Register } from "./registration";
 import "./style.css";
 import { useNavigate } from "react-router-dom";
 import { isAuthenticated } from "../../lib/utils";
