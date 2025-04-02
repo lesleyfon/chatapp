@@ -145,7 +145,7 @@ export class AppSocketBase extends QueryHandlers {
           });
 
           const chatId = insertIntoChatResponse[0].id;
-          console.log({sent_at, timezone})
+          
           // Add message to the message table - refactor this
           const messageResponse = await this.insertMessageToTable({
             chatId,
