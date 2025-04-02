@@ -29,7 +29,7 @@ export class UserSchema {
     email: string;
     timezone: string;
     created_at: string;
-  }): Promise<Omit<UserInterface, "created_at"> | undefined> {
+  }): Promise<Omit<UserInterface, "created_at"> & { timezone: string } | undefined> {
     try {
       const hashedPassword = await this.hashPassword({ password });
 
