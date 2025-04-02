@@ -509,9 +509,7 @@ export class QueryHandlers extends UserSchema {
    * @returns {Promise<{ id: number }>} - The ID of the newly created chat room.
    */
   async createNewChatroomRoomNameAndByUserId(
-    chatName: string,
-    userId: number,
-    chatData?: {
+    chatData: {
       chatName: string;
       created_at: string;
       timezone: string;
@@ -527,6 +525,7 @@ export class QueryHandlers extends UserSchema {
     reason?: string;
     userId?: number;
   }> {
+    const { chatName, userId, created_at, timezone } = chatData;
     if (!this.isValidInput(chatName, userId)) {
       // TODO: ADD logging to the repo
       return {
@@ -535,14 +534,10 @@ export class QueryHandlers extends UserSchema {
         userId,
       };
     }
-    if (
-      chatData?.timezone === undefined ||
-      chatData?.created_at === undefined
-    ) {
+    if ( timezone === undefined || created_at === undefined) {
       return {
         error: true,
-        reason: "Invalid input",
-        userId,
+        reason: `Bad Request: timezone, and created_at are required to create a chat room`,
       };
     }
     const chatroomExist = await this.selectChatByChatName(chatName);
@@ -557,8 +552,8 @@ export class QueryHandlers extends UserSchema {
     try {
       const insertIntoChatResponse = await this.createNewChatRoom({
         chatName,
-        timezone: chatData.timezone,
-        created_at: chatData.created_at,
+        timezone,
+        created_at,
       });
 
       const chatResponse = insertIntoChatResponse[0];
@@ -566,7 +561,7 @@ export class QueryHandlers extends UserSchema {
 
       await this.db.execute(sql`
           INSERT INTO ${chatMembers} (fk_chat_id, fk_user_id, added_at, timezone)
-          SELECT ${chatId}, ${userId}, ${chatData.created_at}, ${chatData.timezone}
+          SELECT ${chatId}, ${userId}, ${created_at}, ${timezone}
           WHERE NOT EXISTS (
             SELECT 1 FROM ${chatMembers} WHERE fk_chat_id = ${chatId} AND fk_user_id = ${userId}
           );

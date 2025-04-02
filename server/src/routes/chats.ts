@@ -167,8 +167,6 @@ export class Chat extends AuthMiddlewareMixin(QueryHandlersMixin(BaseClass)) {
 
     const chatRooms =
       await this.queryHandlers.createNewChatroomRoomNameAndByUserId(
-        chat_name,
-        userId,
         {
           chatName: chat_name,
           created_at,
