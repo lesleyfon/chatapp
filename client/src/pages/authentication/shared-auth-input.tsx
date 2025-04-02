@@ -4,7 +4,7 @@ import { Input } from "../../components/ui/input";
 import { RegisterFormSchemaValidation, LoginFormSchemaValidation } from "./validation";
 import { Button } from "../../components/ui/button";
 import { Eye, EyeOff } from "lucide-react";
-import { useRef, useState } from "react";
+import { useRef, useState, useCallback } from "react";
 import { ControllerRenderProps } from "react-hook-form";
 type FormSchema = z.infer<typeof RegisterFormSchemaValidation | typeof LoginFormSchemaValidation>;
 type NameType =
@@ -13,7 +13,7 @@ type NameType =
 type Field = ControllerRenderProps<FormSchema>;
 
 interface SharedAuthInputProps {
-	field: Field; // Replace with proper type
+	field: Field;
 	fd: {
 		name: NameType;
 		label: string;
@@ -30,17 +30,16 @@ export function SharedAuthInput({ field, fd }: SharedAuthInputProps) {
 		type = "text";
 	}
 
-	const togglePasswordVisibility = () => {
+	const togglePasswordVisibility = useCallback(() => {
 		setShowPassword(!showPassword);
 		if (inputRef.current) {
-			// focus on the input element when toggling password visibility
 			inputRef.current.focus();
 		}
-	};
+	}, [showPassword]);
 
 	return (
 		<FormControl>
-			<div className="flex flex-row">
+			<div className="flex flex-row relative items-center">
 				<Input {...field} {...fd} ref={inputRef} placeholder={fd.label} type={type} />
 				{fd.type === "password" && (
 					<Button
