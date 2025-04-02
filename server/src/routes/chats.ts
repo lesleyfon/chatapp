@@ -161,7 +161,7 @@ export class Chat extends AuthMiddlewareMixin(QueryHandlersMixin(BaseClass)) {
 
     if (!timezone || !created_at) {
       return res.status(StatusCodes.BAD_REQUEST).json({
-        reason: `Bad Request:c timezone, and created_at are required to create a chat room`,
+        reason: `Bad Request: timezone, and created_at are required to create a chat room`,
       });
     }
 
