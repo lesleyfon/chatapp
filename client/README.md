@@ -31,7 +31,7 @@ export default {
 
 ### FEATURES TO ADD
 - [x] Ensure that you cant go to a chats room page if the chatroom does not exist
-- [X] BUG: singing into a new session causes an infinite rerender.
+- [X] BUG: signing into a new session causes an infinite rerender.
 - [X] Create an error Page
 - [X] BUG: SORT MESSAGES BY DATE SENT NOT WORKING CORRECTLY
   - [ ] fix. But I am using js sort to sort the messages by date sent. Would like this to be a db query.
