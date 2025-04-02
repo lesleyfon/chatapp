@@ -48,7 +48,19 @@ export class QueryHandlers extends UserSchema {
    * console.log(messageResponse);
    * // Output: { id: '...', sent_at: '...', fk_user_id: 'user456', fk_chat_id: 'chat123', message_text: 'Hello World' }
    */
-  async insertMessageToTable(chatId: number, user_id: number, message: string) {
+  async insertMessageToTable({
+    chatId,
+    user_id,
+    message,
+    sent_at,
+    timezone,
+  }: {
+    chatId: number;
+    user_id: number;
+    message: string;
+    sent_at: string;
+    timezone: string;
+  }) {
     const [messageResponse] = await Promise.all([
       this.db
         .insert(messages)
@@ -56,6 +68,8 @@ export class QueryHandlers extends UserSchema {
           fk_chat_id: chatId,
           fk_user_id: user_id,
           message_text: message,
+          sent_at: sent_at,
+          timezone: timezone,
         })
         .returning({
           id: messages.id,
@@ -67,8 +81,8 @@ export class QueryHandlers extends UserSchema {
 
       /** @description  Insert a new record into the chatMembers table, but only if that record does not already exist. */
       this.db.execute(sql`
-        INSERT INTO ${chatMembers} (fk_chat_id, fk_user_id)
-        SELECT ${chatId}, ${user_id}
+        INSERT INTO ${chatMembers} (fk_chat_id, fk_user_id, added_at, timezone)
+        SELECT ${chatId}, ${user_id}, ${sent_at}, ${timezone}
         WHERE NOT EXISTS (
           SELECT 1 FROM ${chatMembers} WHERE fk_chat_id = ${chatId} AND fk_user_id = ${user_id}
         );
@@ -334,6 +348,7 @@ export class QueryHandlers extends UserSchema {
             fk_user_id: privateMessages.fk_user_id,
             image_file: privateMessages.image_file,
             image_name: privateMessages.image_name,
+            timezone: privateMessages.timezone,
           },
         })
         .from(privateChats)
@@ -465,10 +480,22 @@ export class QueryHandlers extends UserSchema {
  * console.log(newChatRoom);
  * // Output: { id: 'newChatRoomId' }
  */
-  async createNewChatRoom(chatName: string) {
+  async createNewChatRoom({
+    chatName,
+    created_at,
+    timezone,
+  }: {
+    chatName: string;
+    created_at: string;
+    timezone: string;
+  }) {
     const insertIntoChatResponse = await this.db
       .insert(chats)
-      .values({ chat_name: chatName })
+      .values({
+        chat_name: chatName,
+        createdAt: created_at,
+        timezone: timezone,
+      })
       .returning({
         id: chats.pk_chats_id,
       });
@@ -484,11 +511,17 @@ export class QueryHandlers extends UserSchema {
   async createNewChatroomRoomNameAndByUserId(
     chatName: string,
     userId: number,
+    chatData?: {
+      chatName: string;
+      created_at: string;
+      timezone: string;
+      userId: number;
+    },
   ): Promise<{
     chats?: {
       pk_chats_id: number;
       chat_name: string | null;
-      createdAt: Date;
+      createdAt: string;
     }[];
     error?: boolean;
     reason?: string;
@@ -496,6 +529,16 @@ export class QueryHandlers extends UserSchema {
   }> {
     if (!this.isValidInput(chatName, userId)) {
       // TODO: ADD logging to the repo
+      return {
+        error: true,
+        reason: "Invalid input",
+        userId,
+      };
+    }
+    if (
+      chatData?.timezone === undefined ||
+      chatData?.created_at === undefined
+    ) {
       return {
         error: true,
         reason: "Invalid input",
@@ -512,14 +555,18 @@ export class QueryHandlers extends UserSchema {
       };
     }
     try {
-      const insertIntoChatResponse = await this.createNewChatRoom(chatName);
+      const insertIntoChatResponse = await this.createNewChatRoom({
+        chatName,
+        timezone: chatData.timezone,
+        created_at: chatData.created_at,
+      });
 
       const chatResponse = insertIntoChatResponse[0];
       const chatId = chatResponse.id;
 
       await this.db.execute(sql`
-          INSERT INTO ${chatMembers} (fk_chat_id, fk_user_id)
-          SELECT ${chatId}, ${userId}
+          INSERT INTO ${chatMembers} (fk_chat_id, fk_user_id, added_at, timezone)
+          SELECT ${chatId}, ${userId}, ${chatData.created_at}, ${chatData.timezone}
           WHERE NOT EXISTS (
             SELECT 1 FROM ${chatMembers} WHERE fk_chat_id = ${chatId} AND fk_user_id = ${userId}
           );
@@ -603,21 +650,21 @@ export class QueryHandlers extends UserSchema {
       return err;
     }
   }
-/**
+  /**
    * @description [WIP]Retrieves private chat rooms for a specific user.
    * @param {number} userId - The ID of the user.
    * @returns {Promise<PrivateChatResult[]>} - An array of private chat rooms.
    */
   async getPrivateChatsForUser(userId: number) {
     // Subquery to get the latest message for each chat
-    const latestMessages = await this.db.$with('latest_messages').as(
-        this.db
+    const latestMessages = await this.db.$with("latest_messages").as(
+      this.db
         .select({
           fkPrivateChatId: privateMessages.fk_private_chat_id,
-          maxSentAt: sql`MAX(${privateMessages.sent_at})`.as('latest_sent_at'),
+          maxSentAt: sql`MAX(${privateMessages.sent_at})`.as("latest_sent_at"),
         })
         .from(privateMessages)
-        .groupBy(privateMessages.fk_private_chat_id)
+        .groupBy(privateMessages.fk_private_chat_id),
     );
 
     // Main query
@@ -639,25 +686,22 @@ export class QueryHandlers extends UserSchema {
       .from(privateChats)
       .innerJoin(
         latestMessages,
-        eq(privateChats.pk_private_chat_id, latestMessages.fkPrivateChatId)
+        eq(privateChats.pk_private_chat_id, latestMessages.fkPrivateChatId),
       )
       .innerJoin(
         privateMessages,
-        sql`${privateMessages.fk_private_chat_id} = ${privateChats.pk_private_chat_id} AND ${privateMessages.sent_at} = ${latestMessages.maxSentAt}`
+        sql`${privateMessages.fk_private_chat_id} = ${privateChats.pk_private_chat_id} AND ${privateMessages.sent_at} = ${latestMessages.maxSentAt}`,
       )
-      .innerJoin(
-        user,
-        eq(user.pk_user_id, userId)
-      )
+      .innerJoin(user, eq(user.pk_user_id, userId))
       .where(
         or(
           eq(privateChats.sender_id, userId),
-          eq(privateChats.recipient_id, userId)
-        )
+          eq(privateChats.recipient_id, userId),
+        ),
       )
       .orderBy(desc(privateMessages.sent_at));
 
-      return privateChatsData;
+    return privateChatsData;
   }
 
   /**
@@ -717,7 +761,7 @@ export class QueryHandlers extends UserSchema {
         ? -1
         : 1;
     });
-    
+
     // Get unique recipient IDs that are not the current user
     const recipientIds = new Set(
       sortedPrivateChatData.map((data) =>
@@ -834,8 +878,9 @@ export class QueryHandlers extends UserSchema {
       pk_user_id: number;
       email: string | null;
       password: string | null;
-      created_at: Date;
-      updated_at: Date;
+      created_at: string;
+      updated_at: string;
+      timezone: string;
     }[][]
   > {
     const userListPromises = userIdList.map((userId) =>
@@ -852,6 +897,7 @@ export class QueryHandlers extends UserSchema {
         password: user.password,
         created_at: user.created_at,
         updated_at: user.updated_at,
+        timezone: user.timezone,
       })),
     );
   }
@@ -868,16 +914,18 @@ export class QueryHandlers extends UserSchema {
       pk_user_id: number;
       email: string | null;
       password: string | null;
-      created_at: Date;
-      updated_at: Date;
+      created_at: string;
+      updated_at: string;
+      timezone: string;
     },
     receiver: {
       name: string | null;
       pk_user_id: number;
       email: string | null;
       password: string | null;
-      created_at: Date;
-      updated_at: Date;
+      created_at: string;
+      updated_at: string;
+      timezone: string;
     },
   ) {
     return await this.db
@@ -885,12 +933,15 @@ export class QueryHandlers extends UserSchema {
       .values({
         sender_id: sender.pk_user_id,
         recipient_id: receiver.pk_user_id,
+        created_at: sender.created_at,
+        timezone: sender.timezone,
       })
       .returning({
         pk_private_chat_id: privateChats.pk_private_chat_id,
         sender_id: privateChats.sender_id,
         recipient_id: privateChats.recipient_id,
         created_at: privateChats.created_at,
+        timezone: privateChats.timezone,
       });
   }
 
@@ -903,18 +954,28 @@ export class QueryHandlers extends UserSchema {
    * @param {string | undefined} imageName - The name of the image file.
    * @returns {Promise<{ id: number; fk_private_chat_id: number; fk_user_id: number; message_text: string; sent_at: Date; image_file: Buffer | null; image_name: string | null; }>} - The created message.
    */
-  async createPrivateMessage(
+  async createPrivateMessage({
+    privateChatsInsertResponse,
+    senderId,
+    message,
+    created_at,
+    timezone,
+    imageFile,
+    imageName,
+  }: {
     privateChatsInsertResponse: {
       pk_private_chat_id: number;
       sender_id: number;
       recipient_id: number;
-      created_at: Date;
-    },
-    senderId: number,
-    message: string,
-    imageFile?: Buffer,
-    imageName?: string,
-  ) {
+      created_at: string;
+    };
+    senderId: number;
+    message: string;
+    created_at: string;
+    timezone: string;
+    imageFile?: Buffer;
+    imageName?: string;
+  }) {
     return await this.db
       .insert(privateMessages)
       .values({
@@ -923,6 +984,8 @@ export class QueryHandlers extends UserSchema {
         message_text: message,
         image_file: imageFile,
         image_name: imageName,
+        sent_at: created_at,
+        timezone: timezone,
       })
       .returning({
         id: privateMessages.id,
@@ -930,6 +993,7 @@ export class QueryHandlers extends UserSchema {
         fk_user_id: privateMessages.fk_user_id,
         message_text: privateMessages.message_text,
         sent_at: privateMessages.sent_at,
+        timezone: privateMessages.timezone,
         image_file: privateMessages.image_file,
         image_name: privateMessages.image_name,
       });
