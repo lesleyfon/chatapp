@@ -44,9 +44,15 @@ export class QueryHandlers extends UserSchema {
    * 2. Ensures that the user is added to the `chatMembers` table if they are not already a member.
    *
    * @example
-   * const messageResponse = await insertMessageToTable('chat123', 'user456', 'Hello World');
+   * const messageResponse = await insertMessageToTable({
+   *   chatId: 123,
+   *   user_id: 456,
+   *   message: 'Hello World',
+   *   sent_at: '2023-04-20T12:00:00Z',
+   *   timezone: 'America/New_York'
+   * });
    * console.log(messageResponse);
-   * // Output: { id: '...', sent_at: '...', fk_user_id: 'user456', fk_chat_id: 'chat123', message_text: 'Hello World' }
+   * // Output: { id: '...', sent_at: '...', fk_user_id: 456, fk_chat_id: 123, message_text: 'Hello World' }
    */
   async insertMessageToTable({
     chatId,
@@ -476,7 +482,11 @@ export class QueryHandlers extends UserSchema {
     This method inserts a new record into the `chats` table with the provided chat name and
     returns the ID of the newly created chat room.
  * @example
- * const newChatRoom = await createNewChatRoom('General Chat');
+ * const newChatRoom = await createNewChatRoom({
+ *   chatName: 'General Chat',
+ *   created_at: '2023-04-20T12:00:00Z',
+ *   timezone: 'America/New_York'
+ * });
  * console.log(newChatRoom);
  * // Output: { id: 'newChatRoomId' }
  */
@@ -498,6 +508,9 @@ export class QueryHandlers extends UserSchema {
       })
       .returning({
         id: chats.pk_chats_id,
+        chat_name: chats.chat_name,
+        createdAt: chats.createdAt,
+        timezone: chats.timezone,
       });
     return insertIntoChatResponse;
   }
