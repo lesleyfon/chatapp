@@ -1,4 +1,8 @@
-import { getBearer } from "../lib/utils";
+import {
+  getBearer,
+  getBrowserTimeZone,
+  getCurrentDateTimeWithTimezone,
+} from "../lib/utils";
 import { PrivateChatResultType } from "../types";
 
 export interface UserInterface {
@@ -55,8 +59,13 @@ class HttpServer {
 
   async register(userCredential: AuthFormDataType) {
     try {
-      const raw = JSON.stringify(userCredential);
-
+      const timezone = getBrowserTimeZone();
+      const created_at = getCurrentDateTimeWithTimezone();
+      const raw = JSON.stringify({
+        ...userCredential,
+        timezone,
+        created_at,
+      });
       const response = await fetch(`${this.apiBasePath}/auth/register`, {
         method: "POST",
         headers: this.apiHeaders,
@@ -148,6 +157,9 @@ class HttpServer {
     if (!bearer) {
       throw new Error("No authorization token found. Logout and login again.");
     }
+    const timezone = getBrowserTimeZone();
+    const created_at = getCurrentDateTimeWithTimezone();
+
     const response = await fetch(
       `${this.apiBasePath}/chats/chat/new-chatroom`,
       {
@@ -155,6 +167,8 @@ class HttpServer {
         headers: this.apiHeaders,
         body: JSON.stringify({
           chat_name: data?.[this.INPUT_NAME],
+          created_at,
+          timezone,
         }),
       },
     );

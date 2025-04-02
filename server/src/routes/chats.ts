@@ -150,7 +150,7 @@ export class Chat extends AuthMiddlewareMixin(QueryHandlersMixin(BaseClass)) {
   };
 
   async createChatRoom(req: RequestWithUser, res: Response) {
-    const { chat_name } = req.body;
+    const { chat_name, created_at, timezone } = req.body;
     const userId = req.user.pk_user_id;
 
     if (chat_name?.length === 0) {
@@ -158,10 +158,23 @@ export class Chat extends AuthMiddlewareMixin(QueryHandlersMixin(BaseClass)) {
         msg: "Room name cant be a falsy value",
       });
     }
+
+    if (!timezone || !created_at) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        reason: `Bad Request:c timezone, and created_at are required to create a chat room`,
+      });
+    }
+
     const chatRooms =
       await this.queryHandlers.createNewChatroomRoomNameAndByUserId(
         chat_name,
         userId,
+        {
+          chatName: chat_name,
+          created_at,
+          timezone,
+          userId: userId,
+        },
       );
 
     if ("error" in chatRooms) {
