@@ -97,8 +97,14 @@ export class AppSocketBase extends QueryHandlers {
   addMessageToRoom(socket: Socket) {
     socket.on(
       "add-message",
-      async (data: { chatName: string; message: string; senderId: string }) => {
-        const { chatName, message } = data;
+      async (data: {
+        chatName: string;
+        message: string;
+        senderId: string;
+        sent_at: string;
+        timezone: string;
+      }) => {
+        const { chatName, message, sent_at, timezone } = data;
         const token = socket.handshake.auth?.token;
         const user = (await this.decodeJWT(token)) as JWT_RETURN_USER;
 
@@ -116,6 +122,12 @@ export class AppSocketBase extends QueryHandlers {
             "Message cannot be empty",
           );
         }
+        if (!sent_at || !timezone) {
+          return this.emitAddMessageErrorResponse(
+            chatName,
+            "sent_at and timezone cannot be empty",
+          );
+        }
         if (!user) {
           return this.emitAddMessageErrorResponse(chatName, "User not found");
         }
@@ -126,16 +138,22 @@ export class AppSocketBase extends QueryHandlers {
 
         if (chatExist.length === 0) {
           // Create a new room
-          const insertIntoChatResponse = await this.createNewChatRoom(chatName);
+          const insertIntoChatResponse = await this.createNewChatRoom({
+            chatName,
+            created_at: sent_at,
+            timezone: timezone,
+          });
 
           const chatId = insertIntoChatResponse[0].id;
-
+          
           // Add message to the message table - refactor this
-          const messageResponse = await this.insertMessageToTable(
+          const messageResponse = await this.insertMessageToTable({
             chatId,
-            userId,
+            user_id: userId,
             message,
-          );
+            sent_at,
+            timezone,
+          });
           const chatExist = await this.selectChatByChatName(chatName);
 
           const addMessageResponse = messageResponse.map((message) => ({
@@ -153,11 +171,13 @@ export class AppSocketBase extends QueryHandlers {
         }
 
         const chatId = chatExist[0].pk_chats_id;
-        const messageInsertResponse = await this.insertMessageToTable(
+        const messageInsertResponse = await this.insertMessageToTable({
           chatId,
-          userId,
+          user_id: userId,
           message,
-        );
+          sent_at,
+          timezone,
+        });
         const messageResponse = await this.getMostRecentChatMessageSent(
           messageInsertResponse,
         );
@@ -189,13 +209,25 @@ export class AppSocketBase extends QueryHandlers {
         message,
         imageFile,
         imageName,
+        created_at, 
+        timezone
       }: {
         recipientId: number;
         senderId: number;
         message: string;
+        created_at:string;
+        timezone:string;
         imageFile?: Buffer;
         imageName?: string;
       }) => {
+      
+        if (!created_at || !timezone) {
+          return this.emitAddMessageErrorResponse(
+            null,
+            "created_at and timezone cannot be empty",
+          );
+        }
+
         // Ensure that you do not return the passwords when selecting users
         const [sender, receiver] = (
           await this.getUserByUserIds({ userIdList: [senderId, recipientId] })
@@ -206,8 +238,8 @@ export class AppSocketBase extends QueryHandlers {
         )[0];
 
         const privateMessageInsertResponse = (
-          await this.createPrivateMessage(
-            {
+          await this.createPrivateMessage({
+            privateChatsInsertResponse: {
               ...privateChatsInsertResponse,
               pk_private_chat_id: privateChatsInsertResponse.pk_private_chat_id,
               sender_id: privateChatsInsertResponse.sender_id,
@@ -217,7 +249,9 @@ export class AppSocketBase extends QueryHandlers {
             message,
             imageFile,
             imageName,
-          )
+            created_at,
+            timezone,
+          })
         )[0];
 
         if (privateMessageInsertResponse?.image_file) {
@@ -253,6 +287,7 @@ export class AppSocketBase extends QueryHandlers {
             sent_at: privateMessageInsertResponse.sent_at,
             image_file: privateMessageInsertResponse.image_file,
             image_name: privateMessageInsertResponse.image_name,
+            timezone: privateMessageInsertResponse.timezone,
           },
           recipient: {
             pk_user_id: receiver.pk_user_id,

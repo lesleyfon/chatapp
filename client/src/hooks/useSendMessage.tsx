@@ -2,6 +2,7 @@ import { Socket } from "socket.io-client";
 import useAuthStorage from "../store/useAuthStorage";
 import { MessageInput } from "./../types/index";
 import { useSocketAuth } from "./useSocketAuth";
+import { getBrowserTimeZone, getCurrentDateTimeWithTimezone } from "../lib/utils";
 
 export const useSendMessage = ({ socket }: { socket: Socket | null }) => {
 	const { userId } = useAuthStorage((state) => state);
@@ -25,6 +26,9 @@ export const useSendMessage = ({ socket }: { socket: Socket | null }) => {
 		},
 		socket: Socket | null
 	) {
+		const created_at = getCurrentDateTimeWithTimezone();
+		const timezone = getBrowserTimeZone();
+
 		// If the socket is null, return early
 		if (socket === null) return;
 		// If the socket is not connected, connect it
@@ -36,7 +40,8 @@ export const useSendMessage = ({ socket }: { socket: Socket | null }) => {
 			message: data.message_text,
 			imageFile: data?.imageFile,
 			imageName: data?.imageName,
-			sent_at: data.sent_at,
+			created_at,
+			timezone,
 		});
 
 		return data;
@@ -59,11 +64,16 @@ export const useSendMessage = ({ socket }: { socket: Socket | null }) => {
 		// If the socket is not connected, connect it
 		if (socket.connected === false) socket.connect();
 
+		const sent_at = getCurrentDateTimeWithTimezone();
+		const timezone = getBrowserTimeZone();
+
 		socket.emit("add-message", {
 			chatId: data.chatId,
 			message: data.message_text,
 			chatName: data.chatName,
 			senderId: userId,
+			sent_at,
+			timezone,
 		});
 	}
 

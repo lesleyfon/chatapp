@@ -21,8 +21,11 @@ export function cn(...inputs: ClassValue[]) {
  */
 function replaceZWithCSTOffset(utcDateTimeString: string) {
   // Check if the string ends with 'Z'
+  // TODO: ADD implementation for when timezone is provided
   if (!utcDateTimeString.endsWith("Z")) {
-    throw new Error("Input string must be in UTC format ending with Z");
+    // eslint-disable-next-line no-console
+    console.error("Input string must be in UTC format ending with Z: ", utcDateTimeString);
+    return utcDateTimeString;
   }
 
   // Remove the 'Z' and append the CST offset
@@ -73,6 +76,7 @@ export function timeDifference(date: string) {
 /**
  * Gets the current date and time with the user's timezone offset
  * @returns {string} ISO 8601 formatted datetime string with timezone information
+ * @example "2025-04-02T12:00:00.000-07:00"
  */
 export function getCurrentDateTimeWithTimezone() {
   const now = new Date();
@@ -112,6 +116,23 @@ export function getCurrentDateTimeWithTimezone() {
     return `${dateTimeBase}${offsetSign}${offsetHours}:${offsetMinutes}`;
   }
 }
+
+/**
+ * Gets the current timezone name in IANA format (e.g., "America/Chicago")
+ * @returns {string} The timezone name
+ * @example "America/Chicago"
+ */
+export function getBrowserTimeZone() {
+  try {
+    // Get the timezone from the browser using Intl API
+    return Intl.DateTimeFormat().resolvedOptions().timeZone;
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error('Error getting timezone:', error);
+    return 'UTC'; // Fallback to UTC if there's an error
+  }
+}
+
 
 export function formatDate(date: Date | string) {
   const inputDate = new Date(replaceZWithCSTOffset(date as string));

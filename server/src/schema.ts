@@ -1,4 +1,3 @@
-import { sql } from "drizzle-orm";
 import { primaryKey } from "drizzle-orm/mysql-core";
 
 import {
@@ -22,9 +21,8 @@ const bytea = customType<{ data: Buffer; notNull: false; default: false }>({
 export const chats = pgTable("chats", {
   pk_chats_id: serial("pk_chats_id").primaryKey(),
   chat_name: text("chat_name"),
-  createdAt: timestamp("created_at")
-    .notNull()
-    .default(sql`now()`),
+  createdAt: timestamp("created_at", { mode: "string" }).notNull(),
+  timezone: text("timezone").notNull(),
 });
 
 // User Table
@@ -33,13 +31,12 @@ export const user = pgTable("chat_user", {
   name: text("name"),
   email: text("email"),
   password: text("password"),
-
-  created_at: timestamp("created_at")
+  created_at: timestamp("created_at", { mode: "string" })
+    .notNull(),
+  updated_at: timestamp("updated_at", { mode: "string" })
     .notNull()
-    .default(sql`now()`),
-  updated_at: timestamp("updated_at")
-    .notNull()
-    .default(sql`now()`),
+    .defaultNow(),
+  timezone: text("timezone").notNull(),
 });
 
 /**
@@ -63,9 +60,8 @@ export const privateChats = pgTable("private_chat", {
   recipient_id: integer("recipient_id")
     .references(() => user.pk_user_id, { onDelete: "cascade" })
     .notNull(),
-  created_at: timestamp("created_at")
-    .notNull()
-    .default(sql`now()`),
+  created_at: timestamp("created_at", { mode: "string" }).notNull(),
+  timezone: text("timezone").notNull(),
 });
 
 export const chatMembers = pgTable(
@@ -78,9 +74,8 @@ export const chatMembers = pgTable(
     fk_user_id: integer("fk_user_id")
       .references(() => user.pk_user_id, { onDelete: "cascade" })
       .notNull(),
-    added_at: timestamp("added_at")
-      .notNull()
-      .default(sql`now()`),
+    added_at: timestamp("added_at", { mode: "string" }).notNull(),
+    timezone: text("timezone").notNull(),
   },
   (table) => ({
     // @ts-expect-error des
@@ -97,9 +92,8 @@ export const messages = pgTable("messages", {
     .references(() => user.pk_user_id, { onDelete: "cascade" })
     .notNull(),
   message_text: text("message_text"),
-  sent_at: timestamp("sent_at")
-    .notNull()
-    .default(sql`now()`),
+  sent_at: timestamp("sent_at", { mode: "string" }).notNull(),
+  timezone: text("timezone").notNull(),
 });
 
 export const privateMessages = pgTable("private_messages", {
@@ -113,7 +107,6 @@ export const privateMessages = pgTable("private_messages", {
   message_text: text("message_text"),
   image_name: text("image_name"),
   image_file: bytea("image_file"),
-  sent_at: timestamp("sent_at")
-    .notNull()
-    .default(sql`now()`),
+  sent_at: timestamp("sent_at", { mode: "string" }).notNull(),
+  timezone: text("timezone").notNull(),
 });
