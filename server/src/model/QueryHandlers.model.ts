@@ -660,6 +660,7 @@ export class QueryHandlers extends UserSchema {
   }
   /**
    * @description [WIP]Retrieves private chat rooms for a specific user.
+   * Includes timezone information for proper message timestamp display.
    * @param {number} userId - The ID of the user.
    * @returns {Promise<PrivateChatResult[]>} - An array of private chat rooms.
    */
