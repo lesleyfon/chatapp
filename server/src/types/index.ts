@@ -1,7 +1,7 @@
 import { Request } from "express";
 
 export type RequestWithUser = Request & {
-  user: Omit<UserInterface, "created_at">;
+  user: Omit<UserInterface, "created_at" | "updated_at">;
   token: string;
 };
 // Environment and Configuration Types
@@ -27,14 +27,15 @@ export interface UserBase {
   pk_user_id: number;
   name: string | null;
   email: string | null;
-  created_at: Date;
-  updated_at?: Date;
+  created_at: string;
+  updated_at?: string;
 }
 
 export interface UserInterface extends UserBase {
   id?: number;
   password?: string;
   userId?: number;
+  timezone?: string;
 }
 
 export interface DBUserInterface extends UserBase {
@@ -45,13 +46,15 @@ export interface JWT_RETURN_USER {
   userId: number;
   name: string;
   email: string;
+  created_at: string;
+  timezone?: string;
 }
 
 // Message Types
 export interface MessageBase {
   id: number;
   fk_user_id: number;
-  sent_at: Date;
+  sent_at: string;
   message_text: string | null;
 }
 
@@ -69,7 +72,7 @@ export interface PrivateMessageBase extends MessageBase {
 export interface ChatBase {
   pk_chats_id: number;
   chat_name: string | null;
-  createdAt: Date;
+  createdAt: string;
 }
 
 export interface ChatType extends ChatBase {
@@ -81,14 +84,14 @@ export interface ChatMembersType {
   id: number;
   fk_chat_id: number;
   fk_user_id: number;
-  added_at: Date;
+  added_at: string;
 }
 
 export interface PrivateChatBase {
   pk_private_chat_id: number;
   sender_id: number;
   recipient_id: number;
-  created_at: Date;
+  created_at: string;
 }
 
 // Composite Types
