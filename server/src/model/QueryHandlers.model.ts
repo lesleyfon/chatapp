@@ -670,7 +670,7 @@ export class QueryHandlers extends UserSchema {
       this.db
         .select({
           fkPrivateChatId: privateMessages.fk_private_chat_id,
-          maxSentAt: sql`MAX(${privateMessages.sent_at})`.as("latest_sent_at"),
+          maxSentAt: sql`MAX(${privateMessages.sent_at} AT TIME ZONE ${privateMessages.timezone})`.as("latest_sent_at"),
         })
         .from(privateMessages)
         .groupBy(privateMessages.fk_private_chat_id),
