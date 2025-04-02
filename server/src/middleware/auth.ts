@@ -73,7 +73,7 @@ export class AuthMiddleware extends UserSchema {
     req: Request,
     res: Response,
     next: NextFunction,
-  ): Promise<Response<any, Record<string, any>>  | void> {
+  ): Promise<Response<any, Record<string, any>> | void> {
     const { email, password } = req.body;
     if (!email || !password) {
       return res.status(StatusCodes.BAD_REQUEST).json({
@@ -107,10 +107,15 @@ export class AuthMiddleware extends UserSchema {
     res: Response,
     next: NextFunction,
   ): Promise<Response<any, Record<string, any>> | void> {
-    const { email, password, name } = req.body;
+    const { email, password, name, timezone, created_at } = req.body;
     if (!email || !password || !name) {
       return res.status(StatusCodes.BAD_REQUEST).json({
         reason: `Bad Request email name, and password are required to register`,
+      });
+    }
+    if (!timezone || !created_at) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        reason: `Bad Request timezone, and created_at are required to register`,
       });
     }
     const userExist = await this.db
@@ -128,8 +133,10 @@ export class AuthMiddleware extends UserSchema {
       email,
       password,
       name,
+      timezone,
+      created_at,
     });
-    
+
     if (!userExist) {
       return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
         reason: "Error occurred while creating a new user",
@@ -141,6 +148,7 @@ export class AuthMiddleware extends UserSchema {
       name,
       email,
       userId: userObj?.id,
+      timezone: userObj?.timezone,
     };
     // @ts-expect-error Description: Ignoring type error because user is not recognized by TypeScript.
     req.token = await this.createJWT({ name, email, userId: userObj?.id });

@@ -21,21 +21,26 @@ export class UserSchema {
     name,
     password,
     email,
+    timezone,
+    created_at,
   }: {
     name: string;
     password: string;
     email: string;
+    timezone: string;
+    created_at: string;
   }): Promise<Omit<UserInterface, "created_at"> | undefined> {
     try {
       const hashedPassword = await this.hashPassword({ password });
-      
+
       const response = await this.db
         .insert(user)
-        .values({ name, password: hashedPassword, email })
+        .values({ name, password: hashedPassword, email, timezone, created_at }) // Default all users to UTC timezone
         .returning({
           id: user.pk_user_id,
           name: user.name,
           email: user.email,
+          timezone: user.timezone,
         });
 
       return {
@@ -43,6 +48,7 @@ export class UserSchema {
         email,
         id: response[0].id,
         pk_user_id: response[0].id,
+        timezone: response[0].timezone,
       };
     } catch (err) {
       if (typeof err === "object" && Object.keys(err as object).length) {
@@ -82,7 +88,7 @@ export class UserSchema {
     email: string;
     password: string;
   }): Promise<
-    | ({ user: Omit<UserInterface, "created_at">; token: string } & {
+    | ({ user: UserInterface; token: string } & {
         code?: StatusCodes;
         message?: string;
       })
@@ -100,7 +106,7 @@ export class UserSchema {
     const dbUser = {
       ...userExist[0],
       pk_user_id: userExist[0].pk_user_id,
-    } as UserInterface;
+    } as unknown as UserInterface;
 
     const isPasswordCorrect = await this.comparePassword({
       password,
@@ -117,6 +123,8 @@ export class UserSchema {
       name: dbUser.name ?? "",
       email: dbUser?.email as string,
       userId: dbUser.pk_user_id,
+      timezone: dbUser.timezone as string,
+      created_at: dbUser.created_at as string,
     });
     return {
       user: {
@@ -125,6 +133,8 @@ export class UserSchema {
         name: dbUser.name ?? "",
         email: dbUser.email as string,
         password: dbUser.password as string,
+        timezone: dbUser.timezone ?? "UTC",
+        created_at: dbUser.created_at as string,
       },
       token,
     };
@@ -134,16 +144,22 @@ export class UserSchema {
     name,
     email,
     userId,
+    timezone,
+    created_at,
   }: {
     name: string;
     email: string;
     userId: number;
+    timezone: string;
+    created_at: string;
   }) {
     const token = jwt.sign(
       {
         userId,
         name: name,
         email: email,
+        timezone,
+        created_at,
       },
       JWT_SECRET,
       {
