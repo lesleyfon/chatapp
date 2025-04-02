@@ -17,8 +17,9 @@ if (process.env.ENVIRONMENT === "development") {
 }
 
 if (process.env.ENVIRONMENT === "production") {
-  console.info("Running app in production mode. Setting CORS options");
+  console.info("Running app in production mode. Setting CORS options: ");
   origin.push(...(JSON.parse(process.env.APP_ENV as string).CORS_ORIGIN ?? []));
+  console.info("CORS options set: ", JSON.stringify(origin) );
 }
 
 const CorsOptions = {
