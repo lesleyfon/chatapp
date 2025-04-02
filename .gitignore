@@ -4,6 +4,7 @@ build/
 .idea/
 .vscode/
 .zed/
+database_backups/
 
 # Files to ignore
 *.log
