@@ -19,6 +19,7 @@ import { useMobileSidebar } from "../../../hooks/useMobileSidebar";
 import { useSocket } from "../../../hooks/useSocket";
 import { SocketProvider } from "../../../context/socket.context";
 import useAuthStorage from "../../../store/useAuthStorage";
+import { ScrollArea } from "../../ui/scroll-area";
 
 export const SidebarItemLink = React.memo(({ data }: { data: SidebarItemLinkProps }) => {
 	const location = useLocation();
@@ -68,9 +69,11 @@ SidebarItemLink.displayName = "SidebarLinkItem";
 
 function ChannelsSection({ children }: { children: React.ReactNode }) {
 	return (
-		<section aria-label="Chat channels">
+		<section aria-label="Chat channels" className="h-1/2 flex flex-col">
 			<h1 className="text-center font-bold text-l pt-4">Channels</h1>
-			<div className="grid gap-1 p-2">{children}</div>
+			<ScrollArea className="flex-1 w-full">
+				<div className="space-y-1 p-2">{children}</div>
+			</ScrollArea>
 		</section>
 	);
 }
@@ -78,9 +81,11 @@ ChannelsSection.displayName = "ChannelsSection";
 
 function PrivateMessagesSection({ children }: { children: React.ReactNode }) {
 	return (
-		<section aria-label="Private Messages">
+		<section aria-label="Private Messages" className="h-1/2 flex flex-col">
 			<h1 className="text-center font-bold text-l pt-4">Private Message</h1>
-			<div className="grid gap-1 p-2">{children}</div>
+			<ScrollArea className="flex-1 w-full">
+				<div className="space-y-1 p-2">{children}</div>
+			</ScrollArea>
 			<SearchPrivateRoom
 				triggerChild={
 					<Button
@@ -131,7 +136,7 @@ const PrivateChatList = memo(({ data }: { data: PrivateChatResultType[] }) => {
 		return <EmptyStateMessage />;
 	}
 
-	return data.slice(0, 5).map((d) => {
+	return data.map((d) => {
 		if (d.private_messages) {
 			const isRecipient = d.recipient.pk_user_id === userId;
 			const targetUser = isRecipient ? d.chat_user : d.recipient;
