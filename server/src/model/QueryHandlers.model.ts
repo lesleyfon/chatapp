@@ -835,14 +835,14 @@ export class QueryHandlers extends UserSchema {
           pk_user_id: data.chat_user?.pk_user_id,
           name: data.chat_user?.name ?? "",
           email: data.chat_user?.email ?? "",
-          created_at: data.chat_user?.created_at ?? new Date(0),
+          created_at: data.chat_user?.created_at ?? "",
         },
         private_messages: {
           id: data.private_messages?.id as unknown as string,
           fk_private_chat_id: data.private_messages?.fk_private_chat_id ?? "",
           fk_user_id: data.private_messages?.fk_user_id ?? "",
           message_text: data.private_messages?.message_text ?? "",
-          sent_at: data.private_messages?.sent_at ?? new Date(0),
+          sent_at: data.private_messages?.sent_at ?? "",
           timezone: data.private_messages?.timezone ?? "",
         },
         recipient: recipientDetails, // Use the found recipient details
