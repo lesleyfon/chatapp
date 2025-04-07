@@ -757,7 +757,8 @@ export class QueryHandlers extends UserSchema {
             'fk_private_chat_id', ${privateMessages.fk_private_chat_id},
             'fk_user_id', ${privateMessages.fk_user_id},
             'message_text', ${privateMessages.message_text},
-            'sent_at', ${privateMessages.sent_at}
+            'sent_at', ${privateMessages.sent_at},
+            'timezone', ${privateMessages.timezone}
           ) AS "private_messages",
           
           ${privateMessages.sent_at} AS "_ordering_sent_at"  -- Hidden field for ordering
@@ -812,16 +813,16 @@ export class QueryHandlers extends UserSchema {
       // Added the recipient details to a map for faster lookup
     const allRecipientMap = new Map(allRecipients.map((recipient) => [recipient.recipient.pk_user_id, recipient.recipient]));
 
-    // Map privateChatsData and ensure unique recipients
+    // Map sortedPrivateChatData and ensure unique recipients
     const returnData = sortedPrivateChatData.map((data) => {
       // Get the ID of the other user in the private chat
-      const otherUserId =
+      const otherPrivateChatUserId =
         data.private_chat.sender_id === userId
           ? data.private_chat.recipient_id
           : data.private_chat.sender_id;
 
       // Get the recipient details from the allRecipients array
-      const recipientDetails = allRecipientMap.get(otherUserId);
+      const recipientDetails = allRecipientMap.get(otherPrivateChatUserId);
 
       return {
         private_chat: {
@@ -842,45 +843,18 @@ export class QueryHandlers extends UserSchema {
           fk_user_id: data.private_messages?.fk_user_id ?? "",
           message_text: data.private_messages?.message_text ?? "",
           sent_at: data.private_messages?.sent_at ?? new Date(0),
+          timezone: data.private_messages?.timezone ?? "",
         },
         recipient: recipientDetails, // Use the found recipient details
       };
     });
 
     // Use a Set to filter unique recipients based on their IDs
-    const uniqueRecipients = Array.from(
-      new Map(
-        // TODO: WHY DO WE NEED THIS? IF WE ARE MAKING THE RECIPIENTS UNIQUE ON LINE: 813. 
-        // WHAT if we just map through the returnData and return the unique recipients?
-        returnData.map((item) => [String(item.recipient?.pk_user_id), item]),
-      ).values(),
-    ).map((item) => ({
-      private_chat: {
-        ...item.private_chat,
-        pk_private_chat_id: item.private_chat.pk_private_chat_id,
-        sender_id: item.private_chat.sender_id,
-        recipient_id: item.private_chat.recipient_id,
-        created_at: item.private_chat.created_at,
-      },
-      chat_user: {
-        ...item.chat_user,
-        name: item.chat_user?.name ?? "",
-        email: item.chat_user?.email ?? "",
-        created_at: item.chat_user?.created_at ?? new Date(0),
-        pk_user_id: item.chat_user?.pk_user_id || undefined,
-      },
-      private_messages: {
-        ...item.private_messages,
-        id: parseInt(item.private_messages.id),
-        fk_private_chat_id: item.private_messages
-          .fk_private_chat_id as unknown as number,
-        fk_user_id: item.private_messages.fk_user_id as unknown as number,
-      },
+    const uniqueRecipients = returnData.map((item) => ({
+      ...item,
       recipient: {
+        ...item.recipient,
         pk_user_id: item.recipient?.pk_user_id ?? 0,
-        name: item.recipient?.name ?? "",
-        email: item.recipient?.email ?? "",
-        created_at: item.recipient?.created_at ?? new Date(0),
       },
     }));
 
