@@ -1,5 +1,5 @@
 import { and, asc, desc, eq, inArray, ne, or, sql } from "drizzle-orm";
-import { NodePgDatabase } from "drizzle-orm/node-postgres";
+import { NodePgDatabase, } from "drizzle-orm/node-postgres";
 import { connectToDB } from "../db";
 import {
   chatMembers,
@@ -665,53 +665,61 @@ export class QueryHandlers extends UserSchema {
    * @returns {Promise<PrivateChatResult[]>} - An array of private chat rooms.
    */
   async getPrivateChatsForUser(userId: number) {
-    // Subquery to get the latest message for each chat
-    const latestMessages = await this.db.$with("latest_messages").as(
-      this.db
-        .select({
-          fkPrivateChatId: privateMessages.fk_private_chat_id,
-          maxSentAt: sql`MAX(${privateMessages.sent_at} AT TIME ZONE ${privateMessages.timezone})`.as("latest_sent_at"),
-        })
-        .from(privateMessages)
-        .groupBy(privateMessages.fk_private_chat_id),
-    );
 
-    // Main query
-    const privateChatsData = await this.db
-      .with(latestMessages)
-      .select({
-        chatId: privateChats.pk_private_chat_id,
-        senderId: privateChats.sender_id,
-        recipientId: privateChats.recipient_id,
-        chatCreatedAt: privateChats.created_at,
-        messageId: privateMessages.id,
-        messageSenderId: privateMessages.fk_user_id,
-        messageText: privateMessages.message_text,
-        imageName: privateMessages.image_name,
-        sentAt: privateMessages.sent_at,
-        userName: user.name,
-        userEmail: user.email,
-      })
-      .from(privateChats)
-      .innerJoin(
-        latestMessages,
-        eq(privateChats.pk_private_chat_id, latestMessages.fkPrivateChatId),
-      )
-      .innerJoin(
-        privateMessages,
-        sql`${privateMessages.fk_private_chat_id} = ${privateChats.pk_private_chat_id} AND ${privateMessages.sent_at} = ${latestMessages.maxSentAt}`,
-      )
-      .innerJoin(user, eq(user.pk_user_id, userId))
-      .where(
-        or(
-          eq(privateChats.sender_id, userId),
-          eq(privateChats.recipient_id, userId),
-        ),
-      )
-      .orderBy(desc(privateMessages.sent_at));
 
-    return privateChatsData;
-  }
+    const latest_messages = await this.db.execute(sql`
+      SELECT *
+      FROM (
+        SELECT DISTINCT ON (
+          LEAST(${privateChats.sender_id}, ${privateChats.recipient_id}),
+          GREATEST(${privateChats.sender_id}, ${privateChats.recipient_id})
+        )
+          json_build_object(
+            'pk_private_chat_id', ${privateChats.pk_private_chat_id},
+            'sender_id', ${privateChats.sender_id},
+            'recipient_id', ${privateChats.recipient_id},
+            'created_at', ${privateChats.created_at}
+          ) AS "private_chat",
+          
+          json_build_object(
+            'pk_user_id', ${user.pk_user_id},
+            'name', ${user.name},
+            'email', ${user.email},
+            'created_at', ${user.created_at}
+          ) AS "chat_user",
+          
+          json_build_object(
+            'id', ${privateMessages.id},
+            'fk_private_chat_id', ${privateMessages.fk_private_chat_id},
+            'fk_user_id', ${privateMessages.fk_user_id},
+            'message_text', ${privateMessages.message_text},
+            'sent_at', ${privateMessages.sent_at}
+          ) AS "private_messages",
+          
+          ${privateMessages.sent_at} AS "_ordering_sent_at"  -- Hidden field for ordering
+          
+        FROM ${privateMessages}
+        LEFT JOIN ${privateChats}
+          ON ${privateMessages.fk_private_chat_id} = ${privateChats.pk_private_chat_id}
+        LEFT JOIN ${user}
+          ON ${user.pk_user_id} = ${userId}
+        WHERE ${privateChats.sender_id} = ${userId} OR ${privateChats.recipient_id} = ${userId}
+        ORDER BY 
+          LEAST(${privateChats.sender_id}, ${privateChats.recipient_id}),
+          GREATEST(${privateChats.sender_id}, ${privateChats.recipient_id}),
+          ${privateMessages.sent_at} DESC
+      ) AS latest_messages
+      ORDER BY latest_messages."_ordering_sent_at" DESC
+    `);
+        
+      const privateChatsData = latest_messages.rows;
+    
+      return privateChatsData;
+    }
+    
+
+
+
 
   /**
    * @description Retrieves the latest private chat messages sent by a user.
@@ -723,59 +731,60 @@ export class QueryHandlers extends UserSchema {
   }: {
     userId: number;
   }): Promise<PrivateChatResult[]> {
-    const privateChatsData = await this.db
-      .selectDistinctOn([privateChats.recipient_id, privateChats.sender_id], {
-        private_chat: {
-          pk_private_chat_id: privateChats.pk_private_chat_id,
-          sender_id: privateChats.sender_id,
-          recipient_id: privateChats.recipient_id,
-          created_at: privateChats.created_at,
-        },
-        chat_user: {
-          pk_user_id: user.pk_user_id,
-          name: user.name,
-          email: user.email,
-          created_at: user.created_at,
-        },
-        private_messages: {
-          id: privateMessages.id,
-          fk_private_chat_id: privateMessages.fk_private_chat_id,
-          fk_user_id: privateMessages.fk_user_id,
-          message_text: privateMessages.message_text,
-          sent_at: privateMessages.sent_at,
-        },
-      })
-      .from(privateChats)
-      .where(
-        or(
-          eq(privateChats.sender_id, userId),
-          eq(privateChats.recipient_id, userId),
-        ),
-      )
-      .orderBy(
-        privateChats.recipient_id,
-        privateChats.sender_id,
-        desc(privateMessages.sent_at),
-      )
-      .leftJoin(user, eq(user.pk_user_id, userId))
-      .leftJoin(
-        privateMessages,
-        eq(privateMessages.fk_private_chat_id, privateChats.pk_private_chat_id),
-      );
+    const latest_messages = await this.db.execute(sql`
+      SELECT *
+      FROM (
+        SELECT DISTINCT ON (
+          LEAST(${privateChats.sender_id}, ${privateChats.recipient_id}),
+          GREATEST(${privateChats.sender_id}, ${privateChats.recipient_id})
+        )
+          json_build_object(
+            'pk_private_chat_id', ${privateChats.pk_private_chat_id},
+            'sender_id', ${privateChats.sender_id},
+            'recipient_id', ${privateChats.recipient_id},
+            'created_at', ${privateChats.created_at}
+          ) AS "private_chat",
+          
+          json_build_object(
+            'pk_user_id', ${user.pk_user_id},
+            'name', ${user.name},
+            'email', ${user.email},
+            'created_at', ${user.created_at}
+          ) AS "chat_user",
+          
+          json_build_object(
+            'id', ${privateMessages.id},
+            'fk_private_chat_id', ${privateMessages.fk_private_chat_id},
+            'fk_user_id', ${privateMessages.fk_user_id},
+            'message_text', ${privateMessages.message_text},
+            'sent_at', ${privateMessages.sent_at}
+          ) AS "private_messages",
+          
+          ${privateMessages.sent_at} AS "_ordering_sent_at"  -- Hidden field for ordering
+          
+        FROM ${privateMessages}
+        LEFT JOIN ${privateChats}
+          ON ${privateMessages.fk_private_chat_id} = ${privateChats.pk_private_chat_id}
+        LEFT JOIN ${user}
+          ON ${user.pk_user_id} = ${userId}
+        WHERE ${privateChats.sender_id} = ${userId} OR ${privateChats.recipient_id} = ${userId}
+        ORDER BY 
+          LEAST(${privateChats.sender_id}, ${privateChats.recipient_id}),
+          GREATEST(${privateChats.sender_id}, ${privateChats.recipient_id}),
+          ${privateMessages.sent_at} DESC
+      ) AS latest_messages
+      ORDER BY latest_messages."_ordering_sent_at" DESC
+    `);
+        
+      const sortedPrivateChatData= latest_messages.rows as unknown as PrivateChatResult[];
 
-    // THIS GETS THE LATEST MESSAGE SENT AND DOES NOT SORT THE QUERIED DATA.
-    const sortedPrivateChatData = [...privateChatsData].sort((chatA, chatB) => {
-      return new Date(chatA.private_messages?.sent_at || 0) >
-        new Date(chatB.private_messages?.sent_at || 0)
-        ? -1
-        : 1;
-    });
 
     // Get unique recipient IDs that are not the current user
     const recipientIds = new Set(
       sortedPrivateChatData.map((data) =>
+        // if the current user is the sender, then get the recipient id, otherwise get the sender id
         data.private_chat.sender_id === userId
-          ? data.private_chat.recipient_id
+          ? data.private_chat.recipient_id 
           : data.private_chat.sender_id,
       ),
     );
@@ -800,19 +809,19 @@ export class QueryHandlers extends UserSchema {
           Array.from(recipientIds).map((id) => id),
         ),
       );
+      // Added the recipient details to a map for faster lookup
+    const allRecipientMap = new Map(allRecipients.map((recipient) => [recipient.recipient.pk_user_id, recipient.recipient]));
 
     // Map privateChatsData and ensure unique recipients
     const returnData = sortedPrivateChatData.map((data) => {
-      // Determine the correct recipient ID based on the current user
+      // Get the ID of the other user in the private chat
       const otherUserId =
         data.private_chat.sender_id === userId
           ? data.private_chat.recipient_id
           : data.private_chat.sender_id;
 
-      // Find the recipient details
-      const recipientDetails = allRecipients.find(
-        (d) => d.recipient.pk_user_id === otherUserId,
-      )?.recipient;
+      // Get the recipient details from the allRecipients array
+      const recipientDetails = allRecipientMap.get(otherUserId);
 
       return {
         private_chat: {
@@ -841,6 +850,8 @@ export class QueryHandlers extends UserSchema {
     // Use a Set to filter unique recipients based on their IDs
     const uniqueRecipients = Array.from(
       new Map(
+        // TODO: WHY DO WE NEED THIS? IF WE ARE MAKING THE RECIPIENTS UNIQUE ON LINE: 813. 
+        // WHAT if we just map through the returnData and return the unique recipients?
         returnData.map((item) => [String(item.recipient?.pk_user_id), item]),
       ).values(),
     ).map((item) => ({
