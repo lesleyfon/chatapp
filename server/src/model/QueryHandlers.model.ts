@@ -777,7 +777,11 @@ export class QueryHandlers extends UserSchema {
       ORDER BY latest_messages."_ordering_sent_at" DESC
     `);
         
-      const sortedPrivateChatData= latest_messages.rows as unknown as PrivateChatResult[];
+      const sortedPrivateChatData= latest_messages.rows.map((row) => ({
+        private_chat: row.private_chat as PrivateChatResult['private_chat'],
+        chat_user: row.chat_user as PrivateChatResult['chat_user'],
+        private_messages: row.private_messages as PrivateChatResult['private_messages']
+      }));
 
 
     // Get unique recipient IDs that are not the current user
@@ -850,7 +854,16 @@ export class QueryHandlers extends UserSchema {
     });
 
     // Use a Set to filter unique recipients based on their IDs
-    const uniqueRecipients = returnData.map((item) => ({
+    // Create a map to ensure uniqueness based on recipient ID
+    const seenRecipients = new Map();
+    const uniqueRecipients = returnData.filter((item) => {
+      const recipientId = item.recipient?.pk_user_id;
+
+      if (!recipientId || seenRecipients.has(recipientId)) return false;
+      
+      seenRecipients.set(recipientId, true);
+      return true;
+    }).map((item) => ({
       ...item,
       recipient: {
         ...item.recipient,
