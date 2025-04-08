@@ -1,6 +1,6 @@
 import { Request, Response, Router } from "express";
 import { StatusCodes } from "http-status-codes";
-
+import * as Sentry from "@sentry/node"
 import AuthMiddleware from "../middleware/auth";
 import QueryHandlers from "../model/QueryHandlers.model";
 import { type RequestWithUser } from "../types";
@@ -76,9 +76,27 @@ export class Chat extends AuthMiddlewareMixin(QueryHandlersMixin(BaseClass)) {
     );
   }
 
+  /**
+   * Get chat messages by chatId
+   * @param req - Request with user
+   * @param res - Response
+   * @returns - Chat messages
+   */
   async getChatMessagesById(req: RequestWithUser, res: Response) {
-    const { chatId } = req.params;
+    try {
+      const { chatId } = req.params;
+
     if (!chatId) {
+      // Report Error to Sentry
+      Sentry.captureEvent({
+        level: "error",
+        extra:{
+          message: `Bad Request: chatId is required chatId = ${chatId}`,
+          chatId,
+          userId: req.user.pk_user_id,
+        }
+      });
+
       res.status(StatusCodes.BAD_REQUEST).json({
         messages: `Bad Request: chatId is required chatId = ${chatId}`,
       });
@@ -92,14 +110,56 @@ export class Chat extends AuthMiddlewareMixin(QueryHandlersMixin(BaseClass)) {
       );
 
     if ("error" in chatMessages) {
+      // Report Error to Sentry
+      Sentry.captureEvent({
+        level: "error",
+        extra: {
+          message: `Bad Request: chatMessages error = ${chatMessages}`,
+          chatMessages,
+          userId: req.user.pk_user_id,
+        },
+      });
       return res.status(StatusCodes.BAD_REQUEST).json(chatMessages);
     }
+
+    Sentry.captureMessage(
+      `Success: retrieved chat messages for userId = ${userId} and chatId = ${chatId}`, {
+      level: "info",
+      extra: {
+        message: `Success: retrieved chat messages for userId = ${userId} and chatId = ${chatId}`,
+        userId,
+        chatId,
+      },
+    });
+    // Return Success
     return res.status(StatusCodes.OK).json({ msg: chatMessages });
+    } catch (error) {
+      Sentry.captureException(error);
+      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+        message: "Internal Server Error",
+      });
+    }
   }
+
+  /**
+   * Get private messages by recipientId
+   * @param req - Request with user
+   * @param res - Response
+   * @returns - Private messages
+   */
   async getPrivateMessagesById(req: RequestWithUser, res: Response) {
-    const { recipientId } = req.params;
-    if (!recipientId) {
-      res.status(StatusCodes.BAD_REQUEST).json({
+    try {
+      const { recipientId } = req.params;
+      if (!recipientId) {
+        // Report Error to Sentry
+        Sentry.captureEvent({
+          level: "error",
+          extra: {
+            message: `Bad Request: recipientId is required: recipientId = ${recipientId}`,
+            recipientId,
+          },
+        });
+        res.status(StatusCodes.BAD_REQUEST).json({
         messages: `Bad Request: recipientId is required: recipientId = ${recipientId}`,
       });
     }
@@ -112,9 +172,37 @@ export class Chat extends AuthMiddlewareMixin(QueryHandlersMixin(BaseClass)) {
       });
 
     if ("error" in privateMessages) {
+      // Report Error to Sentry
+      Sentry.captureEvent({
+        level: "error",
+        extra: {
+          message: `Bad Request: privateMessages error = ${privateMessages}`,
+          privateMessages,
+          userId,
+          recipientId,
+        },
+      });
+
       return res.status(StatusCodes.BAD_REQUEST).json(privateMessages);
     }
+
+    Sentry.captureMessage(
+      `Success: retrieved private messages for userId = ${userId} and recipientId = ${recipientId}`, {
+      level: "info",
+      extra: {
+        message: `Success: retrieved private messages for userId = ${userId} and recipientId = ${recipientId}`,
+        userId,
+        recipientId,
+      },
+    });
+    // Return Success
     return res.status(StatusCodes.OK).json({ msg: privateMessages });
+    } catch (error) {
+      Sentry.captureException(error);
+      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+        message: "Internal Server Error",
+      });
+    }
   }
 
   async getAllChatRooms(_req: Request, res: Response) {
