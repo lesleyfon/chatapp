@@ -521,14 +521,12 @@ export class QueryHandlers extends UserSchema {
    * @param {number} userId - The ID of the user.
    * @returns {Promise<{ id: number }>} - The ID of the newly created chat room.
    */
-  async createNewChatroomRoomNameAndByUserId(
-    chatData: {
-      chatName: string;
-      created_at: string;
-      timezone: string;
-      userId: number;
-    },
-  ): Promise<{
+  async createNewChatroomRoomNameAndByUserId(chatData: {
+    chatName: string;
+    created_at: string;
+    timezone: string;
+    userId: number;
+  }): Promise<{
     chats?: {
       pk_chats_id: number;
       chat_name: string | null;
@@ -547,7 +545,7 @@ export class QueryHandlers extends UserSchema {
         userId,
       };
     }
-    if ( timezone === undefined || created_at === undefined) {
+    if (timezone === undefined || created_at === undefined) {
       return {
         error: true,
         reason: `Bad Request: timezone, and created_at are required to create a chat room`,
@@ -665,50 +663,52 @@ export class QueryHandlers extends UserSchema {
    * @returns {Promise<PrivateChatResult[]>} - An array of private chat rooms.
    */
   async getPrivateChatsForUser(userId: number) {
-    // Subquery to get the latest message for each chat
-    const latestMessages = await this.db.$with("latest_messages").as(
-      this.db
-        .select({
-          fkPrivateChatId: privateMessages.fk_private_chat_id,
-          maxSentAt: sql`MAX(${privateMessages.sent_at} AT TIME ZONE ${privateMessages.timezone})`.as("latest_sent_at"),
-        })
-        .from(privateMessages)
-        .groupBy(privateMessages.fk_private_chat_id),
-    );
+    const latest_messages = await this.db.execute(sql`
+      SELECT *
+      FROM (
+        SELECT DISTINCT ON (
+          LEAST(${privateChats.sender_id}, ${privateChats.recipient_id}),
+          GREATEST(${privateChats.sender_id}, ${privateChats.recipient_id})
+        )
+          json_build_object(
+            'pk_private_chat_id', ${privateChats.pk_private_chat_id},
+            'sender_id', ${privateChats.sender_id},
+            'recipient_id', ${privateChats.recipient_id},
+            'created_at', ${privateChats.created_at}
+          ) AS "private_chat",
 
-    // Main query
-    const privateChatsData = await this.db
-      .with(latestMessages)
-      .select({
-        chatId: privateChats.pk_private_chat_id,
-        senderId: privateChats.sender_id,
-        recipientId: privateChats.recipient_id,
-        chatCreatedAt: privateChats.created_at,
-        messageId: privateMessages.id,
-        messageSenderId: privateMessages.fk_user_id,
-        messageText: privateMessages.message_text,
-        imageName: privateMessages.image_name,
-        sentAt: privateMessages.sent_at,
-        userName: user.name,
-        userEmail: user.email,
-      })
-      .from(privateChats)
-      .innerJoin(
-        latestMessages,
-        eq(privateChats.pk_private_chat_id, latestMessages.fkPrivateChatId),
-      )
-      .innerJoin(
-        privateMessages,
-        sql`${privateMessages.fk_private_chat_id} = ${privateChats.pk_private_chat_id} AND ${privateMessages.sent_at} = ${latestMessages.maxSentAt}`,
-      )
-      .innerJoin(user, eq(user.pk_user_id, userId))
-      .where(
-        or(
-          eq(privateChats.sender_id, userId),
-          eq(privateChats.recipient_id, userId),
-        ),
-      )
-      .orderBy(desc(privateMessages.sent_at));
+          json_build_object(
+            'pk_user_id', ${user.pk_user_id},
+            'name', ${user.name},
+            'email', ${user.email},
+            'created_at', ${user.created_at}
+          ) AS "chat_user",
+
+          json_build_object(
+            'id', ${privateMessages.id},
+            'fk_private_chat_id', ${privateMessages.fk_private_chat_id},
+            'fk_user_id', ${privateMessages.fk_user_id},
+            'message_text', ${privateMessages.message_text},
+            'sent_at', ${privateMessages.sent_at}
+          ) AS "private_messages",
+
+          ${privateMessages.sent_at} AS "_ordering_sent_at"  -- Hidden field for ordering
+
+        FROM ${privateMessages}
+        LEFT JOIN ${privateChats}
+          ON ${privateMessages.fk_private_chat_id} = ${privateChats.pk_private_chat_id}
+        LEFT JOIN ${user}
+          ON ${user.pk_user_id} = ${userId}
+        WHERE ${privateChats.sender_id} = ${userId} OR ${privateChats.recipient_id} = ${userId}
+        ORDER BY
+          LEAST(${privateChats.sender_id}, ${privateChats.recipient_id}),
+          GREATEST(${privateChats.sender_id}, ${privateChats.recipient_id}),
+          ${privateMessages.sent_at} DESC
+      ) AS latest_messages
+      ORDER BY latest_messages."_ordering_sent_at" DESC
+    `);
+
+    const privateChatsData = latest_messages.rows;
 
     return privateChatsData;
   }
@@ -722,158 +722,165 @@ export class QueryHandlers extends UserSchema {
     userId,
   }: {
     userId: number;
-  }): Promise<PrivateChatResult[]> {
-    const privateChatsData = await this.db
-      .selectDistinctOn([privateChats.recipient_id, privateChats.sender_id], {
-        private_chat: {
-          pk_private_chat_id: privateChats.pk_private_chat_id,
-          sender_id: privateChats.sender_id,
-          recipient_id: privateChats.recipient_id,
-          created_at: privateChats.created_at,
-        },
-        chat_user: {
-          pk_user_id: user.pk_user_id,
-          name: user.name,
-          email: user.email,
-          created_at: user.created_at,
-        },
-        private_messages: {
-          id: privateMessages.id,
-          fk_private_chat_id: privateMessages.fk_private_chat_id,
-          fk_user_id: privateMessages.fk_user_id,
-          message_text: privateMessages.message_text,
-          sent_at: privateMessages.sent_at,
-        },
-      })
-      .from(privateChats)
-      .where(
-        or(
-          eq(privateChats.sender_id, userId),
-          eq(privateChats.recipient_id, userId),
-        ),
-      )
-      .orderBy(
-        privateChats.recipient_id,
-        privateChats.sender_id,
-        desc(privateMessages.sent_at),
-      )
-      .leftJoin(user, eq(user.pk_user_id, userId))
-      .leftJoin(
-        privateMessages,
-        eq(privateMessages.fk_private_chat_id, privateChats.pk_private_chat_id),
-      );
+  }): Promise<PrivateChatResult[] | SQLErrorType> {
+    try {
+      const latest_messages = await this.db.execute(sql`
+      SELECT *
+      FROM (
+        SELECT DISTINCT ON (
+          LEAST(${privateChats.sender_id}, ${privateChats.recipient_id}),
+          GREATEST(${privateChats.sender_id}, ${privateChats.recipient_id})
+        )
+          json_build_object(
+            'pk_private_chat_id', ${privateChats.pk_private_chat_id},
+            'sender_id', ${privateChats.sender_id},
+            'recipient_id', ${privateChats.recipient_id},
+            'created_at', ${privateChats.created_at}
+          ) AS "private_chat",
+          json_build_object(
+            'pk_user_id', ${user.pk_user_id},
+            'name', ${user.name},
+            'email', ${user.email},
+            'created_at', ${user.created_at}
+          ) AS "chat_user",
+          json_build_object(
+            'id', ${privateMessages.id},
+            'fk_private_chat_id', ${privateMessages.fk_private_chat_id},
+            'fk_user_id', ${privateMessages.fk_user_id},
+            'message_text', ${privateMessages.message_text},
+            'sent_at', ${privateMessages.sent_at},
+            'timezone', ${privateMessages.timezone}
+          ) AS "private_messages",
+          ${privateMessages.sent_at} AS "_ordering_sent_at"  -- Hidden field for ordering
+        FROM ${privateMessages}
+        LEFT JOIN ${privateChats}
+          ON ${privateMessages.fk_private_chat_id} = ${privateChats.pk_private_chat_id}
+        LEFT JOIN ${user}
+          ON ${user.pk_user_id} = ${userId}
+        WHERE ${privateChats.sender_id} = ${userId} OR ${privateChats.recipient_id} = ${userId}
+        ORDER BY
+          LEAST(${privateChats.sender_id}, ${privateChats.recipient_id}),
+          GREATEST(${privateChats.sender_id}, ${privateChats.recipient_id}),
+          ${privateMessages.sent_at} DESC
+      ) AS latest_messages
+      ORDER BY latest_messages."_ordering_sent_at" DESC
+    `);
 
-    // THIS GETS THE LATEST MESSAGE SENT AND DOES NOT SORT THE QUERIED DATA.
-    const sortedPrivateChatData = [...privateChatsData].sort((chatA, chatB) => {
-      return new Date(chatA.private_messages?.sent_at || 0) >
-        new Date(chatB.private_messages?.sent_at || 0)
-        ? -1
-        : 1;
-    });
+      const sortedPrivateChatData = latest_messages.rows.map((row) => ({
+        private_chat: row.private_chat as PrivateChatResult["private_chat"],
+        chat_user: row.chat_user as PrivateChatResult["chat_user"],
+        private_messages:
+          row.private_messages as PrivateChatResult["private_messages"],
+      }));
 
-    // Get unique recipient IDs that are not the current user
-    const recipientIds = new Set(
-      sortedPrivateChatData.map((data) =>
-        data.private_chat.sender_id === userId
-          ? data.private_chat.recipient_id
-          : data.private_chat.sender_id,
-      ),
-    );
-
-    if (recipientIds.size === 0) {
-      return [];
-    }
-    // Fetch recipient details from user table
-    const allRecipients = await this.db
-      .select({
-        recipient: {
-          pk_user_id: user.pk_user_id,
-          name: user.name,
-          email: user.email,
-          created_at: user.created_at,
-        },
-      })
-      .from(user)
-      .where(
-        inArray(
-          user.pk_user_id,
-          Array.from(recipientIds).map((id) => id),
+      // Get unique recipient IDs that are not the current user
+      const recipientIds = new Set(
+        sortedPrivateChatData.map((data) =>
+          // if the current user is the sender, then get the recipient id, otherwise get the sender id
+          data.private_chat.sender_id === userId
+            ? data.private_chat.recipient_id
+            : data.private_chat.sender_id,
         ),
       );
 
-    // Map privateChatsData and ensure unique recipients
-    const returnData = sortedPrivateChatData.map((data) => {
-      // Determine the correct recipient ID based on the current user
-      const otherUserId =
-        data.private_chat.sender_id === userId
-          ? data.private_chat.recipient_id
-          : data.private_chat.sender_id;
+      if (recipientIds.size === 0) {
+        return [];
+      }
+      // Fetch recipient details from user table
+      const allRecipients = await this.db
+        .select({
+          recipient: {
+            pk_user_id: user.pk_user_id,
+            name: user.name,
+            email: user.email,
+            created_at: user.created_at,
+          },
+        })
+        .from(user)
+        .where(
+          inArray(
+            user.pk_user_id,
+            Array.from(recipientIds).map((id) => id),
+          ),
+        );
+      // Added the recipient details to a map for faster lookup
+      const allRecipientMap = new Map(
+        allRecipients.map((recipient) => [
+          recipient.recipient.pk_user_id,
+          recipient.recipient,
+        ]),
+      );
 
-      // Find the recipient details
-      const recipientDetails = allRecipients.find(
-        (d) => d.recipient.pk_user_id === otherUserId,
-      )?.recipient;
+      // Map sortedPrivateChatData and ensure unique recipients
+      const returnData = sortedPrivateChatData.map((data) => {
+        // Get the ID of the other user in the private chat
+        const otherPrivateChatUserId =
+          data.private_chat.sender_id === userId
+            ? data.private_chat.recipient_id
+            : data.private_chat.sender_id;
 
+        // Get the recipient details from the allRecipients array
+        const recipientDetails = allRecipientMap.get(otherPrivateChatUserId);
+
+        return {
+          private_chat: {
+            pk_private_chat_id: data.private_chat.pk_private_chat_id,
+            sender_id: data.private_chat.sender_id,
+            recipient_id: data.private_chat.recipient_id,
+            created_at: data.private_chat.created_at,
+          },
+          chat_user: {
+            pk_user_id: data.chat_user?.pk_user_id,
+            name: data.chat_user?.name ?? "",
+            email: data.chat_user?.email ?? "",
+            created_at: data.chat_user?.created_at ?? "",
+          },
+          private_messages: {
+            id: data.private_messages?.id as unknown as string,
+            fk_private_chat_id: data.private_messages?.fk_private_chat_id ?? "",
+            fk_user_id: data.private_messages?.fk_user_id ?? "",
+            message_text: data.private_messages?.message_text ?? "",
+            sent_at: data.private_messages?.sent_at ?? "",
+            timezone: data.private_messages?.timezone ?? "",
+          },
+          recipient: recipientDetails, // Use the found recipient details
+        };
+      });
+
+      // Use a Set to filter unique recipients based on their IDs
+      // Create a map to ensure uniqueness based on recipient ID
+      const seenRecipients = new Map();
+      const uniqueRecipients = returnData
+        .filter((item) => {
+          const recipientId = item.recipient?.pk_user_id;
+
+          if (!recipientId || seenRecipients.has(recipientId)) return false;
+
+          seenRecipients.set(recipientId, true);
+          return true;
+        })
+        .map((item) => ({
+          ...item,
+          recipient: {
+            ...item.recipient,
+            pk_user_id: item.recipient?.pk_user_id ?? 0,
+          },
+        }));
+
+      return uniqueRecipients as unknown as PrivateChatResult[];
+    } catch (err) {
+      if (typeof err === "object" && Object.keys(err as object).length) {
+        return {
+          ...err,
+          error: true,
+          reason: err.message,
+        };
+      }
       return {
-        private_chat: {
-          pk_private_chat_id: data.private_chat.pk_private_chat_id,
-          sender_id: data.private_chat.sender_id,
-          recipient_id: data.private_chat.recipient_id,
-          created_at: data.private_chat.created_at,
-        },
-        chat_user: {
-          pk_user_id: data.chat_user?.pk_user_id,
-          name: data.chat_user?.name ?? "",
-          email: data.chat_user?.email ?? "",
-          created_at: data.chat_user?.created_at ?? new Date(0),
-        },
-        private_messages: {
-          id: data.private_messages?.id as unknown as string,
-          fk_private_chat_id: data.private_messages?.fk_private_chat_id ?? "",
-          fk_user_id: data.private_messages?.fk_user_id ?? "",
-          message_text: data.private_messages?.message_text ?? "",
-          sent_at: data.private_messages?.sent_at ?? new Date(0),
-        },
-        recipient: recipientDetails, // Use the found recipient details
+        error: true,
+        reason: err.message,
       };
-    });
-
-    // Use a Set to filter unique recipients based on their IDs
-    const uniqueRecipients = Array.from(
-      new Map(
-        returnData.map((item) => [String(item.recipient?.pk_user_id), item]),
-      ).values(),
-    ).map((item) => ({
-      private_chat: {
-        ...item.private_chat,
-        pk_private_chat_id: item.private_chat.pk_private_chat_id,
-        sender_id: item.private_chat.sender_id,
-        recipient_id: item.private_chat.recipient_id,
-        created_at: item.private_chat.created_at,
-      },
-      chat_user: {
-        ...item.chat_user,
-        name: item.chat_user?.name ?? "",
-        email: item.chat_user?.email ?? "",
-        created_at: item.chat_user?.created_at ?? new Date(0),
-        pk_user_id: item.chat_user?.pk_user_id || undefined,
-      },
-      private_messages: {
-        ...item.private_messages,
-        id: parseInt(item.private_messages.id),
-        fk_private_chat_id: item.private_messages
-          .fk_private_chat_id as unknown as number,
-        fk_user_id: item.private_messages.fk_user_id as unknown as number,
-      },
-      recipient: {
-        pk_user_id: item.recipient?.pk_user_id ?? 0,
-        name: item.recipient?.name ?? "",
-        email: item.recipient?.email ?? "",
-        created_at: item.recipient?.created_at ?? new Date(0),
-      },
-    }));
-
-    return uniqueRecipients as unknown as PrivateChatResult[];
+    }
   }
 
   /**

@@ -66,6 +66,7 @@ export interface PrivateMessageBase extends MessageBase {
   fk_private_chat_id: number;
   image_file: Buffer | string | null;
   image_name: string | null;
+  timezone: string;
 }
 
 // Chat Types
