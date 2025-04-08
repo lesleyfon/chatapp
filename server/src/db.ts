@@ -2,17 +2,17 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import { Client, type Client as ClientType, type Connection } from "pg";
 import { getEnvs } from "./utils/getEnvs";
 
-const { DB_URL } = getEnvs();
+const {  DATABASE_URL } = getEnvs();
 
 export const connectToDB = () => {
   let client: ClientType | Connection;
   if (process.env.ENVIRONMENT === "production") {
     client = new Client({
-      connectionString: DB_URL,
+      connectionString: DATABASE_URL,
     });
   } else {
     client = new Client({
-      connectionString: DB_URL,
+      connectionString: DATABASE_URL,
     });
   }
 
@@ -28,7 +28,7 @@ export const connectToDB = () => {
 
 // Initialize a single client instance
 const client = new Client({
-  connectionString: DB_URL,
+  connectionString: DATABASE_URL,
   ssl:
     process.env.ENVIRONMENT === "production"
       ? { rejectUnauthorized: false }
