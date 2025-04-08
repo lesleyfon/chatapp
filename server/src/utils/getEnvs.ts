@@ -15,7 +15,7 @@ export function getEnvs() {
     DATABASE_PASSWORD,
     DB_URL,
     DATABASE_URL,
-
+    SENTRY_DSN,
   }: ENV_VARS = JSON.parse(process.env.APP_ENV as string);
 
   return {
@@ -28,5 +28,6 @@ export function getEnvs() {
     DATABASE_PASSWORD,
     DB_URL,
     DATABASE_URL,
+    SENTRY_DSN,
   };
 }
