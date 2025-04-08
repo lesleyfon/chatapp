@@ -1,20 +1,13 @@
 import { drizzle } from "drizzle-orm/node-postgres";
-import { Client, type Client as ClientType, type Connection } from "pg";
+import { Client } from "pg";
 import { getEnvs } from "./utils/getEnvs";
 
 const {  DATABASE_URL } = getEnvs();
 
 export const connectToDB = () => {
-  let client: ClientType | Connection;
-  if (process.env.ENVIRONMENT === "production") {
-    client = new Client({
-      connectionString: DATABASE_URL,
-    });
-  } else {
-    client = new Client({
-      connectionString: DATABASE_URL,
-    });
-  }
+  const client = new Client({
+    connectionString: DATABASE_URL,
+  });
 
   client.connect((err) => {
     if (err) {
