@@ -1,5 +1,5 @@
 "use strict";
-!function(){try{var e="undefined"!=typeof window?window:"undefined"!=typeof global?global:"undefined"!=typeof globalThis?globalThis:"undefined"!=typeof self?self:{},n=(new e.Error).stack;n&&(e._sentryDebugIds=e._sentryDebugIds||{},e._sentryDebugIds[n]="cad4f750-e093-5ccb-8ad8-f94fd42d7533")}catch(e){}}();
+!function(){try{var e="undefined"!=typeof window?window:"undefined"!=typeof global?global:"undefined"!=typeof globalThis?globalThis:"undefined"!=typeof self?self:{},n=(new e.Error).stack;n&&(e._sentryDebugIds=e._sentryDebugIds||{},e._sentryDebugIds[n]="0744334a-758e-5a70-b605-be0ee17744db")}catch(e){}}();
 
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
@@ -35,23 +35,13 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getEnvs = getEnvs;
-const dotenv = __importStar(require("dotenv"));
-dotenv.config();
-function getEnvs() {
-    const { MONGO_CONNECTION_URL, PORT, JWT_SECRET, JWT_LIFETIME, DATABASE_HOST, DATABASE_USERNAME, DATABASE_PASSWORD, DB_URL, DATABASE_URL, SENTRY_DSN, } = JSON.parse(process.env.APP_ENV);
-    return {
-        MONGO_CONNECTION_URL,
-        PORT,
-        JWT_SECRET,
-        JWT_LIFETIME,
-        DATABASE_HOST,
-        DATABASE_USERNAME,
-        DATABASE_PASSWORD,
-        DB_URL,
-        DATABASE_URL,
-        SENTRY_DSN,
-    };
-}
-//# sourceMappingURL=getEnvs.js.map
-//# debugId=cad4f750-e093-5ccb-8ad8-f94fd42d7533
+const Sentry = __importStar(require("@sentry/node"));
+const getEnvs_1 = require("./utils/getEnvs");
+const { SENTRY_DSN } = (0, getEnvs_1.getEnvs)();
+Sentry.init({
+    dsn: SENTRY_DSN,
+    tracesSampleRate: 1.0,
+    environment: process.env.ENVIRONMENT,
+});
+//# sourceMappingURL=instrument.js.map
+//# debugId=0744334a-758e-5a70-b605-be0ee17744db

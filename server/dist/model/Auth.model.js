@@ -1,4 +1,6 @@
 "use strict";
+!function(){try{var e="undefined"!=typeof window?window:"undefined"!=typeof global?global:"undefined"!=typeof globalThis?globalThis:"undefined"!=typeof self?self:{},n=(new e.Error).stack;n&&(e._sentryDebugIds=e._sentryDebugIds||{},e._sentryDebugIds[n]="9dbd3284-67e3-51ac-811b-6c8bd597e6d5")}catch(e){}}();
+
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);
@@ -15,47 +17,58 @@ var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (
 }) : function(o, v) {
     o["default"] = v;
 });
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserSchema = void 0;
 const bcrypt_1 = __importDefault(require("bcrypt"));
-const jsonwebtoken_1 = __importStar(require("jsonwebtoken"));
-const getEnvs_1 = require("../utils/getEnvs");
-const db_1 = require("../db");
-const schema_1 = require("../schema");
 const drizzle_orm_1 = require("drizzle-orm");
 const http_status_codes_1 = require("http-status-codes");
+const jsonwebtoken_1 = __importStar(require("jsonwebtoken"));
+const db_1 = require("../db");
+const schema_1 = require("../schema");
+const getEnvs_1 = require("../utils/getEnvs");
 const { JWT_SECRET } = (0, getEnvs_1.getEnvs)();
 class UserSchema {
     constructor() {
         this.db = (0, db_1.connectToDB)();
     }
-    async createUser({ name, password, email, }) {
+    async createUser({ name, password, email, timezone, created_at, }) {
         try {
             const hashedPassword = await this.hashPassword({ password });
             const response = await this.db
                 .insert(schema_1.user)
-                .values({ name, password: hashedPassword, email })
+                .values({ name, password: hashedPassword, email, timezone, created_at })
                 .returning({
                 id: schema_1.user.pk_user_id,
                 name: schema_1.user.name,
                 email: schema_1.user.email,
+                timezone: schema_1.user.timezone,
             });
             return {
                 name,
                 email,
-                password: hashedPassword,
                 id: response[0].id,
-                pk_user_id: response[0].id
+                pk_user_id: response[0].id,
+                timezone: response[0].timezone,
             };
         }
         catch (err) {
@@ -67,7 +80,10 @@ class UserSchema {
     }
     async getUser({ email }) {
         try {
-            const userExist = await this.db.select().from(schema_1.user).where((0, drizzle_orm_1.eq)(schema_1.user.email, email));
+            const userExist = await this.db
+                .select()
+                .from(schema_1.user)
+                .where((0, drizzle_orm_1.eq)(schema_1.user.email, email));
             if (userExist.length === 0) {
                 return undefined;
             }
@@ -77,14 +93,20 @@ class UserSchema {
             if (typeof err === "object" && Object.keys(err).length) {
                 throw new Error(JSON.stringify(err));
             }
-            return err;
+            return {
+                reason: "Failed to retrieve user",
+                code: http_status_codes_1.StatusCodes.INTERNAL_SERVER_ERROR,
+            };
         }
     }
-    async getAuthUser({ email, password }) {
-        var _a, _b;
-        const userExist = await this.db.select().from(schema_1.user).where((0, drizzle_orm_1.eq)(schema_1.user.email, email));
+    async getAuthUser({ email, password, }) {
+        var _a, _b, _c;
+        const userExist = await this.db
+            .select()
+            .from(schema_1.user)
+            .where((0, drizzle_orm_1.eq)(schema_1.user.email, email));
         if (userExist.length === 0) {
-            return { code: http_status_codes_1.StatusCodes.NOT_FOUND, message: "User does not exist" };
+            return { code: http_status_codes_1.StatusCodes.NOT_FOUND, reason: "User does not exist" };
         }
         const dbUser = Object.assign(Object.assign({}, userExist[0]), { pk_user_id: userExist[0].pk_user_id });
         const isPasswordCorrect = await this.comparePassword({
@@ -93,14 +115,16 @@ class UserSchema {
         });
         if (!isPasswordCorrect) {
             return {
-                message: "Incorrect password",
+                reason: "Incorrect password",
                 code: http_status_codes_1.StatusCodes.UNAUTHORIZED,
             };
         }
         const token = await this.createJWT({
             name: (_a = dbUser.name) !== null && _a !== void 0 ? _a : "",
             email: dbUser === null || dbUser === void 0 ? void 0 : dbUser.email,
-            userId: dbUser.pk_user_id
+            userId: dbUser.pk_user_id,
+            timezone: dbUser.timezone,
+            created_at: dbUser.created_at,
         });
         return {
             user: {
@@ -109,18 +133,22 @@ class UserSchema {
                 name: (_b = dbUser.name) !== null && _b !== void 0 ? _b : "",
                 email: dbUser.email,
                 password: dbUser.password,
+                timezone: (_c = dbUser.timezone) !== null && _c !== void 0 ? _c : "UTC",
+                created_at: dbUser.created_at,
             },
             token,
         };
     }
-    async createJWT({ name, email, userId }) {
+    async createJWT({ name, email, userId, timezone, created_at, }) {
         const token = jsonwebtoken_1.default.sign({
             userId,
             name: name,
             email: email,
+            timezone,
+            created_at,
         }, JWT_SECRET, {
-            expiresIn: '24h',
-            algorithm: 'HS256'
+            expiresIn: "24h",
+            algorithm: "HS256",
         });
         return token;
     }
@@ -129,13 +157,13 @@ class UserSchema {
             if (!token) {
                 return;
             }
-            const response = await jsonwebtoken_1.default.verify(token, JWT_SECRET);
+            const response = (await jsonwebtoken_1.default.verify(token, JWT_SECRET));
             return response;
         }
         catch (err) {
             if (err instanceof jsonwebtoken_1.TokenExpiredError) {
                 return {
-                    message: "Unauthorized",
+                    reason: "Unauthorized",
                     code: http_status_codes_1.StatusCodes.UNAUTHORIZED,
                 };
             }
@@ -154,3 +182,4 @@ class UserSchema {
 }
 exports.UserSchema = UserSchema;
 //# sourceMappingURL=Auth.model.js.map
+//# debugId=9dbd3284-67e3-51ac-811b-6c8bd597e6d5
