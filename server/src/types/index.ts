@@ -14,6 +14,7 @@ export interface ENV_VARS {
   DATABASE_USERNAME: string;
   DATABASE_PASSWORD: string;
   DB_URL: string;
+  DATABASE_URL: string;
 }
 
 export type SQLErrorType = {
