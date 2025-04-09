@@ -49,7 +49,7 @@ const port = process.env.PORT ? parseInt(process.env.PORT) : 3010;
 const url =
   process.env.ENVIRONMENT === "development" ? "http://localhost:3010" : "";
 
-console.log("URL to listen too: ", url);
+  console.log("URL to listen too: ", url);
 
 class SocketServer {
   port: number;

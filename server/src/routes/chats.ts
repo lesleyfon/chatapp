@@ -141,7 +141,13 @@ export class Chat extends AuthMiddlewareMixin(QueryHandlersMixin(BaseClass)) {
       // Return Success
       return res.status(StatusCodes.OK).json({ msg: chatMessages });
     } catch (error) {
-      Sentry.captureException(error);
+      Sentry.captureException(error, {
+        extra: {
+          method: "getChatMessagesById",
+          userId: req.user.pk_user_id,
+          chatId: req.params.chatId,
+        },
+      });
       return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
         message: "Internal Server Error",
       });
@@ -214,7 +220,13 @@ export class Chat extends AuthMiddlewareMixin(QueryHandlersMixin(BaseClass)) {
       // Return Success
       return res.status(StatusCodes.OK).json({ msg: privateMessages });
     } catch (error) {
-      Sentry.captureException(error);
+      Sentry.captureException(error, {
+        extra: {
+          userId: req.user.pk_user_id,
+          recipientId: req.params.recipientId,
+          method: "getPrivateMessagesById",
+        },
+      });
       return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
         message: "Internal Server Error",
       });
