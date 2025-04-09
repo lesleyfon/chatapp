@@ -7,10 +7,10 @@ import multer from "multer";
 import { Server as SocketIOServer } from "socket.io";
 import { appRouter } from "./routes/index";
 import { AppSocketBase } from "./web/socket";
-import * as Sentry from "@sentry/node"
+import * as Sentry from "@sentry/node";
 
 // Extend Express Response type to include Sentry property
-declare module 'express' {
+declare module "express" {
   interface Response {
     sentry?: string;
   }
@@ -28,7 +28,7 @@ if (process.env.ENVIRONMENT === "development") {
 if (process.env.ENVIRONMENT === "production") {
   console.info("Running app in production mode. Setting CORS options: ");
   origin.push(...(JSON.parse(process.env.APP_ENV as string).CORS_ORIGIN ?? []));
-  console.info("CORS options set: ", JSON.stringify(origin) );
+  console.info("CORS options set: ", JSON.stringify(origin));
 }
 
 const CorsOptions = {
@@ -69,7 +69,7 @@ class SocketServer {
     this.app = express();
     this.app.use(express.json());
     this.app.use(upload.single("file"));
-    
+
     // Middlewares
     this.app.use(cors());
     this.app.use(
@@ -81,45 +81,51 @@ class SocketServer {
           "Access-Control-Allow-Headers",
           "Origin, Content-Type, Accept",
         );
-        
+
         // Handle preflight requests
         if (req.method === "OPTIONS") {
           return res.sendStatus(200);
         }
-        
+
         next();
       },
     );
     this.app.use(appRouter);
-    
+
     // The error handler must be registered before any other error middleware and after all controllers
     Sentry.setupExpressErrorHandler(this.app);
-    
+
     // Error handling middleware
-    this.app.use((err: Error, req: Request, res: Response, _next: NextFunction) => {
-      // Log the error to Sentry
-      Sentry.captureException(err);
-      
-      // The error id is attached to `res.sentry` to be returned and optionally displayed to the user for support.
-      res.statusCode = 500;
-      res.json({
-        error: true,
-        message: err.message,
-        sentryId: res.sentry,
-        path: req.path
-      });
-    });
+    this.app.use(
+      (err: Error, req: Request, res: Response, _next: NextFunction) => {
+        // Log the error to Sentry
+        const eventId = Sentry.captureException(err);
+
+        // The error id is attached to `res.sentry` to be returned and optionally displayed to the user for support.
+        res.statusCode = 500;
+        res.json({
+          error: true,
+          message: err.message,
+          sentryId: res.sentry,
+          path: req.path,
+          eventId,
+        });
+      },
+    );
 
     // 404 handler - must be after all other routes
     this.app.use((req: Request, res: Response) => {
-      Sentry.captureException(new Error(`Route not found: ${req.path}`));
+      const eventId = Sentry.captureException(
+        new Error(`Route not found: ${req.path}`),
+      );
       res.status(404).json({
         error: true,
         message: `Route not found: ${req.path}`,
-        sentryId: res.sentry
+        sentryId: res.sentry,
+        eventId,
       });
     });
-    
+
     this.httpServer = createServer(this.app);
     this.setupAppSocketConnection(new SocketIOServer(this.httpServer));
   }
