@@ -1,4 +1,6 @@
 "use strict";
+!function(){try{var e="undefined"!=typeof window?window:"undefined"!=typeof global?global:"undefined"!=typeof globalThis?globalThis:"undefined"!=typeof self?self:{},n=(new e.Error).stack;n&&(e._sentryDebugIds=e._sentryDebugIds||{},e._sentryDebugIds[n]="c9b75f71-7611-5e97-8644-4e3ff9e4b8da")}catch(e){}}();
+
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -13,13 +15,14 @@ class AuthMiddleware extends Auth_model_1.UserSchema {
     constructor() {
         super();
         this.authenticateRequests = this.authenticateRequests.bind(this);
-        this.authenticateUserLoginMiddleware = this.authenticateUserLoginMiddleware.bind(this);
+        this.authenticateUserLoginMiddleware =
+            this.authenticateUserLoginMiddleware.bind(this);
     }
     async authenticateRequests(req, res, next) {
         const authorization = req.headers["authorization"];
         if (!authorization || !authorization.includes("Bearer")) {
             return res.status(http_status_codes_1.StatusCodes.UNAUTHORIZED).json({
-                message: "Unauthorized",
+                reason: "Unauthorized",
                 code: http_status_codes_1.StatusCodes.UNAUTHORIZED,
             });
         }
@@ -27,14 +30,14 @@ class AuthMiddleware extends Auth_model_1.UserSchema {
         const user = jsonwebtoken_1.default.decode(token);
         if (!user) {
             return res.status(http_status_codes_1.StatusCodes.UNAUTHORIZED).json({
-                message: "Unauthorized",
+                reason: "Unauthorized",
                 code: http_status_codes_1.StatusCodes.UNAUTHORIZED,
             });
         }
         const userExist = await this.getUser({ email: user.email });
         if (userExist === undefined) {
             return res.status(http_status_codes_1.StatusCodes.UNAUTHORIZED).json({
-                message: "Unauthorized",
+                reason: "Unauthorized",
                 code: http_status_codes_1.StatusCodes.UNAUTHORIZED,
             });
         }
@@ -50,7 +53,7 @@ class AuthMiddleware extends Auth_model_1.UserSchema {
         const { email, password } = req.body;
         if (!email || !password) {
             return res.status(http_status_codes_1.StatusCodes.BAD_REQUEST).json({
-                message: `Bad Request email and password are required`,
+                reason: `Bad Request email and password are required`,
                 code: http_status_codes_1.StatusCodes.BAD_REQUEST,
             });
         }
@@ -63,16 +66,24 @@ class AuthMiddleware extends Auth_model_1.UserSchema {
         return next();
     }
     async authenticateUserRegisterMiddleware(req, res, next) {
-        const { email, password, name } = req.body;
+        const { email, password, name, timezone, created_at } = req.body;
         if (!email || !password || !name) {
             return res.status(http_status_codes_1.StatusCodes.BAD_REQUEST).json({
-                message: `Bad Request email name, and password are required to register`,
+                reason: `Bad Request email name, and password are required to register`,
             });
         }
-        const userExist = await this.db.select().from(schema_1.user).where((0, drizzle_orm_1.eq)(schema_1.user.email, email));
+        if (!timezone || !created_at) {
+            return res.status(http_status_codes_1.StatusCodes.BAD_REQUEST).json({
+                reason: `Bad Request timezone, and created_at are required to register`,
+            });
+        }
+        const userExist = await this.db
+            .select()
+            .from(schema_1.user)
+            .where((0, drizzle_orm_1.eq)(schema_1.user.email, email));
         if (userExist.length > 0) {
             return res.status(http_status_codes_1.StatusCodes.FORBIDDEN).json({
-                message: "User with email already exist. Try another email",
+                reason: "User with email already exist. Try another email",
                 code: http_status_codes_1.StatusCodes.FORBIDDEN,
             });
         }
@@ -80,23 +91,26 @@ class AuthMiddleware extends Auth_model_1.UserSchema {
             email,
             password,
             name,
+            timezone,
+            created_at,
         });
         if (!userExist) {
             return res.status(http_status_codes_1.StatusCodes.INTERNAL_SERVER_ERROR).json({
-                message: "Error occurred while creating a new user",
+                reason: "Error occurred while creating a new user",
                 code: http_status_codes_1.StatusCodes.INTERNAL_SERVER_ERROR,
             });
         }
         req.user = {
             name,
             email,
-            password: userObj === null || userObj === void 0 ? void 0 : userObj.password,
             userId: userObj === null || userObj === void 0 ? void 0 : userObj.id,
+            timezone: userObj === null || userObj === void 0 ? void 0 : userObj.timezone,
         };
-        req.token = await this.createJWT({ name, email });
+        req.token = await this.createJWT({ name, email, userId: userObj === null || userObj === void 0 ? void 0 : userObj.id });
         return next();
     }
 }
 exports.AuthMiddleware = AuthMiddleware;
 exports.default = AuthMiddleware;
 //# sourceMappingURL=auth.js.map
+//# debugId=c9b75f71-7611-5e97-8644-4e3ff9e4b8da

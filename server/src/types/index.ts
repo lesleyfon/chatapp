@@ -15,6 +15,7 @@ export interface ENV_VARS {
   DATABASE_PASSWORD: string;
   DB_URL: string;
   DATABASE_URL: string;
+  SENTRY_DSN: string;
 }
 
 export type SQLErrorType = {
