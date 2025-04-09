@@ -1,6 +1,6 @@
 import { Request, Response, Router } from "express";
 import { StatusCodes } from "http-status-codes";
-import * as Sentry from "@sentry/node"
+import * as Sentry from "@sentry/node";
 import AuthMiddleware from "../middleware/auth";
 import QueryHandlers from "../model/QueryHandlers.model";
 import { type RequestWithUser } from "../types";
@@ -86,53 +86,60 @@ export class Chat extends AuthMiddlewareMixin(QueryHandlersMixin(BaseClass)) {
     try {
       const { chatId } = req.params;
 
-    if (!chatId) {
-      // Report Error to Sentry
-      Sentry.captureEvent({
-        level: "error",
-        extra:{
-          message: `Bad Request: chatId is required chatId = ${chatId}`,
-          chatId,
-          userId: req.user.pk_user_id,
-        }
-      });
+      if (!chatId) {
+        // Report Error to Sentry
+        const eventId = Sentry.captureEvent({
+          level: "error",
+          extra: {
+            message: `Bad Request: chatId is required chatId = ${chatId}`,
+            chatId,
+            userId: req.user.pk_user_id,
+          },
+        });
 
-      res.status(StatusCodes.BAD_REQUEST).json({
-        messages: `Bad Request: chatId is required chatId = ${chatId}`,
-      });
-    }
+        return res.status(StatusCodes.BAD_REQUEST).json({
+          messages: `Bad Request: chatId is required chatId = ${chatId}`,
+          eventId,
+          error: true,
+        });
+      }
 
-    const userId = req.user.pk_user_id;
-    const chatMessages =
-      await this.queryHandlers.selectChatRoomMessagesByUserId(
-        userId,
-        parseInt(chatId),
-      );
+      const userId = req.user.pk_user_id;
+      const chatMessages =
+        await this.queryHandlers.selectChatRoomMessagesByUserId(
+          userId,
+          parseInt(chatId),
+        );
 
-    if ("error" in chatMessages) {
-      // Report Error to Sentry
-      Sentry.captureEvent({
-        level: "error",
-        extra: {
-          message: `Bad Request: chatMessages error = ${chatMessages}`,
-          chatMessages,
-          userId: req.user.pk_user_id,
+      if ("error" in chatMessages) {
+        // Report Error to Sentry
+        const eventId = Sentry.captureEvent({
+          level: "error",
+          extra: {
+            message: `Bad Request: chatMessages error = ${chatMessages}`,
+            chatMessages,
+            userId: req.user.pk_user_id,
+          },
+        });
+        return res.status(StatusCodes.BAD_REQUEST).json({
+          ...chatMessages,
+          eventId,
+        });
+      }
+
+      Sentry.captureMessage(
+        `Success: retrieved chat messages for userId = ${userId} and chatId = ${chatId}`,
+        {
+          level: "info",
+          extra: {
+            message: `Success: retrieved chat messages for userId = ${userId} and chatId = ${chatId}`,
+            userId,
+            chatId,
+          },
         },
-      });
-      return res.status(StatusCodes.BAD_REQUEST).json(chatMessages);
-    }
-
-    Sentry.captureMessage(
-      `Success: retrieved chat messages for userId = ${userId} and chatId = ${chatId}`, {
-      level: "info",
-      extra: {
-        message: `Success: retrieved chat messages for userId = ${userId} and chatId = ${chatId}`,
-        userId,
-        chatId,
-      },
-    });
-    // Return Success
-    return res.status(StatusCodes.OK).json({ msg: chatMessages });
+      );
+      // Return Success
+      return res.status(StatusCodes.OK).json({ msg: chatMessages });
     } catch (error) {
       Sentry.captureException(error);
       return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
@@ -152,51 +159,60 @@ export class Chat extends AuthMiddlewareMixin(QueryHandlersMixin(BaseClass)) {
       const { recipientId } = req.params;
       if (!recipientId) {
         // Report Error to Sentry
-        Sentry.captureEvent({
+        const eventId = Sentry.captureEvent({
           level: "error",
           extra: {
-            message: `Bad Request: recipientId is required: recipientId = ${recipientId}`,
+            messages: `Bad Request: recipientId is required: recipientId = ${recipientId}`,
+            recipientId,
+            userId: req.user.pk_user_id,
+          },
+        });
+
+        return res.status(StatusCodes.BAD_REQUEST).json({
+          error: true,
+          messages: `Bad Request: recipientId is required: recipientId = ${recipientId}`,
+          eventId,
+        });
+      }
+
+      const userId = req.user.pk_user_id;
+      const privateMessages =
+        await this.queryHandlers.getPrivateRoomMessagesBySenderId({
+          userId,
+          recipientId: parseInt(recipientId),
+        });
+
+      if ("error" in privateMessages) {
+        // Report Error to Sentry
+        const eventId = Sentry.captureEvent({
+          level: "error",
+          extra: {
+            message: `Bad Request: privateMessages error = ${privateMessages}`,
+            privateMessages,
+            userId,
             recipientId,
           },
         });
-        res.status(StatusCodes.BAD_REQUEST).json({
-        messages: `Bad Request: recipientId is required: recipientId = ${recipientId}`,
-      });
-    }
 
-    const userId = req.user.pk_user_id;
-    const privateMessages =
-      await this.queryHandlers.getPrivateRoomMessagesBySenderId({
-        userId,
-        recipientId: parseInt(recipientId),
-      });
+        return res.status(StatusCodes.BAD_REQUEST).json({
+          ...privateMessages,
+          eventId,
+        });
+      }
 
-    if ("error" in privateMessages) {
-      // Report Error to Sentry
-      Sentry.captureEvent({
-        level: "error",
-        extra: {
-          message: `Bad Request: privateMessages error = ${privateMessages}`,
-          privateMessages,
-          userId,
-          recipientId,
+      Sentry.captureMessage(
+        `Success: retrieved private messages for userId = ${userId} and recipientId = ${recipientId}`,
+        {
+          level: "info",
+          extra: {
+            message: `Success: retrieved private messages for userId = ${userId} and recipientId = ${recipientId}`,
+            userId,
+            recipientId,
+          },
         },
-      });
-
-      return res.status(StatusCodes.BAD_REQUEST).json(privateMessages);
-    }
-
-    Sentry.captureMessage(
-      `Success: retrieved private messages for userId = ${userId} and recipientId = ${recipientId}`, {
-      level: "info",
-      extra: {
-        message: `Success: retrieved private messages for userId = ${userId} and recipientId = ${recipientId}`,
-        userId,
-        recipientId,
-      },
-    });
-    // Return Success
-    return res.status(StatusCodes.OK).json({ msg: privateMessages });
+      );
+      // Return Success
+      return res.status(StatusCodes.OK).json({ msg: privateMessages });
     } catch (error) {
       Sentry.captureException(error);
       return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
@@ -254,14 +270,12 @@ export class Chat extends AuthMiddlewareMixin(QueryHandlersMixin(BaseClass)) {
     }
 
     const chatRooms =
-      await this.queryHandlers.createNewChatroomRoomNameAndByUserId(
-        {
-          chatName: chat_name,
-          created_at,
-          timezone,
-          userId: userId,
-        },
-      );
+      await this.queryHandlers.createNewChatroomRoomNameAndByUserId({
+        chatName: chat_name,
+        created_at,
+        timezone,
+        userId: userId,
+      });
 
     if ("error" in chatRooms) {
       return res.status(StatusCodes.BAD_REQUEST).json(chatRooms);

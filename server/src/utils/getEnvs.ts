@@ -28,6 +28,6 @@ export function getEnvs() {
     DATABASE_PASSWORD,
     DB_URL,
     DATABASE_URL,
-    SENTRY_DSN,
+    SENTRY_DSN: SENTRY_DSN || "",
   };
 }
