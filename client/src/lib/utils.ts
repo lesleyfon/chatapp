@@ -2,6 +2,7 @@ import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
 
 import {
   LOCAL_STORAGE_AUTH_KEYS,
@@ -9,6 +10,7 @@ import {
 } from "../store/useAuthStorage";
 
 dayjs.extend(utc);
+dayjs.extend(timezone)
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -24,7 +26,7 @@ function replaceZWithCSTOffset(utcDateTimeString: string) {
   // TODO: ADD implementation for when timezone is provided
   if (!utcDateTimeString.endsWith("Z")) {
     // eslint-disable-next-line no-console
-    console.error("Input string must be in UTC format ending with Z: ", utcDateTimeString);
+    // console.error("Input string must be in UTC format ending with Z: ", utcDateTimeString);
     return utcDateTimeString;
   }
 
@@ -122,7 +124,7 @@ export function getCurrentDateTimeWithTimezone() {
  * @returns {string} The timezone name
  * @example "America/Chicago"
  */
-export function getBrowserTimeZone() {
+export function getBrowserTimeZone(): string {
   try {
     // Get the timezone from the browser using Intl API
     return Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -133,17 +135,38 @@ export function getBrowserTimeZone() {
   }
 }
 
+/**
+ * Formats a date to a specific timezone.
+ * @param {Date | string} date - The date to format.
+ * @param {string} timeZone - The timezone to format the date to.
+ * @returns {string} The formatted date in the user's current timezone.
+ */
+export function formatDate(date: Date | string, timeZone:string = "America/Chicago") {
+  /**
+   * The date and timezones are going to be given based on when a specific action was taken. 
+   * We want to format the date and time to be in the user's timezone.
+   * if the currents browser timezone is Different from the timezone the user performed a specific action
+   *  Sure we convert the saved date into the browsers local timezone by getting the time offset
+   * If the date is a string, we need to convert it to a Date object.
+   * If the date is a Date object, we need to convert it to a string.
+   * 
+   * Final Solution:
+   *  If the timezones are the same, we just return the date in the user's timezone.
+   * else:
+   *  Convert the transaction date to the user's timezone.
+   * 
+   */
 
-export function formatDate(date: Date | string) {
-  const inputDate = new Date(replaceZWithCSTOffset(date as string));
-  return inputDate.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "numeric",
-    minute: "numeric",
-    timeZone: "America/Chicago",
-  });
+  const browserTimeZone = getBrowserTimeZone();
+  
+  
+  if(browserTimeZone === timeZone) {
+    const inputDate = dayjs.tz(date, timeZone);
+    return inputDate.format('MMM DD, YYYY hh:mm A');
+  }
+
+  const transactionTimestampToBrowserTimezone = dayjs.tz(date, timeZone).tz(browserTimeZone);
+  return transactionTimestampToBrowserTimezone.format('MMM DD, YYYY hh:mm A');
 }
 
 /**
