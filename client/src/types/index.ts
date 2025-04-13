@@ -39,6 +39,7 @@ export type PrivateMessageType = {
   sent_at: Date; // Assuming it's a timestamp
   image_file: string;
   image_name: string;
+	timezone: string;
 };
 
 export interface NavItem {
