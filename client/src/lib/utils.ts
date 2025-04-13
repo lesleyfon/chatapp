@@ -30,7 +30,7 @@ function replaceZWithCSTOffset(utcDateTimeString: string) {
     return utcDateTimeString;
   }
 
-  // Remove the 'Z' and append the CST offset
+  
   return utcDateTimeString.slice(0, -1) + "-07:00";
 }
 
@@ -44,26 +44,21 @@ function replaceZWithCSTOffset(utcDateTimeString: string) {
  * function returns a string representing the time difference in the largest applicable unit (days,
  * hours, minutes, or seconds) rounded down to the nearest whole number.
  */
-export function timeDifference(date: string) {
-  // Convert the input UTC date to CST
-  const inputDate = new Date(replaceZWithCSTOffset(date));
-  const cstDate = new Date(
-    inputDate.toLocaleString("en-US", { timeZone: "America/Chicago" }),
-  );
-
-  // Get current time in CST
+export function timeDifference(date: string, timeZone:string="America/Chicago") {
   const now = new Date();
-  const currentCST = new Date(
-    now.toLocaleString("en-US", { timeZone: "America/Chicago" }),
-  );
+  const inputDate = new Date(replaceZWithCSTOffset(date));
+  
+  const transactionDate = new Date(inputDate.toLocaleString("en-US", { timeZone }));
+  const currentTime = new Date(now.toLocaleString("en-US", { timeZone }));
+  
 
-  const daysDifference = dayjs(currentCST).diff(dayjs(cstDate), "day");
-  const hoursDifference = dayjs(currentCST).diff(dayjs(cstDate), "hour");
-  const minutesDifference = dayjs(currentCST).diff(dayjs(cstDate), "minute");
-  const secondsDifference = dayjs(currentCST).diff(dayjs(cstDate), "second");
+  const daysDifference = dayjs(currentTime).diff(dayjs(transactionDate), "day");
+  const hoursDifference = dayjs(currentTime).diff(dayjs(transactionDate), "hour");
+  const minutesDifference = dayjs(currentTime).diff(dayjs(transactionDate), "minute");
+  const secondsDifference = dayjs(currentTime).diff(dayjs(transactionDate), "second");
   
   if (daysDifference >= 7) {
-    return cstDate.toLocaleDateString();
+    return transactionDate.toLocaleDateString();
   } else if (daysDifference >= 1) {
     return `${Math.floor(daysDifference)}d`;
   } else if (hoursDifference >= 1) {
