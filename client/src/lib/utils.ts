@@ -62,13 +62,13 @@ export function timeDifference(date: string) {
   const minutesDifference = dayjs(currentCST).diff(dayjs(cstDate), "minute");
   const secondsDifference = dayjs(currentCST).diff(dayjs(cstDate), "second");
   
-  if (daysDifference > 7) {
+  if (daysDifference >= 7) {
     return cstDate.toLocaleDateString();
-  } else if (daysDifference > 1) {
+  } else if (daysDifference >= 1) {
     return `${Math.floor(daysDifference)}d`;
-  } else if (hoursDifference > 1) {
+  } else if (hoursDifference >= 1) {
     return `${Math.floor(hoursDifference)}h`;
-  } else if (minutesDifference > 1) {
+  } else if (minutesDifference >= 1) {
     return `${Math.floor(minutesDifference)}m`;
   } else {
     return `${Math.floor(secondsDifference)}s`;
