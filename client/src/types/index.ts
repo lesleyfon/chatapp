@@ -67,6 +67,7 @@ export type MessageType = {
 	fk_user_id: string;
 	message_text: string | null;
 	sent_at: Date;
+	timezone: string
 };
 
 export type ChatMember = {
