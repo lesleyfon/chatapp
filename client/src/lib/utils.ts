@@ -145,13 +145,20 @@ export function formatDate(date: Date | string, timeZone:string = "America/Chica
   const browserTimeZone = getBrowserTimeZone();
   
   
-  if(browserTimeZone === timeZone) {
-    const inputDate = dayjs.tz(date, timeZone);
-    return inputDate.format('MMM DD, YYYY hh:mm A');
-  }
-
-  const transactionTimestampToBrowserTimezone = dayjs.tz(date, timeZone).tz(browserTimeZone);
-  return transactionTimestampToBrowserTimezone.format('MMM DD, YYYY hh:mm A');
+  try{
+    if(browserTimeZone === timeZone) {
+      const inputDate = dayjs.tz(date, timeZone);
+      return inputDate.format('MMM DD, YYYY hh:mm A');
+    }
+    
+    const transactionTimestampToBrowserTimezone = dayjs.tz(date, timeZone).tz(browserTimeZone);
+    return transactionTimestampToBrowserTimezone.format('MMM DD, YYYY hh:mm A');
+    }catch(error){
+      // eslint-disable-next-line no-console
+      console.error(`Error formatting date with timezone ${timeZone}:`, error);
+      const fallbackDate = dayjs.tz(date, browserTimeZone)
+      return fallbackDate.format('MMM DD, YYYY hh:mm A');
+    }
 }
 
 /**
