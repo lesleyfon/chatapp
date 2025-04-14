@@ -44,9 +44,7 @@ Here's how to resolve this in Render.com:
 - Render.com makes the SENTRY_AUTH_TOKEN environment variable available during the build process.
 - The sentry-cli then automatically uses the token when running its commands, allowing the source maps to be uploaded successfully to Sentry. 
 **Important Notes:**
-- Never hardcode the auth token in code or commit it to your repository. Environment variables are the secure and preferred way to handle sensitive configuration. 
-Make sure the specified scopes for your token cover all the actions you want to perform during deployment (e.g., creating releases, uploading source maps).
-If issues occur after this, review the Render.com build logs for more detail. Look for any messages related to authentication. 
+- Never hardcode the auth token in code or commit it to your repository. Environment variables are the secure and preferred way to handle sensitive configuration. Make sure the specified scopes for your token cover all the actions you want to perform during deployment (e.g., creating releases, uploading source maps). If issues occur after this, review the Render.com build logs for more detail. Look for any messages related to authentication. 
 By following these steps, Render.com builds should now be able to authenticate with Sentry and upload source maps without the "Auth token is required" error.
 
 
@@ -55,7 +53,7 @@ By following these steps, Render.com builds should now be able to authenticate w
 I ran into an issue when I was deploying my node.js app on render.com.
 I kept getting the following error:
 
-```
+```bash
 "Error: Auth token is required for this request. Please run `sentry-cli login` and try again!"
 ```
 
@@ -75,7 +73,7 @@ Here's how to resolve this in Render.com:
   - org:read
   - project:read
   - project:releases
-  * I was bot able to add scopes to the new token. Most likely because I am using a free account.
+  *I was not able to add scopes to the new token. Most likely because I am using a free account.
 - Generate and copy the token. **The token cannot be viewed again later, so store it securely.**
 **2. Set the SENTRY_AUTH_TOKEN as an Environment Variable in Render.com:**
 - Go to your Render.com service.
