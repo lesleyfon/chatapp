@@ -137,20 +137,10 @@ export function getBrowserTimeZone(): string {
  * @returns {string} The formatted date in the user's current timezone.
  */
 export function formatDate(date: Date | string, timeZone:string = "America/Chicago") {
-  /**
-   * The date and timezones are going to be given based on when a specific action was taken. 
-   * We want to format the date and time to be in the user's timezone.
-   * if the currents browser timezone is Different from the timezone the user performed a specific action
-   *  Sure we convert the saved date into the browsers local timezone by getting the time offset
-   * If the date is a string, we need to convert it to a Date object.
-   * If the date is a Date object, we need to convert it to a string.
-   * 
-   * Final Solution:
-   *  If the timezones are the same, we just return the date in the user's timezone.
-   * else:
-   *  Convert the transaction date to the user's timezone.
-   * 
-   */
+
+  // If the timezones are the same, we just return the date in the user's timezone.
+  // else: Convert the transaction date to the user's timezone.
+   
 
   const browserTimeZone = getBrowserTimeZone();
   
