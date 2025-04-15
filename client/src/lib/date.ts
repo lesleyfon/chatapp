@@ -4,7 +4,7 @@ import timezone from "dayjs/plugin/timezone";
 
 
 dayjs.extend(utc);
-dayjs.extend(timezone)
+dayjs.extend(timezone);
 
 
 /**
@@ -60,25 +60,6 @@ export function formatDate(date: Date | string, timeZone:string = "America/Chica
 
 
 /**
- * Replaces the 'Z' UTC indicator in an ISO 8601 datetime string with the CST (-06:00) offset
- * @param {string} utcDateTimeString - The datetime string with 'Z' indicating UTC
- * @returns {string} The datetime string with CST offset instead of 'Z'
- */
-function replaceZWithCSTOffset(utcDateTimeString: string) {
-  // Check if the string ends with 'Z'
-  // TODO: ADD implementation for when timezone is provided
-  if (!utcDateTimeString.endsWith("Z")) {
-    // eslint-disable-next-line no-console
-    // console.error("Input string must be in UTC format ending with Z: ", utcDateTimeString);
-    return utcDateTimeString;
-  }
-
-  
-  return utcDateTimeString.slice(0, -1) + "-07:00";
-}
-
-
-/**
  * The function calculates the time difference between a given date and the current date in days,
  * hours, minutes, or seconds and returns the result in a formatted string.
  * @param {Date} date - The `timeDifference` function calculates the time difference between the
@@ -89,11 +70,9 @@ function replaceZWithCSTOffset(utcDateTimeString: string) {
  * hours, minutes, or seconds) rounded down to the nearest whole number.
  */
 export function timeDifference(date: string, timeZone:string="America/Chicago") {
-  const now = new Date();
-  const inputDate = new Date(replaceZWithCSTOffset(date));
-  
-  const transactionDate = new Date(inputDate.toLocaleString("en-US", { timeZone }));
-  const currentTime = new Date(now.toLocaleString("en-US", { timeZone }));
+
+  const transactionDate = new Date(new Date(date).toLocaleString("en-US", { timeZone }));
+  const currentTime = new Date(new Date().toLocaleString("en-US", { timeZone }));
   
 
   const daysDifference = dayjs(currentTime).diff(dayjs(transactionDate), "day");
