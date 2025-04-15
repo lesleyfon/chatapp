@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { useNavigate } from "react-router-dom";
 import { PrivateChatResultType } from "./../types/index";
@@ -6,31 +6,32 @@ import { PrivateChatResultType } from "./../types/index";
 import { Socket } from "socket.io-client";
 import useAuthStorage from "../store/useAuthStorage";
 
-// Create a utility function for checking chat participants
+/**
+ * Checks if the user is a participant in the chat
+ * @param userId - The user's ID
+ * @param chatUsers - An array of user IDs that are part of the chat
+ * @returns true if the user is a participant in the chat, false otherwise
+ */
 const isChatParticipant = (userId: string, chatUsers: string[]) => {
 	const chatUserSet = new Set(chatUsers);
 	return chatUserSet.has(userId);
 };
 
-export function isPrivateChatBetweenTwoUsers({
-	responseRecipientId,
-	responseSenderId,
-	userId,
-	recipientId,
-}: {
-	responseRecipientId: string | null;
-	responseSenderId: string | null;
-	userId: string | null;
-	recipientId?: string;
-}): boolean {
-	const senderIdString = String(responseSenderId);
-	const recipientIdString = String(responseRecipientId);
-	const userIdString = String(userId);
+/**
+ * Checks if two chats are the same
+ * @param chat1 - The first chat
+ * @param chat2 - The second chat
+ * @returns true if the chats are the same, false otherwise
+ */
+const doChatsMatch = (
+	chat1: { sender_id: string; recipient_id: string },
+	chat2: { sender_id: string; recipient_id: string }
+) => {
 	return (
-		(senderIdString === userIdString && recipientIdString === recipientId) ||
-		(senderIdString === recipientId && recipientIdString === userIdString)
+		(chat1.sender_id === chat2.sender_id && chat1.recipient_id === chat2.recipient_id) ||
+		(chat1.sender_id === chat2.recipient_id && chat1.recipient_id === chat2.sender_id)
 	);
-}
+};
 
 function updateChatList({
 	state,
@@ -46,11 +47,11 @@ function updateChatList({
 		stateSenderId = state.private_chat.sender_id,
 		stateRecipientId = state.private_chat.recipient_id;
 
+	const isChatUser = isChatParticipant(userId, [stateSenderId, stateRecipientId]);
+
 	const chatToUpdate =
 		(responseSenderId === stateSenderId && responseRecipientId === stateRecipientId) ||
 		(responseSenderId === stateRecipientId && responseRecipientId === stateSenderId);
-
-	const isChatUser = isChatParticipant(userId, [stateSenderId, stateRecipientId]);
 
 	if (isChatUser && chatToUpdate) {
 		// This Updates the most recent message sent
@@ -72,75 +73,41 @@ export const useGetPrivateMessageList = ({ socket }: { socket: Socket | null }) 
 	const navigate = useNavigate();
 	const { userId } = useAuthStorage((state) => state);
 
-	const handleMessageUpdate = (response: PrivateChatResultType) => {
-		const { sender_id: responseSenderId, recipient_id: responseRecipientId } =
-			response.private_chat;
-		const privateMessageUserIds = [responseSenderId, responseRecipientId];
-		if (!userId) return;
-		// If we're in a specific chat, only update that chat
+	const handleMessageUpdate = useCallback(
+		(response: PrivateChatResultType) => {
+			if (!userId) return;
 
-		if (!isChatParticipant(userId, privateMessageUserIds)) {
-			return;
-		}
+			const { sender_id: responseSenderId, recipient_id: responseRecipientId } =
+				response.private_chat;
+			const privateMessageUserIds = [responseSenderId, responseRecipientId];
 
-		setPrivateRoomList((prevList) => {
-			const userExist = prevList.some((chat) => {
-				const { sender_id: chatSenderId, recipient_id: chatRecipientId } =
-					chat.private_chat;
-				const chatUserIds = [chatSenderId, chatRecipientId];
-
-				const recipientExist = isChatParticipant(responseRecipientId, chatUserIds);
-				const senderExist = isChatParticipant(responseSenderId, chatUserIds);
-
-				return recipientExist && senderExist;
-			});
-
-			if (userExist === false) {
-				return [
-					updateChatList({
-						userId,
-						response,
-						state: response,
-					}),
-					...prevList,
-				];
+			// Check if the user is a participant in the chat If not, return early
+			if (!isChatParticipant(userId, privateMessageUserIds)) {
+				return;
 			}
-			// Check if this chat already exists
-			const existingChatIndex = prevList.filter((chat) => {
-				const { sender_id: chatSenderId, recipient_id: chatRecipientId } =
-					chat.private_chat;
-				// IF the current user if not part of a chat, return early.
-				return isChatParticipant(userId, [chatSenderId, chatRecipientId]);
-			});
 
-			if (existingChatIndex.length === 0) {
-				// This is a new chat, add it to the list
-				return [
-					updateChatList({
-						userId,
-						response,
-						state: response,
-					}),
-				];
-			}
-			// Update existing chat
-			const filteredList = prevList.filter((chat) => {
-				const { sender_id, recipient_id } = chat.private_chat;
-				const chatToFilterOut =
-					(sender_id === responseSenderId && recipient_id === responseRecipientId) ||
-					(sender_id === responseRecipientId && recipient_id === responseSenderId);
-				return chatToFilterOut === false;
+			setPrivateRoomList((prevList) => {
+				// Check if the new response is part of a message sent by an already existing chat.
+				const userExist = prevList.some((chat) =>
+					doChatsMatch(chat.private_chat, response.private_chat)
+				);
+
+				// If the user does not exist, update the chat list with the new message
+				if (userExist === false) {
+					return [updateChatList({ userId, response, state: response }), ...prevList];
+				}
+
+				//Filter out the chat that has the same sender and recipient from the list. This is the response that we want to update.
+				const updatedList = prevList.filter(
+					(chat) => !doChatsMatch(chat.private_chat, response.private_chat)
+				);
+
+				// Update the chat list with the new message
+				return [updateChatList({ userId, response, state: response }), ...updatedList];
 			});
-			return [
-				updateChatList({
-					userId,
-					response,
-					state: response,
-				}),
-				...filteredList,
-			];
-		});
-	};
+		},
+		[userId]
+	);
 
 	useEffect(() => {
 		if (socket === null) return;
