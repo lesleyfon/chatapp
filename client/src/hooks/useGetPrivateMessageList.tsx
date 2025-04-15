@@ -20,7 +20,6 @@ export function isPrivateChatBetweenTwoUsers({
 	const senderIdString = String(responseSenderId);
 	const recipientIdString = String(responseRecipientId);
 	const userIdString = String(userId);
-
 	return (
 		(senderIdString === userIdString && recipientIdString === recipientId) ||
 		(senderIdString === recipientId && recipientIdString === userIdString)
@@ -31,25 +30,22 @@ function updateChatList({
 	state,
 	response,
 	userId,
-	recipientId,
 }: {
+	userId: string;
 	state: PrivateChatResultType;
 	response: PrivateChatResultType;
-	userId: string;
-	recipientId?: string;
 }) {
-	if (!recipientId) return state;
+	const chatUser = new Set([state.private_chat.sender_id, state.private_chat.recipient_id]);
+	const responseSenderId = response.private_chat.sender_id,
+		responseRecipientId = response.private_chat.recipient_id,
+		stateSenderId = state.private_chat.sender_id,
+		stateRecipientId = state.private_chat.recipient_id;
 
-	const { sender_id, recipient_id } = state.private_chat;
+	const chatToUpdate =
+		(responseSenderId === stateSenderId && responseRecipientId === stateRecipientId) ||
+		(responseSenderId === stateRecipientId && responseRecipientId === stateSenderId);
 
-	if (
-		isPrivateChatBetweenTwoUsers({
-			responseSenderId: String(sender_id),
-			responseRecipientId: String(recipient_id),
-			userId: String(userId),
-			recipientId: String(recipientId),
-		})
-	) {
+	if (chatUser.has(userId) && chatToUpdate) {
 		// This Updates the most recent message sent
 		return {
 			...state, // Create a new object
@@ -68,52 +64,79 @@ export const useGetPrivateMessageList = ({ socket }: { socket: Socket | null }) 
 	const [privateRoomList, setPrivateRoomList] = useState<PrivateChatResultType[]>([]);
 	const navigate = useNavigate();
 	const { userId } = useAuthStorage((state) => state);
-	const { recipientId } = useParams();
+	const { recipientId } = useParams(); // This should not be from params.
 
 	const handleMessageUpdate = (response: PrivateChatResultType) => {
 		const { sender_id: responseSenderId, recipient_id: responseRecipientId } =
 			response.private_chat;
-
+		const chatUser = new Set([responseSenderId, responseRecipientId]);
+		if (!userId) return;
 		// If we're in a specific chat, only update that chat
-		if (recipientId) {
-			const isSameChat = isPrivateChatBetweenTwoUsers({
-				responseSenderId,
-				responseRecipientId,
-				userId,
-				recipientId,
-			});
 
-			if (!isSameChat) {
+		if (recipientId) {
+			// TODO: WHYYYYY
+			if (!chatUser.has(userId)) {
 				return;
 			}
 		}
 
-		if (!userId) return;
-
 		setPrivateRoomList((prevList) => {
+			const userExist = prevList.some((chat) => {
+				const { sender_id: chatSenderId, recipient_id: chatRecipientId } =
+					chat.private_chat;
+				const chatIdBetweenUsers = new Set([chatSenderId, chatRecipientId]);
+
+				const recipientExist = chatIdBetweenUsers.has(response.private_chat.recipient_id);
+				const senderExist = chatIdBetweenUsers.has(response.private_chat.sender_id);
+
+				return recipientExist && senderExist;
+			});
+
+			if (userExist === false) {
+				return [
+					updateChatList({
+						userId,
+						response,
+						state: response,
+					}),
+					...prevList,
+				];
+			}
 			// Check if this chat already exists
 			const existingChatIndex = prevList.filter((chat) => {
-				const { sender_id: charSenderId, recipient_id: chatRecipientId } =
+				const { sender_id: chatSenderId, recipient_id: chatRecipientId } =
 					chat.private_chat;
-
-				const isSameChat = isPrivateChatBetweenTwoUsers({
-					responseSenderId: String(charSenderId),
-					responseRecipientId: String(chatRecipientId),
-					userId: String(userId),
-					recipientId: String(recipientId),
-				});
-				return !isSameChat;
+				const existingChatUser = new Set([chatSenderId, chatRecipientId]);
+				// IF the current user if not part of a chat, return early.
+				return existingChatUser.has(userId);
 			});
 
 			if (existingChatIndex.length === 0) {
 				// This is a new chat, add it to the list
-				return [updateChatList({ state: response, response, userId, recipientId })];
+				return [
+					updateChatList({
+						userId,
+						response,
+						state: response,
+					}),
+				];
 			}
-
 			// Update existing chat
-			return prevList.map((chat) =>
-				updateChatList({ state: chat, response, userId, recipientId })
-			);
+			const filteredList = prevList.filter((chat) => {
+				const { sender_id, recipient_id } = chat.private_chat;
+				const chatToFilterOut =
+					(sender_id === responseSenderId && recipient_id === responseRecipientId) ||
+					(sender_id === responseRecipientId && recipient_id === responseSenderId);
+				return chatToFilterOut === false;
+			});
+			return [
+				updateChatList({
+					userId,
+					response,
+					state: response,
+				}),
+				...filteredList,
+			];
 		});
 	};
 
