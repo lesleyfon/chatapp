@@ -67,7 +67,7 @@ function ChatroomLinksItem({
 }
 
 const ChatroomLinks = memo(function ChatroomLinks({ data, handleSelect }: ChatroomLinksProps) {
-	if (!data.length) return [];
+	if (!data.length) return null;
 
 	return data
 		.sort(sortData)
