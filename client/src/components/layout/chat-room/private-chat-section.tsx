@@ -9,7 +9,6 @@ import useAuthStorage from "../../../store/useAuthStorage";
 import { PrivateChatResultType } from "../../../types";
 import { Card, CardContent } from "../../ui/card";
 import { ScrollArea } from "../../ui/scroll-area";
-import { isPrivateChatBetweenTwoUsers } from "../../../hooks/useGetPrivateMessageList";
 
 export default function ImageCard({
 	imageUrl,
@@ -104,29 +103,33 @@ export const PrivateMessageSection = ({ data }: { data: PrivateChatResultType[] 
 
 	useEffect(() => {
 		if (socket?.connected === false) socket?.connect();
+		if (!userId) return; // Maybe logout?
 
 		socket?.on("add-private-message-response", (response: PrivateChatResultType) => {
 			const { sender_id: responseSenderId, recipient_id: responseRecipientId } =
 				response.private_chat;
 
+			const chatUser = new Set([responseSenderId, responseRecipientId]);
+
 			// IF users are not the same, return early
-			if (
-				!isPrivateChatBetweenTwoUsers({
-					responseSenderId,
-					responseRecipientId,
-					userId,
-					recipientId,
-				})
-			) {
+			if (!chatUser.has(userId)) {
 				return;
 			}
+			// Prevent messages from showing in other users chats
+			const chatToUpdate =
+				(responseSenderId.toString() === userId.toString() &&
+					responseRecipientId.toString() === recipientId?.toString()) ||
+				(responseSenderId.toString() === recipientId?.toString() &&
+					responseRecipientId.toString() === userId.toString());
+
+			if (chatToUpdate === false) return;
 
 			setAllRoomMessages((previousRoomMessages) => {
 				const responseCopy = { ...response };
 				if (String(response.chat_user.pk_user_id) === String(userId)) {
 					set(responseCopy, "chat_user.name", "You");
 				}
-				return previousRoomMessages.concat(responseCopy);
+				return [...previousRoomMessages, responseCopy];
 			});
 
 			if (vListRef.current) {
