@@ -110,3 +110,12 @@ export type MessageInput = {
 	message_img?:string
 	sent_at?:string
 };
+
+export interface SearchPrivateRoomProps {
+	triggerChild?: React.ReactNode;
+}
+
+export interface CustomDialogTriggerProps {
+	triggerChild?: React.ReactNode;
+	openDialog: () => void;
+}
