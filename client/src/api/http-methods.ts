@@ -2,7 +2,7 @@ import {
   getBearer,
   getBrowserTimeZone,
   getCurrentDateTimeWithTimezone,
-} from "../lib/utils";
+} from "../lib";
 import { PrivateChatResultType } from "../types";
 
 export interface UserInterface {

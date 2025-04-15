@@ -1,6 +1,6 @@
 import { type FC } from "react";
 import { createBrowserRouter, Navigate, Outlet } from "react-router-dom";
-import { isAuthenticated } from "../../lib/utils";
+import { isAuthenticated } from "../../lib";
 import Authentication from "../authentication/Authentication";
 import Header from "../../components/layout/nav";
 import Sidebar from "../../components/layout/nav/sidebar";

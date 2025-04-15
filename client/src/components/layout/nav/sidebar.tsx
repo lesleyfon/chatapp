@@ -1,5 +1,5 @@
 import React, { memo } from "react";
-import { cn, timeDifference } from "../../../lib/utils";
+import { cn, timeDifference } from "../../../lib";
 import { Avatar } from "../../ui/avatar";
 import { Link, useLocation } from "react-router-dom";
 import {
