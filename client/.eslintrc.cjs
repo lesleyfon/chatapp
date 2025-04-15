@@ -15,5 +15,6 @@ module.exports = {
 		"react/jsx-no-leaked-render": ["warn", { validStrategies: ["ternary", "coerce"] }],
 		"react/react-in-jsx-scope": "off",
 		"no-console": "error",
+		"react/prop-types": "off",
 	},
 };

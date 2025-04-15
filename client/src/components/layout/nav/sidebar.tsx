@@ -81,7 +81,7 @@ ChannelsSection.displayName = "ChannelsSection";
 
 function PrivateMessagesSection({ children }: { children: React.ReactNode }) {
 	return (
-		<section aria-label="Private Messages" className="h-1/2 flex flex-col">
+		<section aria-label="Private Messages" className="h-[90%] flex flex-col">
 			<h1 className="text-center font-bold text-l pt-4">Private Message</h1>
 			<ScrollArea className="flex-1 w-full">
 				<div className="space-y-1 p-2">{children}</div>
