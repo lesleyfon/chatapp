@@ -12,7 +12,7 @@ export const scrollToBottom = (lastElemRef: React.MutableRefObject<null>) => {
     const lastChild = messageSectionContainerRef.lastElementChild;
 
     if (lastChild !== null) {
-      lastChild?.scrollIntoView({ behavior: "smooth" });
+      lastChild.scrollIntoView({ behavior: "smooth" });
     }
   }
 };
