@@ -5,7 +5,7 @@ import { Button } from "../../ui/button";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { useSendMessage } from "../../../hooks/useSendMessage";
 import { useSocket } from "../../../hooks/useSocket";
-import { cn, getCurrentDateTimeWithTimezone } from "../../../lib/utils";
+import { cn, getCurrentDateTimeWithTimezone } from "../../../lib";
 import { type MessageInput } from "../../../types";
 import { Input } from "../../ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "../../ui/popover";

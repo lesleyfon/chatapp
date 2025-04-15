@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 
 import { useNavigate } from "react-router";
 import api from "../../api/http-methods";
-import { cn } from "../../lib/utils";
+import { cn } from "../../lib";
 import { PlusIcon, SendIcon } from "../ui/avatar/index";
 import { Button } from "../ui/button";
 import {

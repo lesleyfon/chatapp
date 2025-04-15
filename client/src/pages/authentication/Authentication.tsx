@@ -5,7 +5,7 @@ import { Login } from "./login";
 import { Register } from "./registration";
 import "./style.css";
 import { useNavigate } from "react-router-dom";
-import { isAuthenticated } from "../../lib/utils";
+import { isAuthenticated } from "../../lib";
 
 export default function Authentication() {
 	const navigate = useNavigate();

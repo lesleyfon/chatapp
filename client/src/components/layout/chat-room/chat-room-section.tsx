@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { useLocation } from "react-router";
 import { useSocket } from "../../../hooks/useSocket";
-import { cn, formatDate, scrollToBottom } from "../../../lib/utils";
+import { cn, formatDate, scrollToBottom } from "../../../lib";
 import useAuthStorage from "../../../store/useAuthStorage";
 import { type RoomMessagesResponse } from "../../../types";
 import { Card, CardContent } from "../../ui/card";

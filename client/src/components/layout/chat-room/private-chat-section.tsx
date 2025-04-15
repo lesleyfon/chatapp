@@ -4,7 +4,7 @@ import { useParams } from "react-router";
 import { VList, VListHandle } from "virtua";
 
 import { useSocket } from "../../../hooks/useSocket";
-import { cn, formatDate } from "../../../lib/utils";
+import { cn, formatDate } from "../../../lib";
 import useAuthStorage from "../../../store/useAuthStorage";
 import { PrivateChatResultType } from "../../../types";
 import { Card, CardContent } from "../../ui/card";

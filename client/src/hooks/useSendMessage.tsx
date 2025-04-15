@@ -2,7 +2,7 @@ import { Socket } from "socket.io-client";
 import useAuthStorage from "../store/useAuthStorage";
 import { MessageInput } from "./../types/index";
 import { useSocketAuth } from "./useSocketAuth";
-import { getBrowserTimeZone, getCurrentDateTimeWithTimezone } from "../lib/utils";
+import { getBrowserTimeZone, getCurrentDateTimeWithTimezone } from "../lib";
 
 export const useSendMessage = ({ socket }: { socket: Socket | null }) => {
 	const { userId } = useAuthStorage((state) => state);
