@@ -24,6 +24,10 @@ export const getBearer = ():string | null => {
 };
 
 
+/** 
+ *@description The function `isAuthenticated` checks if the user is currently authenticated by verifying if a valid bearer token exists in the local storage. 
+ *@return {boolean} A boolean value indicating whether the user is authenticated (true) or not (false).
+*/
 export const isAuthenticated = ():boolean => {
   return !!getBearer();
 };
