@@ -57,7 +57,7 @@ const PrivateChatroomLinks = ({
 	handleSelect: () => void;
 	data: ChatUserType[];
 }) => {
-	if (!data.length) return [];
+	if (!data.length) return null;
 	return data
 		.sort(sortData)
 		.map((chatroomName) => (
@@ -69,11 +69,12 @@ const PrivateChatroomLinks = ({
 		));
 };
 
-function CustomDialogTrigger({ triggerChild, openDialog }: CustomDialogTriggerProps) {
+function DialogTriggerButton({ triggerChild, openDialog }: CustomDialogTriggerProps) {
 	function handleClick(e: MouseEvent) {
 		e.stopPropagation();
 		openDialog();
 	}
+
 	if (!triggerChild) {
 		return (
 			<Button
@@ -98,7 +99,7 @@ export function SearchPrivateRoom({ triggerChild }: SearchPrivateRoomProps) {
 
 	const SEARCH_INPUT_NAME: string = "SEARCH_ROOM_NAME";
 
-	const { data } = useQuery<ChatUserType[], Error>({
+	const { data, isLoading, error } = useQuery<ChatUserType[], Error>({
 		queryKey: ["private-rooms"],
 		queryFn: () => api.fetchAllPrivateChatroom(),
 	});
@@ -111,10 +112,18 @@ export function SearchPrivateRoom({ triggerChild }: SearchPrivateRoomProps) {
 		setOpen(false);
 	}
 
+	// Then in your JSX
+	if (isLoading) {
+		return <div className=" animate-bounce">Loading...</div>;
+	}
+
+	if (error) {
+		return <div className="text-red-500">Error loading private rooms: {error.message}</div>;
+	}
 	return (
 		<Dialog open={open} onOpenChange={setOpen}>
 			<DialogTrigger asChild>
-				<CustomDialogTrigger triggerChild={triggerChild} openDialog={openDialog} />
+				<DialogTriggerButton triggerChild={triggerChild} openDialog={openDialog} />
 			</DialogTrigger>
 			<DialogContent
 				className="sm:max-w-[475px] [&>button]:hidden bg-[#242424] p-6 border-0"
