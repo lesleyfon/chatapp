@@ -41,3 +41,5 @@ export default {
 - [ ] FEAT: The replaceZWithCSTOffset function has a TODO comment about handling provided timezones but currently only handles UTC
 - [ ] FEAT: The timeDifference function hardcodes "America/Chicago" timezone instead of using the user's timezone
 - [ ] FEAT: The formatDate function also hardcodes "America/Chicago" timezone
+- [ ] FEAT: Sanitize messages sent for XSS
+- [ ] FEAT: Make message input a dropzone for images. [See this](https://supabase.com/ui/docs/nextjs/dropzone)
