@@ -83,6 +83,7 @@ export class QueryHandlers extends UserSchema {
           fk_user_id: messages.fk_user_id,
           fk_chat_id: messages.fk_chat_id,
           message_text: messages.message_text,
+          timezone: messages.timezone,
         }),
 
       /** @description  Insert a new record into the chatMembers table, but only if that record does not already exist. */
@@ -94,7 +95,7 @@ export class QueryHandlers extends UserSchema {
         );
       `),
     ]);
-
+    
     return messageResponse;
   }
 
@@ -246,12 +247,14 @@ export class QueryHandlers extends UserSchema {
             pk_chats_id: chats.pk_chats_id,
             chat_name: chats.chat_name,
             createdAt: chats.createdAt,
+            timezone: chats.timezone,
           },
           messages: {
             id: messages.id,
             fk_chat_id: messages.fk_chat_id,
             message_text: messages.message_text,
             sent_at: messages.sent_at,
+            timezone: messages.timezone
           },
           chat_user: {
             pk_user_id: user.pk_user_id,

@@ -2,6 +2,7 @@ import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
 
 import {
   LOCAL_STORAGE_AUTH_KEYS,
@@ -9,6 +10,7 @@ import {
 } from "../store/useAuthStorage";
 
 dayjs.extend(utc);
+dayjs.extend(timezone)
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -24,11 +26,11 @@ function replaceZWithCSTOffset(utcDateTimeString: string) {
   // TODO: ADD implementation for when timezone is provided
   if (!utcDateTimeString.endsWith("Z")) {
     // eslint-disable-next-line no-console
-    console.error("Input string must be in UTC format ending with Z: ", utcDateTimeString);
+    // console.error("Input string must be in UTC format ending with Z: ", utcDateTimeString);
     return utcDateTimeString;
   }
 
-  // Remove the 'Z' and append the CST offset
+  
   return utcDateTimeString.slice(0, -1) + "-07:00";
 }
 
@@ -42,31 +44,26 @@ function replaceZWithCSTOffset(utcDateTimeString: string) {
  * function returns a string representing the time difference in the largest applicable unit (days,
  * hours, minutes, or seconds) rounded down to the nearest whole number.
  */
-export function timeDifference(date: string) {
-  // Convert the input UTC date to CST
-  const inputDate = new Date(replaceZWithCSTOffset(date));
-  const cstDate = new Date(
-    inputDate.toLocaleString("en-US", { timeZone: "America/Chicago" }),
-  );
-
-  // Get current time in CST
+export function timeDifference(date: string, timeZone:string="America/Chicago") {
   const now = new Date();
-  const currentCST = new Date(
-    now.toLocaleString("en-US", { timeZone: "America/Chicago" }),
-  );
-
-  const daysDifference = dayjs(currentCST).diff(dayjs(cstDate), "day");
-  const hoursDifference = dayjs(currentCST).diff(dayjs(cstDate), "hour");
-  const minutesDifference = dayjs(currentCST).diff(dayjs(cstDate), "minute");
-  const secondsDifference = dayjs(currentCST).diff(dayjs(cstDate), "second");
+  const inputDate = new Date(replaceZWithCSTOffset(date));
   
-  if (daysDifference > 7) {
-    return cstDate.toLocaleDateString();
-  } else if (daysDifference > 1) {
+  const transactionDate = new Date(inputDate.toLocaleString("en-US", { timeZone }));
+  const currentTime = new Date(now.toLocaleString("en-US", { timeZone }));
+  
+
+  const daysDifference = dayjs(currentTime).diff(dayjs(transactionDate), "day");
+  const hoursDifference = dayjs(currentTime).diff(dayjs(transactionDate), "hour");
+  const minutesDifference = dayjs(currentTime).diff(dayjs(transactionDate), "minute");
+  const secondsDifference = dayjs(currentTime).diff(dayjs(transactionDate), "second");
+  
+  if (daysDifference >= 7) {
+    return transactionDate.toLocaleDateString();
+  } else if (daysDifference >= 1) {
     return `${Math.floor(daysDifference)}d`;
-  } else if (hoursDifference > 1) {
+  } else if (hoursDifference >= 1) {
     return `${Math.floor(hoursDifference)}h`;
-  } else if (minutesDifference > 1) {
+  } else if (minutesDifference >= 1) {
     return `${Math.floor(minutesDifference)}m`;
   } else {
     return `${Math.floor(secondsDifference)}s`;
@@ -122,7 +119,7 @@ export function getCurrentDateTimeWithTimezone() {
  * @returns {string} The timezone name
  * @example "America/Chicago"
  */
-export function getBrowserTimeZone() {
+export function getBrowserTimeZone(): string {
   try {
     // Get the timezone from the browser using Intl API
     return Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -133,17 +130,35 @@ export function getBrowserTimeZone() {
   }
 }
 
+/**
+ * Formats a date to a specific timezone.
+ * @param {Date | string} date - The date to format.
+ * @param {string} timeZone - The timezone to format the date to.
+ * @returns {string} The formatted date in the user's current timezone.
+ */
+export function formatDate(date: Date | string, timeZone:string = "America/Chicago") {
 
-export function formatDate(date: Date | string) {
-  const inputDate = new Date(replaceZWithCSTOffset(date as string));
-  return inputDate.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "numeric",
-    minute: "numeric",
-    timeZone: "America/Chicago",
-  });
+  // If the timezones are the same, we just return the date in the user's timezone.
+  // else: Convert the transaction date to the user's timezone.
+   
+
+  const browserTimeZone = getBrowserTimeZone();
+  
+  
+  try{
+    if(browserTimeZone === timeZone) {
+      const inputDate = dayjs.tz(date, timeZone);
+      return inputDate.format('MMM DD, YYYY hh:mm A');
+    }
+    
+    const transactionTimestampToBrowserTimezone = dayjs.tz(date, timeZone).tz(browserTimeZone);
+    return transactionTimestampToBrowserTimezone.format('MMM DD, YYYY hh:mm A');
+    }catch(error){
+      // eslint-disable-next-line no-console
+      console.error(`Error formatting date with timezone ${timeZone}:`, error);
+      const fallbackDate = dayjs.tz(date, browserTimeZone)
+      return fallbackDate.format('MMM DD, YYYY hh:mm A');
+    }
 }
 
 /**

@@ -39,6 +39,7 @@ export type PrivateMessageType = {
   sent_at: Date; // Assuming it's a timestamp
   image_file: string;
   image_name: string;
+	timezone: string;
 };
 
 export interface NavItem {
@@ -66,6 +67,7 @@ export type MessageType = {
 	fk_user_id: string;
 	message_text: string | null;
 	sent_at: Date;
+	timezone: string
 };
 
 export type ChatMember = {

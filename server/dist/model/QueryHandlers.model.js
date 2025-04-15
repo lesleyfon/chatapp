@@ -1,5 +1,5 @@
 "use strict";
-!function(){try{var e="undefined"!=typeof window?window:"undefined"!=typeof global?global:"undefined"!=typeof globalThis?globalThis:"undefined"!=typeof self?self:{},n=(new e.Error).stack;n&&(e._sentryDebugIds=e._sentryDebugIds||{},e._sentryDebugIds[n]="d45e3f5a-6e53-5338-8e31-8c63b806d4f5")}catch(e){}}();
+!function(){try{var e="undefined"!=typeof window?window:"undefined"!=typeof global?global:"undefined"!=typeof globalThis?globalThis:"undefined"!=typeof self?self:{},n=(new e.Error).stack;n&&(e._sentryDebugIds=e._sentryDebugIds||{},e._sentryDebugIds[n]="7bb4bf71-3df7-5d9e-8fc3-317ea7b4a16a")}catch(e){}}();
 
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.QueryHandlers = void 0;
@@ -33,6 +33,7 @@ class QueryHandlers extends Auth_model_1.UserSchema {
                 fk_user_id: schema_1.messages.fk_user_id,
                 fk_chat_id: schema_1.messages.fk_chat_id,
                 message_text: schema_1.messages.message_text,
+                timezone: schema_1.messages.timezone,
             }),
             this.db.execute((0, drizzle_orm_1.sql) `
         INSERT INTO ${schema_1.chatMembers} (fk_chat_id, fk_user_id, added_at, timezone)
@@ -146,12 +147,14 @@ class QueryHandlers extends Auth_model_1.UserSchema {
                     pk_chats_id: schema_1.chats.pk_chats_id,
                     chat_name: schema_1.chats.chat_name,
                     createdAt: schema_1.chats.createdAt,
+                    timezone: schema_1.chats.timezone,
                 },
                 messages: {
                     id: schema_1.messages.id,
                     fk_chat_id: schema_1.messages.fk_chat_id,
                     message_text: schema_1.messages.message_text,
                     sent_at: schema_1.messages.sent_at,
+                    timezone: schema_1.messages.timezone
                 },
                 chat_user: {
                     pk_user_id: schema_1.user.pk_user_id,
@@ -620,4 +623,4 @@ class QueryHandlers extends Auth_model_1.UserSchema {
 exports.QueryHandlers = QueryHandlers;
 exports.default = QueryHandlers;
 //# sourceMappingURL=QueryHandlers.model.js.map
-//# debugId=d45e3f5a-6e53-5338-8e31-8c63b806d4f5
+//# debugId=7bb4bf71-3df7-5d9e-8fc3-317ea7b4a16a

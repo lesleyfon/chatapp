@@ -1,5 +1,5 @@
 "use strict";
-!function(){try{var e="undefined"!=typeof window?window:"undefined"!=typeof global?global:"undefined"!=typeof globalThis?globalThis:"undefined"!=typeof self?self:{},n=(new e.Error).stack;n&&(e._sentryDebugIds=e._sentryDebugIds||{},e._sentryDebugIds[n]="128792c0-0b17-5c0e-8878-04b693a486f3")}catch(e){}}();
+!function(){try{var e="undefined"!=typeof window?window:"undefined"!=typeof global?global:"undefined"!=typeof globalThis?globalThis:"undefined"!=typeof self?self:{},n=(new e.Error).stack;n&&(e._sentryDebugIds=e._sentryDebugIds||{},e._sentryDebugIds[n]="b16d1ef2-e875-518f-b639-f6bca88a4b4d")}catch(e){}}();
 
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.appRouter = void 0;
@@ -15,9 +15,6 @@ class App_Routes {
         this.router.use("/api/auth", auth_1.authRouter);
         this.router.use("/api/chats", chats_1.chatRouter);
         this.router.get("/api", this.baseRoute);
-        this.router.get("/debug-sentry", function mainHandler(_req, _res) {
-            throw new Error("My first Sentry error!");
-        });
     }
     baseRoute(_req, res) {
         res.send("Hello world");
@@ -25,4 +22,4 @@ class App_Routes {
 }
 exports.appRouter = new App_Routes().router;
 //# sourceMappingURL=index.js.map
-//# debugId=128792c0-0b17-5c0e-8878-04b693a486f3
+//# debugId=b16d1ef2-e875-518f-b639-f6bca88a4b4d

@@ -1,5 +1,5 @@
 "use strict";
-!function(){try{var e="undefined"!=typeof window?window:"undefined"!=typeof global?global:"undefined"!=typeof globalThis?globalThis:"undefined"!=typeof self?self:{},n=(new e.Error).stack;n&&(e._sentryDebugIds=e._sentryDebugIds||{},e._sentryDebugIds[n]="cad4f750-e093-5ccb-8ad8-f94fd42d7533")}catch(e){}}();
+!function(){try{var e="undefined"!=typeof window?window:"undefined"!=typeof global?global:"undefined"!=typeof globalThis?globalThis:"undefined"!=typeof self?self:{},n=(new e.Error).stack;n&&(e._sentryDebugIds=e._sentryDebugIds||{},e._sentryDebugIds[n]="5f607f83-87da-5e5d-815d-5123bc2918ef")}catch(e){}}();
 
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
@@ -50,8 +50,8 @@ function getEnvs() {
         DATABASE_PASSWORD,
         DB_URL,
         DATABASE_URL,
-        SENTRY_DSN,
+        SENTRY_DSN: SENTRY_DSN || "",
     };
 }
 //# sourceMappingURL=getEnvs.js.map
-//# debugId=cad4f750-e093-5ccb-8ad8-f94fd42d7533
+//# debugId=5f607f83-87da-5e5d-815d-5123bc2918ef

@@ -38,19 +38,17 @@ export default function ImageCard({
 }
 
 function ConversationCard({ data, isSender }: { data: PrivateChatResultType; isSender: boolean }) {
+	const { image_file, image_name, message_text, sent_at, timezone } = data.private_messages;
 	return (
 		<>
-			{data?.private_messages?.image_file ? (
+			{image_file ? (
 				<ImageCard
-					imageUrl={data?.private_messages?.image_file as string}
-					imageName={data?.private_messages?.image_name as string}
+					imageUrl={image_file as string}
+					imageName={image_name as string}
 					isSender={isSender}
 				/>
 			) : null}
-			<div
-				key={data?.private_messages.id}
-				className={cn("flex py-4 ", isSender ? "justify-end" : "justify-start")}
-			>
+			<div className={cn("flex py-4 ", isSender ? "justify-end" : "justify-start")}>
 				<Card className={cn("max-w-[70%]", isSender ? "bg-slate-300 text-black" : "")}>
 					<CardContent className="p-3">
 						<div
@@ -61,9 +59,9 @@ function ConversationCard({ data, isSender }: { data: PrivateChatResultType; isS
 						>
 							{isSender ? "You" : data?.chat_user.name}
 						</div>
-						<p>{data?.private_messages?.message_text as string}</p>
+						<p>{message_text as string}</p>
 						<div className="text-[10px] text-muted-foreground mt-1">
-							{formatDate(data.private_messages.sent_at)}
+							{formatDate(sent_at, timezone)}
 						</div>
 					</CardContent>
 				</Card>
