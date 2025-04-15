@@ -1,25 +1,21 @@
 import EmojiPicker, { Theme } from "emoji-picker-react";
 import { SendIcon, SmileIcon } from "lucide-react";
 import { Button } from "../../ui/button";
+import { useState } from "react";
 
 import { SubmitHandler, useForm } from "react-hook-form";
 import { useSendMessage } from "../../../hooks/useSendMessage";
 import { useSocket } from "../../../hooks/useSocket";
 import { cn, getCurrentDateTimeWithTimezone } from "../../../lib";
-import { type MessageInput } from "../../../types";
+import { type MessageInput, type ChatInputProps } from "../../../types";
+
 import { Input } from "../../ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "../../ui/popover";
+import { DEFAULT_SVG_URL } from "../../constants";
 
-interface ChatInputProps {
-	chatId: string;
-	chatName: string;
-	isPrivateChat?: boolean;
-}
 // BUTTON Background Image
-const svgUrl =
-	"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjEiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgY2xhc3M9Imx1Y2lkZSBsdWNpZGUtcGFwZXJjbGlwIj48cGF0aCBkPSJNMTMuMjM0IDIwLjI1MiAyMSAxMi4zIi8+PHBhdGggZD0ibTE2IDYtOC40MTQgOC41ODZhMiAyIDAgMCAwIDAgMi44MjggMiAyIDAgMCAwIDIuODI4IDBsOC40MTQtOC41ODZhNCA0IDAgMCAwIDAtNS42NTYgNCA0IDAgMCAwLTUuNjU2IDBsLTguNDE1IDguNTg1YTYgNiAwIDEgMCA4LjQ4NiA4LjQ4NiIvPjwvc3ZnPg==";
-
 export function MessageInput({ chatId, chatName, isPrivateChat }: ChatInputProps) {
+	const [svgUrl, setSvgUrl] = useState(DEFAULT_SVG_URL);
 	const socket = useSocket();
 	const { sendMessage, sendPrivateMessage } = useSendMessage({ socket });
 
@@ -90,6 +86,13 @@ export function MessageInput({ chatId, chatName, isPrivateChat }: ChatInputProps
 						type="file"
 						accept="image/png, image/jpeg"
 						className=" cursor-pointer opacity-0"
+						onChange={(e) => {
+							const file = e.target.files?.[0];
+							if (file) {
+								const filePreview = URL.createObjectURL(file);
+								setSvgUrl(filePreview);
+							}
+						}}
 					/>
 				</Button>
 				<Input
