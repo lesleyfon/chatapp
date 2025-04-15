@@ -34,12 +34,12 @@ export default {
 - [X] BUG: signing into a new session causes an infinite rerender.
 - [X] Create an error Page
 - [X] BUG: SORT MESSAGES BY DATE SENT NOT WORKING CORRECTLY
-  - [ ] fix. But I am using js sort to sort the messages by date sent. Would like this to be a db query.
-- [ ] Sidebar has a scroll. And fix to enable no scroll for elements on sidebar
-- [ ] BUG: Clicking on `New Private Chat` on mobile closes the modal for selecting a new chat
-- [ ] FEAT: Implement saving timezones to the DB and the current time a message or chat was sent at.
-- [ ] FEAT: The replaceZWithCSTOffset function has a TODO comment about handling provided timezones but currently only handles UTC
-- [ ] FEAT: The timeDifference function hardcodes "America/Chicago" timezone instead of using the user's timezone
-- [ ] FEAT: The formatDate function also hardcodes "America/Chicago" timezone
+  - [X] fix. But I am using js sort to sort the messages by date sent. Would like this to be a db query.
+- [X] Sidebar has a scroll. And fix to enable no scroll for elements on sidebar
+- [X] BUG: Clicking on `New Private Chat` on mobile closes the modal for selecting a new chat
+- [X] FEAT: Implement saving timezones to the DB and the current time a message or chat was sent at.
+- [X] FEAT: The replaceZWithCSTOffset function has a TODO comment about handling provided timezones but currently only handles UTC
+- [X] FEAT: The timeDifference function hardcodes "America/Chicago" timezone instead of using the user's timezone
+- [X] FEAT: The formatDate function also hardcodes "America/Chicago" timezone
 - [ ] FEAT: Sanitize messages sent for XSS
 - [ ] FEAT: Make message input a dropzone for images. [See this](https://supabase.com/ui/docs/nextjs/dropzone)
