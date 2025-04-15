@@ -47,8 +47,12 @@ export function formatDate(date: Date | string, timeZone:string = "America/Chica
     const transactionTimestampToBrowserTimezone = dayjs.tz(date, timeZone).tz(browserTimeZone);
     return transactionTimestampToBrowserTimezone.format('MMM DD, YYYY hh:mm A');
     }catch(error){
+      let message:string | undefined 
+      if(error instanceof Error){
+        message = error?.message
+      }
       // eslint-disable-next-line no-console
-      console.error(`Error formatting date with timezone ${timeZone}:`, error);
+      console.error(`Error formatting date with timezone ${timeZone}:`, message || error);
       const fallbackDate = dayjs.tz(date, browserTimeZone)
       return fallbackDate.format('MMM DD, YYYY hh:mm A');
     }
@@ -97,17 +101,12 @@ export function timeDifference(date: string, timeZone:string="America/Chicago") 
   const minutesDifference = dayjs(currentTime).diff(dayjs(transactionDate), "minute");
   const secondsDifference = dayjs(currentTime).diff(dayjs(transactionDate), "second");
   
-  if (daysDifference >= 7) {
-    return transactionDate.toLocaleDateString();
-  } else if (daysDifference >= 1) {
-    return `${Math.floor(daysDifference)}d`;
-  } else if (hoursDifference >= 1) {
-    return `${Math.floor(hoursDifference)}h`;
-  } else if (minutesDifference >= 1) {
-    return `${Math.floor(minutesDifference)}m`;
-  } else {
-    return `${Math.floor(secondsDifference)}s`;
-  }
+  if (daysDifference >= 7)  return transactionDate.toLocaleDateString();
+  if (daysDifference >= 1)  return `${Math.floor(daysDifference)}d`;
+  if (hoursDifference >= 1) return `${Math.floor(hoursDifference)}h`;
+  if (minutesDifference >= 1) return `${Math.floor(minutesDifference)}m`;
+
+  return `${Math.floor(secondsDifference)}s`;
 }
 
 
