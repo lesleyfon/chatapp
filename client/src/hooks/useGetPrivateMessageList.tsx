@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
 
-import { useNavigate } from "react-router-dom";
 import { PrivateChatResultType } from "./../types/index";
 
 import { Socket } from "socket.io-client";
@@ -70,7 +69,6 @@ function updateChatList({
 
 export const useGetPrivateMessageList = ({ socket }: { socket: Socket | null }) => {
 	const [privateRoomList, setPrivateRoomList] = useState<PrivateChatResultType[]>([]);
-	const navigate = useNavigate();
 	const { userId } = useAuthStorage((state) => state);
 
 	const handleMessageUpdate = useCallback(
@@ -126,7 +124,7 @@ export const useGetPrivateMessageList = ({ socket }: { socket: Socket | null }) 
 			socket.off("get-latest-private-message-sent", handleMessageUpdate);
 		};
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [socket, userId, navigate]);
+	}, [socket, userId]);
 
 	return {
 		privateRoomList,
