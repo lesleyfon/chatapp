@@ -1,10 +1,16 @@
 import { useEffect, useState } from "react";
 
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { PrivateChatResultType } from "./../types/index";
 
 import { Socket } from "socket.io-client";
 import useAuthStorage from "../store/useAuthStorage";
+
+// Create a utility function for checking chat participants
+const isChatParticipant = (userId: string, chatUsers: string[]) => {
+	const chatUserSet = new Set(chatUsers);
+	return chatUserSet.has(userId);
+};
 
 export function isPrivateChatBetweenTwoUsers({
 	responseRecipientId,
@@ -35,7 +41,6 @@ function updateChatList({
 	state: PrivateChatResultType;
 	response: PrivateChatResultType;
 }) {
-	const chatUser = new Set([state.private_chat.sender_id, state.private_chat.recipient_id]);
 	const responseSenderId = response.private_chat.sender_id,
 		responseRecipientId = response.private_chat.recipient_id,
 		stateSenderId = state.private_chat.sender_id,
@@ -45,7 +50,9 @@ function updateChatList({
 		(responseSenderId === stateSenderId && responseRecipientId === stateRecipientId) ||
 		(responseSenderId === stateRecipientId && responseRecipientId === stateSenderId);
 
-	if (chatUser.has(userId) && chatToUpdate) {
+	const isChatUser = isChatParticipant(userId, [stateSenderId, stateRecipientId]);
+
+	if (isChatUser && chatToUpdate) {
 		// This Updates the most recent message sent
 		return {
 			...state, // Create a new object
@@ -64,30 +71,26 @@ export const useGetPrivateMessageList = ({ socket }: { socket: Socket | null }) 
 	const [privateRoomList, setPrivateRoomList] = useState<PrivateChatResultType[]>([]);
 	const navigate = useNavigate();
 	const { userId } = useAuthStorage((state) => state);
-	const { recipientId } = useParams(); // This should not be from params.
 
 	const handleMessageUpdate = (response: PrivateChatResultType) => {
 		const { sender_id: responseSenderId, recipient_id: responseRecipientId } =
 			response.private_chat;
-		const chatUser = new Set([responseSenderId, responseRecipientId]);
+		const privateMessageUserIds = [responseSenderId, responseRecipientId];
 		if (!userId) return;
 		// If we're in a specific chat, only update that chat
 
-		if (recipientId) {
-			// TODO: WHYYYYY
-			if (!chatUser.has(userId)) {
-				return;
-			}
+		if (!isChatParticipant(userId, privateMessageUserIds)) {
+			return;
 		}
 
 		setPrivateRoomList((prevList) => {
 			const userExist = prevList.some((chat) => {
 				const { sender_id: chatSenderId, recipient_id: chatRecipientId } =
 					chat.private_chat;
-				const chatIdBetweenUsers = new Set([chatSenderId, chatRecipientId]);
+				const chatUserIds = [chatSenderId, chatRecipientId];
 
-				const recipientExist = chatIdBetweenUsers.has(response.private_chat.recipient_id);
-				const senderExist = chatIdBetweenUsers.has(response.private_chat.sender_id);
+				const recipientExist = isChatParticipant(responseRecipientId, chatUserIds);
+				const senderExist = isChatParticipant(responseSenderId, chatUserIds);
 
 				return recipientExist && senderExist;
 			});
@@ -106,9 +109,8 @@ export const useGetPrivateMessageList = ({ socket }: { socket: Socket | null }) 
 			const existingChatIndex = prevList.filter((chat) => {
 				const { sender_id: chatSenderId, recipient_id: chatRecipientId } =
 					chat.private_chat;
-				const existingChatUser = new Set([chatSenderId, chatRecipientId]);
 				// IF the current user if not part of a chat, return early.
-				return existingChatUser.has(userId);
+				return isChatParticipant(userId, [chatSenderId, chatRecipientId]);
 			});
 
 			if (existingChatIndex.length === 0) {
@@ -157,7 +159,7 @@ export const useGetPrivateMessageList = ({ socket }: { socket: Socket | null }) 
 			socket.off("get-latest-private-message-sent", handleMessageUpdate);
 		};
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [socket, userId, recipientId, navigate]);
+	}, [socket, userId, navigate]);
 
 	return {
 		privateRoomList,
