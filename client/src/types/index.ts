@@ -119,3 +119,9 @@ export interface CustomDialogTriggerProps {
 	triggerChild?: React.ReactNode;
 	openDialog: () => void;
 }
+
+export interface ChatInputProps {
+	chatId: string;
+	chatName: string;
+	isPrivateChat?: boolean;
+}
