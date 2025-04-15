@@ -1,5 +1,5 @@
 "use strict";
-!function(){try{var e="undefined"!=typeof window?window:"undefined"!=typeof global?global:"undefined"!=typeof globalThis?globalThis:"undefined"!=typeof self?self:{},n=(new e.Error).stack;n&&(e._sentryDebugIds=e._sentryDebugIds||{},e._sentryDebugIds[n]="0744334a-758e-5a70-b605-be0ee17744db")}catch(e){}}();
+!function(){try{var e="undefined"!=typeof window?window:"undefined"!=typeof global?global:"undefined"!=typeof globalThis?globalThis:"undefined"!=typeof self?self:{},n=(new e.Error).stack;n&&(e._sentryDebugIds=e._sentryDebugIds||{},e._sentryDebugIds[n]="21c650a3-5b4f-5119-bafb-680587a5522d")}catch(e){}}();
 
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
@@ -38,10 +38,17 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const Sentry = __importStar(require("@sentry/node"));
 const getEnvs_1 = require("./utils/getEnvs");
 const { SENTRY_DSN } = (0, getEnvs_1.getEnvs)();
-Sentry.init({
-    dsn: SENTRY_DSN,
-    tracesSampleRate: 1.0,
-    environment: process.env.ENVIRONMENT,
-});
+const ENV = process.env.ENVIRONMENT;
+if (SENTRY_DSN) {
+    Sentry.init({
+        dsn: SENTRY_DSN,
+        tracesSampleRate: ENV === "production" ? 0.1 : 1,
+        environment: ENV,
+    });
+    console.log(`Sentry initialized in ${process.env.ENVIRONMENT} environment`);
+}
+else {
+    console.warn("Sentry DSN not provided, error tracking disabled");
+}
 //# sourceMappingURL=instrument.js.map
-//# debugId=0744334a-758e-5a70-b605-be0ee17744db
+//# debugId=21c650a3-5b4f-5119-bafb-680587a5522d

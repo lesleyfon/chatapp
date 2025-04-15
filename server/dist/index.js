@@ -1,5 +1,5 @@
 "use strict";
-!function(){try{var e="undefined"!=typeof window?window:"undefined"!=typeof global?global:"undefined"!=typeof globalThis?globalThis:"undefined"!=typeof self?self:{},n=(new e.Error).stack;n&&(e._sentryDebugIds=e._sentryDebugIds||{},e._sentryDebugIds[n]="82c21b12-51c2-5371-9c27-b15bdb5f98ab")}catch(e){}}();
+!function(){try{var e="undefined"!=typeof window?window:"undefined"!=typeof global?global:"undefined"!=typeof globalThis?globalThis:"undefined"!=typeof self?self:{},n=(new e.Error).stack;n&&(e._sentryDebugIds=e._sentryDebugIds||{},e._sentryDebugIds[n]="33e1e646-1cf6-54c5-9b47-ba7be8f52e1e")}catch(e){}}();
 
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
@@ -103,21 +103,23 @@ class SocketServer {
         this.app.use(index_1.appRouter);
         Sentry.setupExpressErrorHandler(this.app);
         this.app.use((err, req, res, _next) => {
-            Sentry.captureException(err);
+            const eventId = Sentry.captureException(err);
             res.statusCode = 500;
             res.json({
                 error: true,
                 message: err.message,
                 sentryId: res.sentry,
-                path: req.path
+                path: req.path,
+                eventId,
             });
         });
         this.app.use((req, res) => {
-            Sentry.captureException(new Error(`Route not found: ${req.path}`));
+            const eventId = Sentry.captureException(new Error(`Route not found: ${req.path}`));
             res.status(404).json({
                 error: true,
                 message: `Route not found: ${req.path}`,
-                sentryId: res.sentry
+                sentryId: res.sentry,
+                eventId,
             });
         });
         this.httpServer = (0, http_1.createServer)(this.app);
@@ -136,4 +138,4 @@ const corsOptions = { origin };
 const socketServer = new SocketServer(port, corsOptions);
 socketServer.start();
 //# sourceMappingURL=index.js.map
-//# debugId=82c21b12-51c2-5371-9c27-b15bdb5f98ab
+//# debugId=33e1e646-1cf6-54c5-9b47-ba7be8f52e1e

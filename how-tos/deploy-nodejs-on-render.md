@@ -23,7 +23,7 @@ Here's how to resolve this in Render.com:
   - org:read
   - project:read
   - project:releases
-  * I was bot able to add scopes to the new token. Most likely because I am using a free account.
+   <br><sup>*</sup>I was not able to add scopes to the new token. Most likely because I am using a free account.
 - Generate and copy the token. **The token cannot be viewed again later, so store it securely.**
 **2. Set the SENTRY_AUTH_TOKEN as an Environment Variable in Render.com:**
 - Go to your Render.com service.

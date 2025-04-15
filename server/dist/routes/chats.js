@@ -1,5 +1,5 @@
 "use strict";
-!function(){try{var e="undefined"!=typeof window?window:"undefined"!=typeof global?global:"undefined"!=typeof globalThis?globalThis:"undefined"!=typeof self?self:{},n=(new e.Error).stack;n&&(e._sentryDebugIds=e._sentryDebugIds||{},e._sentryDebugIds[n]="1a09ec42-84c4-5115-a910-ce848e71c015")}catch(e){}}();
+!function(){try{var e="undefined"!=typeof window?window:"undefined"!=typeof global?global:"undefined"!=typeof globalThis?globalThis:"undefined"!=typeof self?self:{},n=(new e.Error).stack;n&&(e._sentryDebugIds=e._sentryDebugIds||{},e._sentryDebugIds[n]="7aa16704-7123-526e-b381-29072c4d10ca")}catch(e){}}();
 
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
@@ -102,22 +102,24 @@ class Chat extends (0, exports.AuthMiddlewareMixin)((0, exports.QueryHandlersMix
         try {
             const { chatId } = req.params;
             if (!chatId) {
-                Sentry.captureEvent({
+                const eventId = Sentry.captureEvent({
                     level: "error",
                     extra: {
                         message: `Bad Request: chatId is required chatId = ${chatId}`,
                         chatId,
                         userId: req.user.pk_user_id,
-                    }
+                    },
                 });
-                res.status(http_status_codes_1.StatusCodes.BAD_REQUEST).json({
+                return res.status(http_status_codes_1.StatusCodes.BAD_REQUEST).json({
                     messages: `Bad Request: chatId is required chatId = ${chatId}`,
+                    eventId,
+                    error: true,
                 });
             }
             const userId = req.user.pk_user_id;
             const chatMessages = await this.queryHandlers.selectChatRoomMessagesByUserId(userId, parseInt(chatId));
             if ("error" in chatMessages) {
-                Sentry.captureEvent({
+                const eventId = Sentry.captureEvent({
                     level: "error",
                     extra: {
                         message: `Bad Request: chatMessages error = ${chatMessages}`,
@@ -125,7 +127,7 @@ class Chat extends (0, exports.AuthMiddlewareMixin)((0, exports.QueryHandlersMix
                         userId: req.user.pk_user_id,
                     },
                 });
-                return res.status(http_status_codes_1.StatusCodes.BAD_REQUEST).json(chatMessages);
+                return res.status(http_status_codes_1.StatusCodes.BAD_REQUEST).json(Object.assign(Object.assign({}, chatMessages), { eventId }));
             }
             Sentry.captureMessage(`Success: retrieved chat messages for userId = ${userId} and chatId = ${chatId}`, {
                 level: "info",
@@ -138,7 +140,13 @@ class Chat extends (0, exports.AuthMiddlewareMixin)((0, exports.QueryHandlersMix
             return res.status(http_status_codes_1.StatusCodes.OK).json({ msg: chatMessages });
         }
         catch (error) {
-            Sentry.captureException(error);
+            Sentry.captureException(error, {
+                extra: {
+                    method: "getChatMessagesById",
+                    userId: req.user.pk_user_id,
+                    chatId: req.params.chatId,
+                },
+            });
             return res.status(http_status_codes_1.StatusCodes.INTERNAL_SERVER_ERROR).json({
                 message: "Internal Server Error",
             });
@@ -148,15 +156,18 @@ class Chat extends (0, exports.AuthMiddlewareMixin)((0, exports.QueryHandlersMix
         try {
             const { recipientId } = req.params;
             if (!recipientId) {
-                Sentry.captureEvent({
+                const eventId = Sentry.captureEvent({
                     level: "error",
                     extra: {
-                        message: `Bad Request: recipientId is required: recipientId = ${recipientId}`,
+                        messages: `Bad Request: recipientId is required: recipientId = ${recipientId}`,
                         recipientId,
+                        userId: req.user.pk_user_id,
                     },
                 });
-                res.status(http_status_codes_1.StatusCodes.BAD_REQUEST).json({
+                return res.status(http_status_codes_1.StatusCodes.BAD_REQUEST).json({
+                    error: true,
                     messages: `Bad Request: recipientId is required: recipientId = ${recipientId}`,
+                    eventId,
                 });
             }
             const userId = req.user.pk_user_id;
@@ -165,7 +176,7 @@ class Chat extends (0, exports.AuthMiddlewareMixin)((0, exports.QueryHandlersMix
                 recipientId: parseInt(recipientId),
             });
             if ("error" in privateMessages) {
-                Sentry.captureEvent({
+                const eventId = Sentry.captureEvent({
                     level: "error",
                     extra: {
                         message: `Bad Request: privateMessages error = ${privateMessages}`,
@@ -174,7 +185,7 @@ class Chat extends (0, exports.AuthMiddlewareMixin)((0, exports.QueryHandlersMix
                         recipientId,
                     },
                 });
-                return res.status(http_status_codes_1.StatusCodes.BAD_REQUEST).json(privateMessages);
+                return res.status(http_status_codes_1.StatusCodes.BAD_REQUEST).json(Object.assign(Object.assign({}, privateMessages), { eventId }));
             }
             Sentry.captureMessage(`Success: retrieved private messages for userId = ${userId} and recipientId = ${recipientId}`, {
                 level: "info",
@@ -187,7 +198,13 @@ class Chat extends (0, exports.AuthMiddlewareMixin)((0, exports.QueryHandlersMix
             return res.status(http_status_codes_1.StatusCodes.OK).json({ msg: privateMessages });
         }
         catch (error) {
-            Sentry.captureException(error);
+            Sentry.captureException(error, {
+                extra: {
+                    userId: req.user.pk_user_id,
+                    recipientId: req.params.recipientId,
+                    method: "getPrivateMessagesById",
+                },
+            });
             return res.status(http_status_codes_1.StatusCodes.INTERNAL_SERVER_ERROR).json({
                 message: "Internal Server Error",
             });
@@ -231,4 +248,4 @@ class Chat extends (0, exports.AuthMiddlewareMixin)((0, exports.QueryHandlersMix
 exports.Chat = Chat;
 exports.chatRouter = new Chat().router;
 //# sourceMappingURL=chats.js.map
-//# debugId=1a09ec42-84c4-5115-a910-ce848e71c015
+//# debugId=7aa16704-7123-526e-b381-29072c4d10ca
