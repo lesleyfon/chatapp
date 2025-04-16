@@ -1,6 +1,6 @@
 import { Socket } from "socket.io-client";
 import useAuthStorage from "../store/useAuthStorage";
-import { MessageInput } from "./../types/index";
+import { MessageInputProps } from "./../types/index";
 import { useSocketAuth } from "./useSocketAuth";
 import { getBrowserTimeZone, getCurrentDateTimeWithTimezone } from "../lib";
 
@@ -37,7 +37,7 @@ export const useSendMessage = ({ socket }: { socket: Socket | null }) => {
 	 * @returns The original message payload if a socket is provided; otherwise, undefined.
 	 */
 	async function sendPrivateMessage(
-		data: MessageInput & {
+		data: MessageInputProps & {
 			recipientId: string;
 			imageFile?: HTMLImageElement | File | string;
 			imageName?: string;
@@ -85,7 +85,7 @@ export const useSendMessage = ({ socket }: { socket: Socket | null }) => {
 	 * @param data - An object containing the chat ID, chat name, and the message text to be sent.
 	 */
 	function sendMessage(
-		data: MessageInput & { chatId: string; chatName: string },
+		data: MessageInputProps & { chatId: string; chatName: string },
 		socket: Socket | null
 	) {
 		// If the socket is null, return early
