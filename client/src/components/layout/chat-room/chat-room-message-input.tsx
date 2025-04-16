@@ -150,6 +150,10 @@ export function MessageInput({ chatId, chatName, isPrivateChat }: ChatInputProps
 				socket
 			);
 		}
+		// Clean up the file preview URL
+		if (svgUrl !== DEFAULT_SVG_URL) {
+			URL.revokeObjectURL(svgUrl);
+		}
 		setValue(INPUT_NAME, "");
 		setSvgUrl(DEFAULT_SVG_URL);
 		setValue(FILE_INPUT_NAME, undefined);
