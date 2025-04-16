@@ -1,3 +1,4 @@
+import { File } from "buffer";
 import { Request } from "express";
 
 export type RequestWithUser = Request & {
@@ -66,7 +67,7 @@ export interface MessageType extends MessageBase {
 
 export interface PrivateMessageBase extends MessageBase {
   fk_private_chat_id: number;
-  image_file: Buffer | string | null;
+  image_file: Buffer | File | string | null;
   image_name: string | null;
   timezone: string;
 }
@@ -123,4 +124,15 @@ export interface TypedMessage {
   chats: ChatBase;
   messages: MessageBase | null;
   chat_user: UserBase | null;
+}
+
+
+export type AddPrivateMessageType = {
+  recipientId: number;
+  senderId: number;
+  message: string;
+  created_at: string;
+  timezone: string;
+  imageFile?: Buffer | File | string;
+  imageName?: string;
 }

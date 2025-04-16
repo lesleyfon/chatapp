@@ -1,3 +1,4 @@
+import { File } from "buffer";
 import { and, asc, desc, eq, inArray, ne, or, sql } from "drizzle-orm";
 import { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { connectToDB } from "../db";
@@ -992,9 +993,18 @@ export class QueryHandlers extends UserSchema {
     message: string;
     created_at: string;
     timezone: string;
-    imageFile?: Buffer;
+    imageFile?: Buffer | File | string;
     imageName?: string;
   }) {
+    try {
+      
+      if(imageFile instanceof File){
+        const arrayBuffer = await imageFile.arrayBuffer();
+        imageFile = Buffer.from(arrayBuffer);
+      } else if (typeof imageFile === "string") {
+        const cleanBase64 = imageFile.replace(/^data:image\/\w+;base64,/, '');
+        imageFile = Buffer.from(cleanBase64, "base64");
+      }
     return await this.db
       .insert(privateMessages)
       .values({
@@ -1016,6 +1026,14 @@ export class QueryHandlers extends UserSchema {
         image_file: privateMessages.image_file,
         image_name: privateMessages.image_name,
       });
+    } catch (err) {
+      // TODO: Add SENTRY logging
+      console.log(err);
+      return {
+        error: true,
+        reason: err.message,
+      };
+    }
   }
 }
 

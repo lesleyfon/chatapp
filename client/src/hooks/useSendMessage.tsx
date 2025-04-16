@@ -1,8 +1,26 @@
 import { Socket } from "socket.io-client";
 import useAuthStorage from "../store/useAuthStorage";
-import { MessageInput } from "./../types/index";
+import { MessageInputProps } from "./../types/index";
 import { useSocketAuth } from "./useSocketAuth";
 import { getBrowserTimeZone, getCurrentDateTimeWithTimezone } from "../lib";
+
+const convertGifToBase64 = (file: File): Promise<string> => {
+	return new Promise((resolve, reject) => {
+		const reader = new FileReader();
+		reader.onloadend = () => {
+			// Make sure the base64 string has the correct format
+			const result = reader.result as string;
+			if (!result.startsWith("data:image/gif;base64,")) {
+				// If it doesn't have the correct prefix, add it
+				resolve(`data:image/gif;base64,${result.replace(/^data:image\/gif;?base64,/, "")}`);
+			} else {
+				resolve(result);
+			}
+		};
+		reader.onerror = reject;
+		reader.readAsDataURL(file);
+	});
+};
 
 export const useSendMessage = ({ socket }: { socket: Socket | null }) => {
 	const { userId } = useAuthStorage((state) => state);
@@ -18,10 +36,10 @@ export const useSendMessage = ({ socket }: { socket: Socket | null }) => {
 	 *
 	 * @returns The original message payload if a socket is provided; otherwise, undefined.
 	 */
-	function sendPrivateMessage(
-		data: MessageInput & {
+	async function sendPrivateMessage(
+		data: MessageInputProps & {
 			recipientId: string;
-			imageFile?: HTMLImageElement;
+			imageFile?: HTMLImageElement | File | string;
 			imageName?: string;
 		},
 		socket: Socket | null
@@ -34,11 +52,22 @@ export const useSendMessage = ({ socket }: { socket: Socket | null }) => {
 		// If the socket is not connected, connect it
 		if (socket.connected === false) socket.connect();
 
+		/**
+		 * IF the imageFile is a gif, convert to base64
+		 */
+		let file = data?.imageFile;
+
+		if (file instanceof File) {
+			if (file.type === "image/gif") {
+				file = await convertGifToBase64(file);
+			}
+		}
+
 		socket.emit("add-private-message", {
 			recipientId: data.recipientId,
 			senderId: userId,
 			message: data.message_text,
-			imageFile: data?.imageFile,
+			imageFile: file,
 			imageName: data?.imageName,
 			created_at,
 			timezone,
@@ -56,7 +85,7 @@ export const useSendMessage = ({ socket }: { socket: Socket | null }) => {
 	 * @param data - An object containing the chat ID, chat name, and the message text to be sent.
 	 */
 	function sendMessage(
-		data: MessageInput & { chatId: string; chatName: string },
+		data: MessageInputProps & { chatId: string; chatName: string },
 		socket: Socket | null
 	) {
 		// If the socket is null, return early

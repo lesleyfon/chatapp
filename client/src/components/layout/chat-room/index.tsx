@@ -3,7 +3,7 @@ import { ErrorResponse, SuccessResponse } from "../../../api/http-methods";
 import { SocketProvider } from "../../../context/socket.context";
 import useRoomData from "../../../hooks/useRoomData";
 import { Loader } from "../../loader";
-import { MessageInput } from "./chat-room-message-input";
+import { ChatMessageInput } from "./chat-room-message-input";
 import { ChatRoomSection } from "./chat-room-section";
 import { PrivateMessageSection } from "./private-chat-section";
 import { useLocation } from "react-router";
@@ -42,7 +42,7 @@ function ChatRoomLayout() {
 		return (
 			<section className="overflow-y-hidden grid grid-rows-[12fr_1fr] md:grid-rows-[11fr_1fr] ">
 				<PrivateMessageSection data={data ?? []} />
-				<MessageInput chatId={recipientId} chatName={""} isPrivateChat />
+				<ChatMessageInput chatId={recipientId} chatName={""} isPrivateChat />
 			</section>
 		);
 	}
@@ -51,7 +51,7 @@ function ChatRoomLayout() {
 		<section className="overflow-y-hidden grid grid-rows-[12fr_1fr] md:grid-rows-[11fr_1fr] ">
 			<ChatRoomSection data={chatData?.msg ?? []} />
 			{chatId && chatId.length > 0 ? (
-				<MessageInput chatId={chatId} chatName={roomName} />
+				<ChatMessageInput chatId={chatId} chatName={roomName} />
 			) : null}
 		</section>
 	);
