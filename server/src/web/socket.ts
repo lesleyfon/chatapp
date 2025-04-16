@@ -251,32 +251,16 @@ export class AppSocketBase extends QueryHandlers {
             return this.emitAddMessageErrorResponse(null, response.reason);
           }
           const privateMessageInsertResponse = response[0];
+          let base64Image: string | undefined
           if (privateMessageInsertResponse?.image_file) {
-            // Convert Buffer to base64 string only if image_file exists and is a Buffer
-            if (Buffer.isBuffer(privateMessageInsertResponse.image_file)) {
-              const base64Image =
-                privateMessageInsertResponse.image_file.toString("base64");
-              // Cast to any to avoid type error when assigning string to Buffer type
-              (privateMessageInsertResponse as unknown as { image_file: string }).image_file = base64Image;
+            // Convert Buffer to base64 string only if image_file exists and is a Buffer or a File
+            if (privateMessageInsertResponse.image_file instanceof File || Buffer.isBuffer(privateMessageInsertResponse.image_file) ) {
+              base64Image = privateMessageInsertResponse.image_file.toString("base64");
             }else if ( typeof privateMessageInsertResponse?.image_file === "string") {
               // If image_file is already a string, no need to convert to base64
               // Just use it as-is since it's likely already in base64 format
-              const base64Image = privateMessageInsertResponse.image_file;
-              (
-                privateMessageInsertResponse as unknown as {
-                  image_file: string;
-                }
-              ).image_file = base64Image;
+              base64Image = privateMessageInsertResponse.image_file;
             }
-            if (privateMessageInsertResponse?.image_file instanceof File) {
-              const base64Image = privateMessageInsertResponse.image_file.toString("base64");
-              // Cast to any to avoid type error when assigning string to Buffer type
-              (
-                privateMessageInsertResponse as unknown as {
-                  image_file: string;
-                }
-              ).image_file = base64Image;
-            } 
           }
 
           const addPrivateMessageSocketResponse = {
@@ -298,7 +282,7 @@ export class AppSocketBase extends QueryHandlers {
               fk_user_id: privateMessageInsertResponse.fk_user_id,
               message_text: privateMessageInsertResponse.message_text,
               sent_at: privateMessageInsertResponse.sent_at,
-              image_file: privateMessageInsertResponse.image_file,
+              image_file: base64Image,
               image_name: privateMessageInsertResponse.image_name,
               timezone: privateMessageInsertResponse.timezone,
             },
