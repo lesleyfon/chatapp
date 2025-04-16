@@ -1,7 +1,7 @@
 import EmojiPicker, { Theme } from "emoji-picker-react";
 import { SendIcon, SmileIcon, ImageIcon } from "lucide-react";
 import { Button } from "../../ui/button";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { FileError, useDropzone } from "react-dropzone";
 import { SubmitErrorHandler, SubmitHandler, useForm } from "react-hook-form";
 import { useSendMessage } from "../../../hooks/useSendMessage";
@@ -65,7 +65,7 @@ const FileInputElement = ({
 	);
 };
 
-export function MessageInput({ chatId, chatName, isPrivateChat }: ChatInputProps) {
+export function ChatMessageInput({ chatId, chatName, isPrivateChat }: ChatInputProps) {
 	const [svgUrl, setSvgUrl] = useState(DEFAULT_SVG_URL);
 	const socket = useSocket();
 	const { sendMessage, sendPrivateMessage } = useSendMessage({ socket });
@@ -83,6 +83,15 @@ export function MessageInput({ chatId, chatName, isPrivateChat }: ChatInputProps
 		formState: { errors },
 	} = useForm<MessageInputProps>();
 
+	useEffect(() => {
+		return () => {
+			// Cleanup when component unmounts
+			if (svgUrl !== DEFAULT_SVG_URL) {
+				URL.revokeObjectURL(svgUrl);
+			}
+		};
+	}, [svgUrl]);
+
 	const validateFile = (file: File): FileError | null => {
 		const fileType = file.type;
 		if (file.size > MAX_FILE_SIZE) {
@@ -98,6 +107,7 @@ export function MessageInput({ chatId, chatName, isPrivateChat }: ChatInputProps
 
 	const onDrop = useCallback(
 		(acceptedFiles: File[]) => {
+			if (!acceptedFiles.length) return;
 			const file = acceptedFiles[0];
 
 			if (file && !validateFile(file)) {
@@ -114,7 +124,10 @@ export function MessageInput({ chatId, chatName, isPrivateChat }: ChatInputProps
 	const { getRootProps, getInputProps, isDragActive } = useDropzone({
 		onDrop,
 		accept: {
-			"image/*": ACCEPTED_IMAGE_TYPES.split(",").map((type) => `.${type.split("/")[1]}`),
+			"image/*": ACCEPTED_IMAGE_TYPES.split(",")
+				.filter((type) => !type.includes("svg"))
+				.map((type) => `.${type.split("/")[1]}`),
+			"image/svg+xml": [".svg"],
 		},
 		maxSize: MAX_FILE_SIZE,
 		multiple: false,
