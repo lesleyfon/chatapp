@@ -67,7 +67,7 @@ export const ACCEPTED_IMAGE_TYPES = [
   "image/jpg",
   "image/gif",
   "image/webp",
-  "image/svg",
+  "image/svg+xml",
   "image/heic",
   "image/heif"
 ].join(", ");
