@@ -61,7 +61,7 @@ class SocketServer {
   constructor(port: number, corsOptions: CorsOptions) {
     const upload = multer({
       dest: "uploads/", // TODO: DO WE NEED TO CHANGE THIS?
-      limits: { fileSize: 1024 * 1024 },
+      limits: { fileSize: 1024 * 1024 * 5 },
     });
 
     this.port = port;
