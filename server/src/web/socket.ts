@@ -251,7 +251,7 @@ export class AppSocketBase extends QueryHandlers {
             return this.emitAddMessageErrorResponse(null, response.reason);
           }
           const privateMessageInsertResponse = response[0];
-          let base64Image: string | undefined
+          let base64Image: string | null = null
           if (privateMessageInsertResponse?.image_file) {
             // Convert Buffer to base64 string only if image_file exists and is a Buffer or a File
             if (privateMessageInsertResponse.image_file instanceof File || Buffer.isBuffer(privateMessageInsertResponse.image_file) ) {
@@ -292,7 +292,6 @@ export class AppSocketBase extends QueryHandlers {
               email: receiver.email,
             },
           };
-
           this.io.emit(
             "add-private-message-response",
             addPrivateMessageSocketResponse,
