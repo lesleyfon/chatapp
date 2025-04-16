@@ -1,9 +1,14 @@
-import { Buffer } from "buffer";
+import { Buffer, File } from "buffer";
 import { StatusCodes } from "http-status-codes";
 import { Socket, Server as SocketIOServer } from "socket.io";
 import { ExtendedError } from "socket.io/dist/namespace";
 import { QueryHandlers } from "../model/QueryHandlers.model";
-import { type CbType, type ChatListType, type JWT_RETURN_USER } from "../types";
+import {
+  type CbType,
+  type ChatListType,
+  type JWT_RETURN_USER,
+  type AddPrivateMessageType,
+} from "../types";
 
 export class AppSocketBase extends QueryHandlers {
   io: SocketIOServer;
@@ -145,7 +150,7 @@ export class AppSocketBase extends QueryHandlers {
           });
 
           const chatId = insertIntoChatResponse[0].id;
-          
+
           // Add message to the message table - refactor this
           const messageResponse = await this.insertMessageToTable({
             chatId,
@@ -209,36 +214,26 @@ export class AppSocketBase extends QueryHandlers {
         message,
         imageFile,
         imageName,
-        created_at, 
-        timezone
-      }: {
-        recipientId: number;
-        senderId: number;
-        message: string;
-        created_at:string;
-        timezone:string;
-        imageFile?: Buffer;
-        imageName?: string;
-      }) => {
-      
-        if (!created_at || !timezone) {
-          return this.emitAddMessageErrorResponse(
-            null,
-            "created_at and timezone cannot be empty",
-          );
-        }
+        created_at,
+        timezone,
+      }: AddPrivateMessageType) => {
+        try {
+          if (!created_at || !timezone) {
+            return this.emitAddMessageErrorResponse(
+              null,
+              "created_at and timezone cannot be empty",
+            );
+          }
 
-        // Ensure that you do not return the passwords when selecting users
-        const [sender, receiver] = (
-          await this.getUserByUserIds({ userIdList: [senderId, recipientId] })
-        ).flat();
+          // Ensure that you do not return the passwords when selecting users
+          const [sender, receiver] = (
+            await this.getUserByUserIds({ userIdList: [senderId, recipientId] })
+          ).flat();
 
-        const privateChatsInsertResponse = (
-          await this.createPrivateChatEntry(sender, receiver)
-        )[0];
-
-        const privateMessageInsertResponse = (
-          await this.createPrivateMessage({
+          const privateChatsInsertResponse = (
+            await this.createPrivateChatEntry(sender, receiver)
+          )[0];
+          const response = await this.createPrivateMessage({
             privateChatsInsertResponse: {
               ...privateChatsInsertResponse,
               pk_private_chat_id: privateChatsInsertResponse.pk_private_chat_id,
@@ -247,64 +242,86 @@ export class AppSocketBase extends QueryHandlers {
             },
             senderId,
             message,
-            imageFile,
+            imageFile: imageFile,
             imageName,
             created_at,
             timezone,
-          })
-        )[0];
-
-        if (privateMessageInsertResponse?.image_file) {
-          // Convert Buffer to base64 string only if image_file exists and is a Buffer
-          if (Buffer.isBuffer(privateMessageInsertResponse.image_file)) {
-            const base64Image =
-              privateMessageInsertResponse.image_file.toString("base64");
-            // Cast to any to avoid type error when assigning string to Buffer type
-            (
-              privateMessageInsertResponse as unknown as { image_file: string }
-            ).image_file = base64Image;
+          });
+          if ("error" in response) {
+            return this.emitAddMessageErrorResponse(null, response.reason);
           }
+          const privateMessageInsertResponse = response[0];
+          if (privateMessageInsertResponse?.image_file) {
+            // Convert Buffer to base64 string only if image_file exists and is a Buffer
+            if (Buffer.isBuffer(privateMessageInsertResponse.image_file)) {
+              const base64Image =
+                privateMessageInsertResponse.image_file.toString("base64");
+              // Cast to any to avoid type error when assigning string to Buffer type
+              (privateMessageInsertResponse as unknown as { image_file: string }).image_file = base64Image;
+            }else if ( typeof privateMessageInsertResponse?.image_file === "string") {
+              // If image_file is already a string, no need to convert to base64
+              // Just use it as-is since it's likely already in base64 format
+              const base64Image = privateMessageInsertResponse.image_file;
+              (
+                privateMessageInsertResponse as unknown as {
+                  image_file: string;
+                }
+              ).image_file = base64Image;
+            }
+            if (privateMessageInsertResponse?.image_file instanceof File) {
+              const base64Image = privateMessageInsertResponse.image_file.toString("base64");
+              // Cast to any to avoid type error when assigning string to Buffer type
+              (
+                privateMessageInsertResponse as unknown as {
+                  image_file: string;
+                }
+              ).image_file = base64Image;
+            } 
+          }
+
+          const addPrivateMessageSocketResponse = {
+            private_chat: {
+              pk_private_chat_id: privateChatsInsertResponse.pk_private_chat_id,
+              sender_id: privateChatsInsertResponse.sender_id,
+              recipient_id: privateChatsInsertResponse.recipient_id,
+              created_at: privateChatsInsertResponse.created_at,
+            },
+            chat_user: {
+              pk_user_id: sender.pk_user_id,
+              name: sender.name,
+              email: sender.email,
+              created_at: sender.created_at,
+            },
+            private_messages: {
+              id: privateMessageInsertResponse.id,
+              fk_private_chat_id: privateMessageInsertResponse.fk_private_chat_id,
+              fk_user_id: privateMessageInsertResponse.fk_user_id,
+              message_text: privateMessageInsertResponse.message_text,
+              sent_at: privateMessageInsertResponse.sent_at,
+              image_file: privateMessageInsertResponse.image_file,
+              image_name: privateMessageInsertResponse.image_name,
+              timezone: privateMessageInsertResponse.timezone,
+            },
+            recipient: {
+              pk_user_id: receiver.pk_user_id,
+              name: receiver.name,
+              email: receiver.email,
+            },
+          };
+
+          this.io.emit(
+            "add-private-message-response",
+            addPrivateMessageSocketResponse,
+          );
+          // Emits an event to display the most recent message sent
+          this.io.emit(
+            "get-latest-private-message-sent",
+            addPrivateMessageSocketResponse,
+          );
+        } catch (error) {
+          // TODO: Add SENTRY logging
+          console.log(error);
         }
-
-        const addPrivateMessageSocketResponse = {
-          private_chat: {
-            pk_private_chat_id: privateChatsInsertResponse.pk_private_chat_id,
-            sender_id: privateChatsInsertResponse.sender_id,
-            recipient_id: privateChatsInsertResponse.recipient_id,
-            created_at: privateChatsInsertResponse.created_at,
-          },
-          chat_user: {
-            pk_user_id: sender.pk_user_id,
-            name: sender.name,
-            email: sender.email,
-            created_at: sender.created_at,
-          },
-          private_messages: {
-            id: privateMessageInsertResponse.id,
-            fk_private_chat_id: privateMessageInsertResponse.fk_private_chat_id,
-            fk_user_id: privateMessageInsertResponse.fk_user_id,
-            message_text: privateMessageInsertResponse.message_text,
-            sent_at: privateMessageInsertResponse.sent_at,
-            image_file: privateMessageInsertResponse.image_file,
-            image_name: privateMessageInsertResponse.image_name,
-            timezone: privateMessageInsertResponse.timezone,
-          },
-          recipient: {
-            pk_user_id: receiver.pk_user_id,
-            name: receiver.name,
-            email: receiver.email,
-          },
-        };
-
-        this.io.emit(
-          "add-private-message-response",
-          addPrivateMessageSocketResponse,
-        );
-        // Emits an event to display the most recent message sent
-        this.io.emit(
-          "get-latest-private-message-sent",
-          addPrivateMessageSocketResponse,
-        );
       },
     );
   }
