@@ -64,8 +64,9 @@ export function MessageInput({ chatId, chatName, isPrivateChat }: ChatInputProps
 		(acceptedFiles: File[]) => {
 			const file = acceptedFiles[0];
 
-			if (file && validateFile(file)) {
+			if (file && !validateFile(file)) {
 				setValue(FILE_INPUT_NAME, file as unknown as string);
+				clearErrors(FILE_INPUT_NAME);
 				const filePreview = URL.createObjectURL(file);
 				setSvgUrl(filePreview);
 			}
@@ -118,9 +119,13 @@ export function MessageInput({ chatId, chatName, isPrivateChat }: ChatInputProps
 		setSvgUrl(DEFAULT_SVG_URL);
 		setValue(FILE_INPUT_NAME, undefined);
 	};
+
 	if (isSubmitting && errors?.message_img) {
 		const message_img = getValues(FILE_INPUT_NAME) as unknown as File;
 		if (!message_img) {
+			clearErrors(FILE_INPUT_NAME);
+		}
+		if (message_img || !validateFile(message_img)) {
 			clearErrors(FILE_INPUT_NAME);
 		}
 	}
