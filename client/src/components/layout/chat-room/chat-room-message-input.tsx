@@ -3,7 +3,7 @@ import { SendIcon, SmileIcon, ImageIcon } from "lucide-react";
 import { Button } from "../../ui/button";
 import { useState, useCallback } from "react";
 import { FileError, useDropzone } from "react-dropzone";
-import { SubmitHandler, useForm } from "react-hook-form";
+import { SubmitErrorHandler, SubmitHandler, useForm } from "react-hook-form";
 import { useSendMessage } from "../../../hooks/useSendMessage";
 import { useSocket } from "../../../hooks/useSocket";
 import { cn, getCurrentDateTimeWithTimezone } from "../../../lib";
@@ -80,25 +80,18 @@ export function MessageInput({ chatId, chatName, isPrivateChat }: ChatInputProps
 		getValues,
 		setError,
 		clearErrors,
-		formState: { errors, isSubmitting },
+		formState: { errors },
 	} = useForm<MessageInputProps>();
 
 	const validateFile = (file: File): FileError | null => {
-		let message = null;
-		let code = null;
 		const fileType = file.type;
-
 		if (file.size > MAX_FILE_SIZE) {
-			message = "File size is too large";
-			code = "file-size-too-large";
+			setError(FILE_INPUT_NAME, { message: "File size is too large" });
+			return { message: "File size is too large", code: "file-size-too-large" };
 		}
 		if (!ACCEPTED_IMAGE_TYPES.includes(fileType)) {
-			message = "File type is not supported";
-			code = "file-type-not-supported";
-		}
-		if (message && code) {
-			setError("message_img", { message });
-			return { message, code };
+			setError(FILE_INPUT_NAME, { message: "File type is not supported" });
+			return { message: "File type is not supported", code: "file-type-not-supported" };
 		}
 		return null;
 	};
@@ -136,7 +129,6 @@ export function MessageInput({ chatId, chatName, isPrivateChat }: ChatInputProps
 			return;
 		}
 		const message_img = getValues(FILE_INPUT_NAME) as unknown as File;
-
 		if (isPrivateChat) {
 			sendPrivateMessage(
 				{
@@ -163,16 +155,18 @@ export function MessageInput({ chatId, chatName, isPrivateChat }: ChatInputProps
 		setValue(FILE_INPUT_NAME, undefined);
 	};
 
-	if (isSubmitting && errors?.message_img) {
-		const message_img = getValues(FILE_INPUT_NAME) as unknown as File;
-		if (!message_img || !validateFile(message_img)) {
-			clearErrors(FILE_INPUT_NAME);
+	const onErrors: SubmitErrorHandler<MessageInputProps> = (errors) => {
+		if ("message_img" in errors) {
+			const message_img = getValues(FILE_INPUT_NAME) as unknown as File;
+			if (!message_img || !validateFile(message_img)) {
+				clearErrors(FILE_INPUT_NAME);
+				handleSubmit(onSubmit)();
+			}
 		}
-	}
-
+	};
 	return (
 		<div className={cn("p-4 border-t", isDragActive && "bg-gray-100/10")}>
-			<form onSubmit={handleSubmit(onSubmit)} className="flex items-center">
+			<form onSubmit={handleSubmit(onSubmit, onErrors)} className="flex items-center">
 				<FileInputElement
 					{...{
 						getRootProps,
