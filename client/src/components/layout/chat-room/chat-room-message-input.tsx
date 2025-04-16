@@ -3,24 +3,67 @@ import { SendIcon, SmileIcon, ImageIcon } from "lucide-react";
 import { Button } from "../../ui/button";
 import { useState, useCallback } from "react";
 import { FileError, useDropzone } from "react-dropzone";
-import { FieldErrors, SubmitHandler, useForm } from "react-hook-form";
+import { SubmitHandler, useForm } from "react-hook-form";
 import { useSendMessage } from "../../../hooks/useSendMessage";
 import { useSocket } from "../../../hooks/useSocket";
 import { cn, getCurrentDateTimeWithTimezone } from "../../../lib";
-import { type MessageInput, type ChatInputProps } from "../../../types";
+import {
+	type MessageInputProps,
+	type ChatInputProps,
+	type ErrorMessagesProps,
+	type FileInputElementProps,
+} from "../../../types";
 import { Input } from "../../ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "../../ui/popover";
 import { ACCEPTED_IMAGE_TYPES, DEFAULT_SVG_URL, MAX_FILE_SIZE } from "../../constants";
 
-const ErrorMessages = ({ errors }: { errors: FieldErrors<MessageInput> }) => (
+const ErrorMessages = ({ errors }: ErrorMessagesProps) => (
 	<div className="flex flex-col">
 		{Object.keys(errors).map((error) => (
 			<p key={error} className="text-red-400 text-xs">
-				{errors[error as keyof MessageInput]?.message as string}
+				{errors[error as keyof MessageInputProps]?.message as string}
 			</p>
 		))}
 	</div>
 );
+
+const FileInputElement = ({
+	getRootProps,
+	errors,
+	svgUrl,
+	isDragActive,
+	getInputProps,
+}: FileInputElementProps) => {
+	return (
+		<div {...getRootProps()}>
+			<input {...getInputProps()} />
+			<Button
+				type="button"
+				variant="ghost"
+				size="icon"
+				className={cn(
+					"mr-2 cursor-pointer relative overflow-hidden",
+					errors?.message_img && "border-[1px] border-red-400",
+					isDragActive && "bg-gray-100 border-[1px] border-green-300"
+				)}
+			>
+				{svgUrl === DEFAULT_SVG_URL ? (
+					<ImageIcon className="h-5 w-5" />
+				) : (
+					<div
+						className="w-full h-full absolute inset-0"
+						style={{
+							backgroundImage: `url(${svgUrl})`,
+							backgroundRepeat: "no-repeat",
+							backgroundSize: "cover",
+							backgroundPosition: "center",
+						}}
+					/>
+				)}
+			</Button>
+		</div>
+	);
+};
 
 export function MessageInput({ chatId, chatName, isPrivateChat }: ChatInputProps) {
 	const [svgUrl, setSvgUrl] = useState(DEFAULT_SVG_URL);
@@ -38,7 +81,7 @@ export function MessageInput({ chatId, chatName, isPrivateChat }: ChatInputProps
 		setError,
 		clearErrors,
 		formState: { errors, isSubmitting },
-	} = useForm<MessageInput>();
+	} = useForm<MessageInputProps>();
 
 	const validateFile = (file: File): FileError | null => {
 		let message = null;
@@ -85,7 +128,7 @@ export function MessageInput({ chatId, chatName, isPrivateChat }: ChatInputProps
 		validator: validateFile,
 	});
 
-	const onSubmit: SubmitHandler<MessageInput> = (data) => {
+	const onSubmit: SubmitHandler<MessageInputProps> = (data) => {
 		if (data.message_text.trim().length === 0) {
 			setError("message_text", {
 				message: "Can't submit an empty field",
@@ -122,43 +165,23 @@ export function MessageInput({ chatId, chatName, isPrivateChat }: ChatInputProps
 
 	if (isSubmitting && errors?.message_img) {
 		const message_img = getValues(FILE_INPUT_NAME) as unknown as File;
-		if (!message_img) {
-			clearErrors(FILE_INPUT_NAME);
-		}
-		if (message_img || !validateFile(message_img)) {
+		if (!message_img || !validateFile(message_img)) {
 			clearErrors(FILE_INPUT_NAME);
 		}
 	}
+
 	return (
 		<div className={cn("p-4 border-t", isDragActive && "bg-gray-100/10")}>
 			<form onSubmit={handleSubmit(onSubmit)} className="flex items-center">
-				<div {...getRootProps()}>
-					<input {...getInputProps()} />
-					<Button
-						type="button"
-						variant="ghost"
-						size="icon"
-						className={cn(
-							"mr-2 cursor-pointer relative overflow-hidden",
-							errors?.message_img && "border-[1px] border-red-400",
-							isDragActive && "bg-gray-100 border-[1px] border-green-300"
-						)}
-					>
-						{svgUrl === DEFAULT_SVG_URL ? (
-							<ImageIcon className="h-5 w-5" />
-						) : (
-							<div
-								className="w-full h-full absolute inset-0"
-								style={{
-									backgroundImage: `url(${svgUrl})`,
-									backgroundRepeat: "no-repeat",
-									backgroundSize: "cover",
-									backgroundPosition: "center",
-								}}
-							/>
-						)}
-					</Button>
-				</div>
+				<FileInputElement
+					{...{
+						getRootProps,
+						errors,
+						svgUrl,
+						isDragActive,
+						getInputProps,
+					}}
+				/>
 
 				<div className="flex flex-col w-full" {...getRootProps()}>
 					<Input
