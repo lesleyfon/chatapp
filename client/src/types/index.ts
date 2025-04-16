@@ -1,4 +1,6 @@
 import { type LucideIcon } from "lucide-react";
+import { DropzoneInputProps, DropzoneRootProps } from "react-dropzone";
+import { FieldErrors } from "react-hook-form";
 
 export type ChatUserType = {
 	name: string | null;
@@ -105,7 +107,7 @@ export type PrivateChatResultType = {
   recipient: ChatUserType; 
 };
 
-export type MessageInput = {
+export type MessageInputProps = {
 	message_text: string;
 	message_img?:string
 	sent_at?:string
@@ -125,3 +127,13 @@ export interface ChatInputProps {
 	chatName: string;
 	isPrivateChat?: boolean;
 }
+
+
+export type ErrorMessagesProps = { errors: FieldErrors<MessageInputProps> };
+export type FileInputElementProps = ErrorMessagesProps & {
+	svgUrl: string;
+	isDragActive: boolean;
+	errors: FieldErrors<MessageInputProps>;
+	getRootProps: <T extends DropzoneRootProps>(props?: T) => T;
+	getInputProps: <T extends DropzoneInputProps>(props?: T) => T;
+};
