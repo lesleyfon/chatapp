@@ -56,8 +56,11 @@ export const useSendMessage = ({ socket }: { socket: Socket | null }) => {
 		 * IF the imageFile is a gif, convert to base64
 		 */
 		let file = data?.imageFile;
-		if (file instanceof File && file.type === "image/gif") {
-			file = await convertGifToBase64(file);
+
+		if (file instanceof File) {
+			if (file.type === "image/gif") {
+				file = await convertGifToBase64(file);
+			}
 		}
 
 		socket.emit("add-private-message", {
