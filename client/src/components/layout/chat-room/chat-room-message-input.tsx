@@ -1,19 +1,27 @@
 import EmojiPicker, { Theme } from "emoji-picker-react";
-import { SendIcon, SmileIcon } from "lucide-react";
+import { SendIcon, SmileIcon, ImageIcon } from "lucide-react";
 import { Button } from "../../ui/button";
-import { useState } from "react";
-
-import { SubmitHandler, useForm } from "react-hook-form";
+import { useState, useCallback } from "react";
+import { FileError, useDropzone } from "react-dropzone";
+import { FieldErrors, SubmitHandler, useForm } from "react-hook-form";
 import { useSendMessage } from "../../../hooks/useSendMessage";
 import { useSocket } from "../../../hooks/useSocket";
 import { cn, getCurrentDateTimeWithTimezone } from "../../../lib";
 import { type MessageInput, type ChatInputProps } from "../../../types";
-
 import { Input } from "../../ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "../../ui/popover";
-import { DEFAULT_SVG_URL } from "../../constants";
+import { ACCEPTED_IMAGE_TYPES, DEFAULT_SVG_URL, MAX_FILE_SIZE } from "../../constants";
 
-// BUTTON Background Image
+const ErrorMessages = ({ errors }: { errors: FieldErrors<MessageInput> }) => (
+	<div className="flex flex-col">
+		{Object.keys(errors).map((error) => (
+			<p key={error} className="text-red-400 text-xs">
+				{errors[error as keyof MessageInput]?.message as string}
+			</p>
+		))}
+	</div>
+);
+
 export function MessageInput({ chatId, chatName, isPrivateChat }: ChatInputProps) {
 	const [svgUrl, setSvgUrl] = useState(DEFAULT_SVG_URL);
 	const socket = useSocket();
@@ -28,8 +36,53 @@ export function MessageInput({ chatId, chatName, isPrivateChat }: ChatInputProps
 		setValue,
 		getValues,
 		setError,
-		formState: { errors },
+		clearErrors,
+		formState: { errors, isSubmitting },
 	} = useForm<MessageInput>();
+
+	const validateFile = (file: File): FileError | null => {
+		let message = null;
+		let code = null;
+		const fileType = file.type;
+
+		if (file.size > MAX_FILE_SIZE) {
+			message = "File size is too large";
+			code = "file-size-too-large";
+		}
+		if (!ACCEPTED_IMAGE_TYPES.includes(fileType)) {
+			message = "File type is not supported";
+			code = "file-type-not-supported";
+		}
+		if (message && code) {
+			setError("message_img", { message });
+			return { message, code };
+		}
+		return null;
+	};
+
+	const onDrop = useCallback(
+		(acceptedFiles: File[]) => {
+			const file = acceptedFiles[0];
+
+			if (file && validateFile(file)) {
+				setValue(FILE_INPUT_NAME, file as unknown as string);
+				const filePreview = URL.createObjectURL(file);
+				setSvgUrl(filePreview);
+			}
+		},
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+		[setValue]
+	);
+
+	const { getRootProps, getInputProps, isDragActive } = useDropzone({
+		onDrop,
+		accept: {
+			"image/*": ACCEPTED_IMAGE_TYPES.split(",").map((type) => `.${type.split("/")[1]}`),
+		},
+		maxSize: MAX_FILE_SIZE,
+		multiple: false,
+		validator: validateFile,
+	});
 
 	const onSubmit: SubmitHandler<MessageInput> = (data) => {
 		if (data.message_text.trim().length === 0) {
@@ -38,7 +91,7 @@ export function MessageInput({ chatId, chatName, isPrivateChat }: ChatInputProps
 			});
 			return;
 		}
-		const message_img = data?.message_img?.[0] as unknown as HTMLImageElement;
+		const message_img = getValues(FILE_INPUT_NAME) as unknown as File;
 
 		if (isPrivateChat) {
 			sendPrivateMessage(
@@ -62,46 +115,60 @@ export function MessageInput({ chatId, chatName, isPrivateChat }: ChatInputProps
 			);
 		}
 		setValue(INPUT_NAME, "");
+		setSvgUrl(DEFAULT_SVG_URL);
+		setValue(FILE_INPUT_NAME, undefined);
 	};
-
+	if (isSubmitting && errors?.message_img) {
+		const message_img = getValues(FILE_INPUT_NAME) as unknown as File;
+		if (!message_img) {
+			clearErrors(FILE_INPUT_NAME);
+		}
+	}
 	return (
-		<div className="p-4 border-t">
+		<div className={cn("p-4 border-t", isDragActive && "bg-gray-100/10")}>
 			<form onSubmit={handleSubmit(onSubmit)} className="flex items-center">
-				<Button
-					type="button"
-					variant="ghost"
-					size="icon"
-					className="mr-2 cursor-pointer"
-					style={{
-						backgroundImage: `url(${svgUrl})`,
-						backgroundRepeat: "no-repeat",
-						backgroundPositionX: "0",
-						backgroundSize: "24px",
-						backgroundPosition: "center",
-					}}
-				>
+				<div {...getRootProps()}>
+					<input {...getInputProps()} />
+					<Button
+						type="button"
+						variant="ghost"
+						size="icon"
+						className={cn(
+							"mr-2 cursor-pointer relative overflow-hidden",
+							errors?.message_img && "border-[1px] border-red-400",
+							isDragActive && "bg-gray-100 border-[1px] border-green-300"
+						)}
+					>
+						{svgUrl === DEFAULT_SVG_URL ? (
+							<ImageIcon className="h-5 w-5" />
+						) : (
+							<div
+								className="w-full h-full absolute inset-0"
+								style={{
+									backgroundImage: `url(${svgUrl})`,
+									backgroundRepeat: "no-repeat",
+									backgroundSize: "cover",
+									backgroundPosition: "center",
+								}}
+							/>
+						)}
+					</Button>
+				</div>
+
+				<div className="flex flex-col w-full" {...getRootProps()}>
 					<Input
-						{...register(FILE_INPUT_NAME)}
-						id="message-img"
-						type="file"
-						accept="image/png, image/jpeg"
-						className=" cursor-pointer opacity-0"
-						onChange={(e) => {
-							const file = e.target.files?.[0];
-							if (file) {
-								const filePreview = URL.createObjectURL(file);
-								setSvgUrl(filePreview);
-							}
+						{...register(INPUT_NAME)}
+						type="text"
+						className={cn("flex-1", errors?.message_text ? "border-red-400" : "")}
+						placeholder="Type a message..."
+						onClick={(e) => {
+							// prevent opening file input since we are passing the getRootProps to the input wrapper
+							e.stopPropagation();
 						}}
 					/>
-				</Button>
-				<Input
-					{...register(INPUT_NAME)}
-					type="text"
-					className={cn("flex-1 ", errors?.message_text ? "border-red-400" : "")}
-					placeholder="Type a message..."
-					autoComplete="off"
-				/>
+					<ErrorMessages errors={errors} />
+				</div>
+
 				<Popover>
 					<PopoverTrigger>
 						<Button type="button" variant="ghost" size="icon" className="ml-2">
@@ -117,7 +184,6 @@ export function MessageInput({ chatId, chatName, isPrivateChat }: ChatInputProps
 							onEmojiClick={({ emoji }) => {
 								const currentMessageValue = getValues(INPUT_NAME);
 								const messageWithEmojiAttached = `${currentMessageValue}${emoji}`;
-
 								setValue(INPUT_NAME, messageWithEmojiAttached);
 							}}
 						/>
