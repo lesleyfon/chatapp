@@ -1,14 +1,9 @@
-import { Buffer, File } from "buffer";
-import { StatusCodes } from "http-status-codes";
-import { Socket, Server as SocketIOServer } from "socket.io";
-import { ExtendedError } from "socket.io/dist/namespace";
-import { QueryHandlers } from "../model/QueryHandlers.model";
-import {
-  type CbType,
-  type ChatListType,
-  type JWT_RETURN_USER,
-  type AddPrivateMessageType,
-} from "../types";
+import { StatusCodes } from 'http-status-codes';
+import { Buffer, File } from 'node:buffer';
+import type { Socket, Server as SocketIOServer } from 'socket.io';
+import type { ExtendedError } from 'socket.io/dist/namespace';
+import { QueryHandlers } from '../model/query-handlers.model';
+import type { AddPrivateMessageType, CbType, ChatListType, JWT_RETURN_USER } from '../types';
 
 export class AppSocketBase extends QueryHandlers {
   io: SocketIOServer;
@@ -18,10 +13,7 @@ export class AppSocketBase extends QueryHandlers {
     this.io.use(this.socketAuthMiddleware);
   }
 
-  socketAuthMiddleware = async (
-    socket: Socket,
-    next: (err?: ExtendedError) => void,
-  ) => {
+  socketAuthMiddleware = async (socket: Socket, next: (err?: ExtendedError) => void) => {
     const token = socket.handshake?.auth?.token;
     const decodedToken = await this.decodeJWT(token);
 
@@ -30,7 +22,7 @@ export class AppSocketBase extends QueryHandlers {
       next(
         new Error(
           JSON.stringify({
-            message: "Unknown error. Please try again",
+            message: 'Unknown error. Please try again',
             code: StatusCodes.INTERNAL_SERVER_ERROR,
           }),
         ),
@@ -38,10 +30,7 @@ export class AppSocketBase extends QueryHandlers {
       return;
     }
 
-    if (
-      "code" in decodedToken &&
-      decodedToken.code === StatusCodes.UNAUTHORIZED
-    ) {
+    if ('code' in decodedToken && decodedToken.code === StatusCodes.UNAUTHORIZED) {
       next(new Error(JSON.stringify(decodedToken)));
       return;
     }
@@ -54,9 +43,8 @@ export class AppSocketBase extends QueryHandlers {
 
     if (!user) return;
     const userId = user.userId;
-    socket.on("get-chat-list", async (cb: CbType) => {
-      const chatList: ChatListType[] =
-        await this.selectUserChatRoomsWithLastSetMessages(userId);
+    socket.on('get-chat-list', async (cb: CbType) => {
+      const chatList: ChatListType[] = await this.selectUserChatRoomsWithLastSetMessages(userId);
 
       cb(chatList);
     });
@@ -66,7 +54,7 @@ export class AppSocketBase extends QueryHandlers {
     const user = (await this.decodeJWT(token)) as JWT_RETURN_USER;
     if (!user) return;
     const userId = user.userId;
-    socket.on("get-private-message-list", async (cb) => {
+    socket.on('get-private-message-list', async (cb) => {
       const chatList = await this.getLatestPrivateChatMessagesSent({ userId });
       cb(chatList);
     });
@@ -82,10 +70,7 @@ export class AppSocketBase extends QueryHandlers {
    * a string that represents the error message to be included in the response object. This message will
    * be sent back to the client when emitting the "add-message-response" event.
    */
-  private emitAddMessageErrorResponse(
-    chatName: string | null,
-    message: string,
-  ) {
+  private emitAddMessageErrorResponse(chatName: string | null, message: string) {
     const response = {
       data: null,
       error: true,
@@ -93,15 +78,15 @@ export class AppSocketBase extends QueryHandlers {
       chats: { chatName },
     };
     if (chatName) {
-      this.io.to(chatName).emit("add-message-response", response);
+      this.io.to(chatName).emit('add-message-response', response);
     } else {
-      this.io.emit("add-message-response", response);
+      this.io.emit('add-message-response', response);
     }
   }
 
   addMessageToRoom(socket: Socket) {
     socket.on(
-      "add-message",
+      'add-message',
       async (data: {
         chatName: string;
         message: string;
@@ -116,25 +101,16 @@ export class AppSocketBase extends QueryHandlers {
         this.io.socketsJoin(chatName);
 
         if (!chatName) {
-          return this.emitAddMessageErrorResponse(
-            null,
-            "Chat name cannot be empty",
-          );
+          return this.emitAddMessageErrorResponse(null, 'Chat name cannot be empty');
         }
         if (!message) {
-          return this.emitAddMessageErrorResponse(
-            chatName,
-            "Message cannot be empty",
-          );
+          return this.emitAddMessageErrorResponse(chatName, 'Message cannot be empty');
         }
         if (!sent_at || !timezone) {
-          return this.emitAddMessageErrorResponse(
-            chatName,
-            "sent_at and timezone cannot be empty",
-          );
+          return this.emitAddMessageErrorResponse(chatName, 'sent_at and timezone cannot be empty');
         }
         if (!user) {
-          return this.emitAddMessageErrorResponse(chatName, "User not found");
+          return this.emitAddMessageErrorResponse(chatName, 'User not found');
         }
 
         const userId = user.userId;
@@ -165,13 +141,10 @@ export class AppSocketBase extends QueryHandlers {
             ...message,
             chats: chatExist[0],
           }));
-          const chatList = await this.getLatestChatRoomMessageSent(
-            userId,
-            chatId,
-          );
+          const chatList = await this.getLatestChatRoomMessageSent(userId, chatId);
 
-          this.io.to(chatName).emit("get-latest-chat-room-message", chatList);
-          this.io.to(chatName).emit("add-message-response", addMessageResponse);
+          this.io.to(chatName).emit('get-latest-chat-room-message', chatList);
+          this.io.to(chatName).emit('add-message-response', addMessageResponse);
           return;
         }
 
@@ -183,9 +156,7 @@ export class AppSocketBase extends QueryHandlers {
           sent_at,
           timezone,
         });
-        const messageResponse = await this.getMostRecentChatMessageSent(
-          messageInsertResponse,
-        );
+        const messageResponse = await this.getMostRecentChatMessageSent(messageInsertResponse);
 
         // Emit message to other users
         const addMessageResponse = messageResponse.map((message) => ({
@@ -194,20 +165,17 @@ export class AppSocketBase extends QueryHandlers {
         }));
 
         // Emitter
-        this.io.to(chatName).emit("add-message-response", addMessageResponse);
+        this.io.to(chatName).emit('add-message-response', addMessageResponse);
 
-        const chatList = await this.getLatestChatRoomMessageSent(
-          userId,
-          chatId,
-        );
-        this.io.to(chatName).emit("get-latest-chat-room-message", chatList);
+        const chatList = await this.getLatestChatRoomMessageSent(userId, chatId);
+        this.io.to(chatName).emit('get-latest-chat-room-message', chatList);
       },
     );
   }
 
-  async addPrivateMessage(socket: Socket) {
+  addPrivateMessage(socket: Socket) {
     socket.on(
-      "add-private-message",
+      'add-private-message',
       async ({
         recipientId,
         senderId,
@@ -221,7 +189,7 @@ export class AppSocketBase extends QueryHandlers {
           if (!created_at || !timezone) {
             return this.emitAddMessageErrorResponse(
               null,
-              "created_at and timezone cannot be empty",
+              'created_at and timezone cannot be empty',
             );
           }
 
@@ -247,16 +215,19 @@ export class AppSocketBase extends QueryHandlers {
             created_at,
             timezone,
           });
-          if ("error" in response) {
+          if ('error' in response) {
             return this.emitAddMessageErrorResponse(null, response.reason);
           }
           const privateMessageInsertResponse = response[0];
-          let base64Image: string | null = null
+          let base64Image: string | null = null;
           if (privateMessageInsertResponse?.image_file) {
             // Convert Buffer to base64 string only if image_file exists and is a Buffer or a File
-            if (privateMessageInsertResponse.image_file instanceof File || Buffer.isBuffer(privateMessageInsertResponse.image_file) ) {
-              base64Image = privateMessageInsertResponse.image_file.toString("base64");
-            }else if ( typeof privateMessageInsertResponse?.image_file === "string") {
+            if (
+              privateMessageInsertResponse.image_file instanceof File ||
+              Buffer.isBuffer(privateMessageInsertResponse.image_file)
+            ) {
+              base64Image = privateMessageInsertResponse.image_file.toString('base64');
+            } else if (typeof privateMessageInsertResponse?.image_file === 'string') {
               // If image_file is already a string, no need to convert to base64
               // Just use it as-is since it's likely already in base64 format
               base64Image = privateMessageInsertResponse.image_file;
@@ -292,24 +263,17 @@ export class AppSocketBase extends QueryHandlers {
               email: receiver.email,
             },
           };
-          this.io.emit(
-            "add-private-message-response",
-            addPrivateMessageSocketResponse,
-          );
+          this.io.emit('add-private-message-response', addPrivateMessageSocketResponse);
           // Emits an event to display the most recent message sent
-          this.io.emit(
-            "get-latest-private-message-sent",
-            addPrivateMessageSocketResponse,
-          );
-        } catch (error) {
+          this.io.emit('get-latest-private-message-sent', addPrivateMessageSocketResponse);
+        } catch (_error) {
           // TODO: Add SENTRY logging
-          console.log(error);
         }
       },
     );
   }
   socketEvents() {
-    this.io.on("connection", (socket) => {
+    this.io.on('connection', (socket) => {
       this.addMessageToRoom(socket);
       this.addPrivateMessage(socket);
       this.getAUserChatList(socket);
@@ -318,6 +282,6 @@ export class AppSocketBase extends QueryHandlers {
   }
 
   connectToRooms(socket: SocketIOServer) {
-    socket.to(["person-1", "person-1"]);
+    socket.to(['person-1', 'person-1']);
   }
 }

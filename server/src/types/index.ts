@@ -1,8 +1,8 @@
-import { File } from "buffer";
-import { Request } from "express";
+import type { Request } from 'express';
+import type { File } from 'node:buffer';
 
 export type RequestWithUser = Request & {
-  user: Omit<UserInterface, "created_at" | "updated_at">;
+  user: Omit<UserInterface, 'created_at' | 'updated_at'>;
   token: string;
 };
 // Environment and Configuration Types
@@ -126,7 +126,6 @@ export interface TypedMessage {
   chat_user: UserBase | null;
 }
 
-
 export type AddPrivateMessageType = {
   recipientId: number;
   senderId: number;
@@ -135,4 +134,4 @@ export type AddPrivateMessageType = {
   timezone: string;
   imageFile?: Buffer | File | string;
   imageName?: string;
-}
+};

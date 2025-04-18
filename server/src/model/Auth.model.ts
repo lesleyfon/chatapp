@@ -1,13 +1,13 @@
-import bcrypt from "bcrypt";
+import bcrypt from 'bcrypt';
+import { eq } from 'drizzle-orm';
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import { StatusCodes } from 'http-status-codes';
+import jwt, { TokenExpiredError } from 'jsonwebtoken';
 
-import { eq } from "drizzle-orm";
-import { NodePgDatabase } from "drizzle-orm/node-postgres";
-import { StatusCodes } from "http-status-codes";
-import jwt, { TokenExpiredError } from "jsonwebtoken";
-import { connectToDB } from "../db";
-import { user } from "../schema";
-import { JWT_RETURN_USER, UserInterface } from "../types";
-import { getEnvs } from "../utils/getEnvs";
+import { connectToDB } from '../db';
+import { user } from '../schema';
+import type { JWT_RETURN_USER, UserInterface } from '../types';
+import { getEnvs } from '../utils/get-envs';
 
 const { JWT_SECRET } = getEnvs();
 
@@ -29,7 +29,7 @@ export class UserSchema {
     email: string;
     timezone: string;
     created_at: string;
-  }): Promise<Omit<UserInterface, "created_at"> & { timezone: string } | undefined> {
+  }): Promise<(Omit<UserInterface, 'created_at'> & { timezone: string }) | undefined> {
     try {
       const hashedPassword = await this.hashPassword({ password });
 
@@ -51,7 +51,7 @@ export class UserSchema {
         timezone: response[0].timezone,
       };
     } catch (err) {
-      if (typeof err === "object" && Object.keys(err as object).length) {
+      if (typeof err === 'object' && Object.keys(err as object).length > 0) {
         throw new Error(JSON.stringify(err as object));
       }
     }
@@ -60,10 +60,7 @@ export class UserSchema {
 
   async getUser({ email }: { email: string }) {
     try {
-      const userExist = await this.db
-        .select()
-        .from(user)
-        .where(eq(user.email, email));
+      const userExist = await this.db.select().from(user).where(eq(user.email, email));
 
       if (userExist.length === 0) {
         return undefined;
@@ -71,11 +68,11 @@ export class UserSchema {
 
       return userExist[0];
     } catch (err) {
-      if (typeof err === "object" && Object.keys(err as object).length) {
+      if (typeof err === 'object' && Object.keys(err as object).length > 0) {
         throw new Error(JSON.stringify(err as object));
       }
       return {
-        reason: "Failed to retrieve user",
+        reason: 'Failed to retrieve user',
         code: StatusCodes.INTERNAL_SERVER_ERROR,
       };
     }
@@ -94,13 +91,10 @@ export class UserSchema {
       })
     | { code: StatusCodes; reason: string }
   > {
-    const userExist = await this.db
-      .select()
-      .from(user)
-      .where(eq(user.email, email));
+    const userExist = await this.db.select().from(user).where(eq(user.email, email));
 
     if (userExist.length === 0) {
-      return { code: StatusCodes.NOT_FOUND, reason: "User does not exist" };
+      return { code: StatusCodes.NOT_FOUND, reason: 'User does not exist' };
     }
 
     const dbUser = {
@@ -115,12 +109,12 @@ export class UserSchema {
 
     if (!isPasswordCorrect) {
       return {
-        reason: "Incorrect password",
+        reason: 'Incorrect password',
         code: StatusCodes.UNAUTHORIZED,
       };
     }
     const token = await this.createJWT({
-      name: dbUser.name ?? "",
+      name: dbUser.name ?? '',
       email: dbUser?.email as string,
       userId: dbUser.pk_user_id,
       timezone: dbUser.timezone as string,
@@ -130,17 +124,17 @@ export class UserSchema {
       user: {
         id: dbUser.pk_user_id,
         pk_user_id: dbUser.pk_user_id,
-        name: dbUser.name ?? "",
+        name: dbUser.name ?? '',
         email: dbUser.email as string,
         password: dbUser.password as string,
-        timezone: dbUser.timezone ?? "UTC",
+        timezone: dbUser.timezone ?? 'UTC',
         created_at: dbUser.created_at as string,
       },
       token,
     };
   }
 
-  async createJWT({
+  createJWT({
     name,
     email,
     userId,
@@ -163,8 +157,8 @@ export class UserSchema {
       },
       JWT_SECRET,
       {
-        expiresIn: "24h",
-        algorithm: "HS256",
+        expiresIn: '24h',
+        algorithm: 'HS256',
       },
     );
     return token;
@@ -184,7 +178,7 @@ export class UserSchema {
     } catch (err) {
       if (err instanceof TokenExpiredError) {
         return {
-          reason: "Unauthorized",
+          reason: 'Unauthorized',
           code: StatusCodes.UNAUTHORIZED,
         };
       }

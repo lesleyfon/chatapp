@@ -1,6 +1,6 @@
-import * as dotenv from "dotenv";
+import * as dotenv from 'dotenv';
 
-import { ENV_VARS } from "../types";
+import type { ENV_VARS } from '../types';
 
 dotenv.config();
 
@@ -28,6 +28,6 @@ export function getEnvs() {
     DATABASE_PASSWORD,
     DB_URL,
     DATABASE_URL,
-    SENTRY_DSN: SENTRY_DSN || "",
+    SENTRY_DSN: SENTRY_DSN || '',
   };
 }

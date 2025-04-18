@@ -1,10 +1,11 @@
-import { drizzle } from "drizzle-orm/node-postgres";
-import { Client } from "pg";
-import { getEnvs } from "./utils/getEnvs";
+import { drizzle } from 'drizzle-orm/node-postgres';
+import { Client } from 'pg';
 
-const {  DATABASE_URL } = getEnvs();
+import { getEnvs } from './utils/get-envs';
 
-export const connectToDB = () => {
+const { DATABASE_URL } = getEnvs();
+
+export function connectToDB() {
   const client = new Client({
     connectionString: DATABASE_URL,
   });
@@ -17,16 +18,14 @@ export const connectToDB = () => {
   });
 
   return drizzle(client as unknown as never);
-};
+}
 
 // Initialize a single client instance
 const client = new Client({
   connectionString: DATABASE_URL,
-  ssl:
-    process.env.ENVIRONMENT === "production"
-      ? { rejectUnauthorized: false }
-      : undefined,
+  ssl: process.env.ENVIRONMENT === 'production' ? { rejectUnauthorized: false } : undefined,
 });
 
+// TODO: Add A retry here/in this file
 client.connect();
 export const db = drizzle(client as unknown as never);
