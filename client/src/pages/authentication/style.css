@@ -1,6 +1,5 @@
-
-button[data-state="active"]{
-  background-color: #09090B !important ;
+button[data-state="active"] {
+  background-color: #09090b !important;
   color: white !important;
   font-weight: bold;
   transition-duration: 0.25s;

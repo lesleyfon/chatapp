@@ -1,11 +1,9 @@
-import dayjs from "dayjs";
-import utc from "dayjs/plugin/utc";
-import timezone from "dayjs/plugin/timezone";
-
+import dayjs from 'dayjs';
+import timezone from 'dayjs/plugin/timezone';
+import utc from 'dayjs/plugin/utc';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
-
 
 /**
  * Gets the current timezone name in IANA format (e.g., "America/Chicago")
@@ -17,7 +15,7 @@ export function getBrowserTimeZone(): string {
     // Get the timezone from the browser using Intl API
     return Intl.DateTimeFormat().resolvedOptions().timeZone;
   } catch (error) {
-    // eslint-disable-next-line no-console
+    // biome-ignore lint/suspicious/noConsole: <explanation>
     console.error('Error getting timezone:', error);
     return 'UTC'; // Fallback to UTC if there's an error
   }
@@ -29,35 +27,32 @@ export function getBrowserTimeZone(): string {
  * @param {string} timeZone - The timezone to format the date to.
  * @returns {string} The formatted date in the user's current timezone.
  */
-export function formatDate(date: Date | string, timeZone:string = "America/Chicago") {
-
+export function formatDate(date: Date | string, timeZone: string = 'America/Chicago') {
   // If the timezones are the same, we just return the date in the user's timezone.
   // else: Convert the transaction date to the user's timezone.
-   
 
   const browserTimeZone = getBrowserTimeZone();
-  
-  
-  try{
-    if(browserTimeZone === timeZone) {
+
+  try {
+    if (browserTimeZone === timeZone) {
       const inputDate = dayjs.tz(date, timeZone);
       return inputDate.format('MMM DD, YYYY hh:mm A');
     }
-    
+
     const transactionTimestampToBrowserTimezone = dayjs.tz(date, timeZone).tz(browserTimeZone);
     return transactionTimestampToBrowserTimezone.format('MMM DD, YYYY hh:mm A');
-    }catch(error){
-      let message:string | undefined 
-      if(error instanceof Error){
-        message = error?.message
-      }
-      // eslint-disable-next-line no-console
-      console.error(`Error formatting date with timezone ${timeZone}:`, message || error);
-      const fallbackDate = dayjs.tz(date, browserTimeZone)
-      return fallbackDate.format('MMM DD, YYYY hh:mm A');
+  } catch (error) {
+    let message: string | undefined;
+    if (error instanceof Error) {
+      message = error?.message;
     }
-}
 
+    // biome-ignore lint/suspicious/noConsole: <explanation>
+    console.error(`Error formatting date with timezone ${timeZone}:`, message || error);
+    const fallbackDate = dayjs.tz(date, browserTimeZone);
+    return fallbackDate.format('MMM DD, YYYY hh:mm A');
+  }
+}
 
 /**
  * The function calculates the time difference between a given date and the current date in days,
@@ -69,26 +64,22 @@ export function formatDate(date: Date | string, timeZone:string = "America/Chica
  * function returns a string representing the time difference in the largest applicable unit (days,
  * hours, minutes, or seconds) rounded down to the nearest whole number.
  */
-export function timeDifference(date: string, timeZone:string="America/Chicago") {
+export function timeDifference(date: string, timeZone: string = 'America/Chicago') {
+  const transactionDate = new Date(new Date(date).toLocaleString('en-US', { timeZone }));
+  const currentTime = new Date(new Date().toLocaleString('en-US', { timeZone }));
 
-  const transactionDate = new Date(new Date(date).toLocaleString("en-US", { timeZone }));
-  const currentTime = new Date(new Date().toLocaleString("en-US", { timeZone }));
-  
+  const daysDifference = dayjs(currentTime).diff(dayjs(transactionDate), 'day');
+  const hoursDifference = dayjs(currentTime).diff(dayjs(transactionDate), 'hour');
+  const minutesDifference = dayjs(currentTime).diff(dayjs(transactionDate), 'minute');
+  const secondsDifference = dayjs(currentTime).diff(dayjs(transactionDate), 'second');
 
-  const daysDifference = dayjs(currentTime).diff(dayjs(transactionDate), "day");
-  const hoursDifference = dayjs(currentTime).diff(dayjs(transactionDate), "hour");
-  const minutesDifference = dayjs(currentTime).diff(dayjs(transactionDate), "minute");
-  const secondsDifference = dayjs(currentTime).diff(dayjs(transactionDate), "second");
-  
-  if (daysDifference >= 7)  return transactionDate.toLocaleDateString();
-  if (daysDifference >= 1)  return `${Math.floor(daysDifference)}d`;
+  if (daysDifference >= 7) return transactionDate.toLocaleDateString();
+  if (daysDifference >= 1) return `${Math.floor(daysDifference)}d`;
   if (hoursDifference >= 1) return `${Math.floor(hoursDifference)}h`;
   if (minutesDifference >= 1) return `${Math.floor(minutesDifference)}m`;
 
   return `${Math.floor(secondsDifference)}s`;
 }
-
-
 
 /**
  * Gets the current date and time with the user's timezone offset
@@ -103,14 +94,14 @@ export function getCurrentDateTimeWithTimezone() {
 
   // Format the date part: YYYY-MM-DD
   const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const day = String(now.getDate()).padStart(2, "0");
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
 
   // Format the time part: HH:MM:SS.sss
-  const hours = String(now.getHours()).padStart(2, "0");
-  const minutes = String(now.getMinutes()).padStart(2, "0");
-  const seconds = String(now.getSeconds()).padStart(2, "0");
-  const milliseconds = String(now.getMilliseconds()).padStart(3, "0");
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  const seconds = String(now.getSeconds()).padStart(2, '0');
+  const milliseconds = String(now.getMilliseconds()).padStart(3, '0');
 
   // Build the base datetime string
   const dateTimeBase = `${year}-${month}-${day}T${hours}:${minutes}:${seconds}.${milliseconds}`;
@@ -122,13 +113,10 @@ export function getCurrentDateTimeWithTimezone() {
   } else {
     // Convert timezone offset to ISO format (+/-HH:MM)
     // Note: getTimezoneOffset() returns minutes WEST of UTC, so we need to flip the sign
-    const offsetSign = timezoneOffsetMinutes > 0 ? "-" : "+";
+    const offsetSign = timezoneOffsetMinutes > 0 ? '-' : '+';
     const absoluteOffset = Math.abs(timezoneOffsetMinutes);
-    const offsetHours = String(Math.floor(absoluteOffset / 60)).padStart(
-      2,
-      "0",
-    );
-    const offsetMinutes = String(absoluteOffset % 60).padStart(2, "0");
+    const offsetHours = String(Math.floor(absoluteOffset / 60)).padStart(2, '0');
+    const offsetMinutes = String(absoluteOffset % 60).padStart(2, '0');
 
     return `${dateTimeBase}${offsetSign}${offsetHours}:${offsetMinutes}`;
   }

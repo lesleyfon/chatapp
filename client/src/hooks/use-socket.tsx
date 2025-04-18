@@ -1,5 +1,5 @@
-import { useContext } from "react";
-import { SocketContext } from "../context/socket.context";
+import { useContext } from 'react';
+import { SocketContext } from '../context/socket.context';
 
 /**
  * Returns the current socket instance from the context.
@@ -15,7 +15,7 @@ export function useSocket() {
   const socket = useContext(SocketContext);
 
   if (!socket) {
-    throw new Error("useSocket must be used within a SocketProvider");
+    throw new Error('useSocket must be used within a SocketProvider');
   }
   return socket;
 }

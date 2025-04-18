@@ -1,8 +1,9 @@
-import { useQuery } from "@tanstack/react-query";
-import { useParams } from "react-router-dom";
-import api from "../api/http-methods";
+import { useQuery } from '@tanstack/react-query';
+import { useParams } from 'react-router-dom';
 
-const useRoomData = () => {
+import api from '../api/http-methods';
+
+function useRoomData() {
   const { chatId, recipientId } = useParams<{
     chatId?: string;
     recipientId?: string;
@@ -14,9 +15,7 @@ const useRoomData = () => {
     isFetching: isChatFetching,
   } = useQuery({
     queryKey: [chatId],
-    queryFn: chatId
-      ? () => api.fetchChatListsDataFromChatId(chatId)
-      : async () => null,
+    queryFn: chatId ? () => api.fetchChatListsDataFromChatId(chatId) : async () => null,
   });
 
   const { isPending: isRecipientPending, data: recipientData } = useQuery({
@@ -38,6 +37,6 @@ const useRoomData = () => {
     chatId,
     recipientId,
   };
-};
+}
 
 export default useRoomData;
