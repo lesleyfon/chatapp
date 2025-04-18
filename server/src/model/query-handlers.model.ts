@@ -1,6 +1,6 @@
+import { File } from 'node:buffer';
 import { and, asc, desc, eq, inArray, ne, or, sql } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { File } from 'node:buffer';
 
 import { connectToDB } from '../db';
 import { chatMembers, chats, messages, privateChats, privateMessages, user } from '../schema';
@@ -13,7 +13,7 @@ import type {
   SQLErrorType,
   TypedMessage,
 } from '../types';
-import { UserSchema } from './auth.model';
+import { UserSchema } from './auth.models';
 
 export class QueryHandlers extends UserSchema {
   db: NodePgDatabase;

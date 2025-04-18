@@ -2,7 +2,7 @@ import type { Request, Response } from 'express';
 import { Router } from 'express';
 import { StatusCodes } from 'http-status-codes';
 import AuthMiddleware from '../middleware/auth';
-import { UserSchema } from '../model/auth.model';
+import { UserSchema } from '../model/auth.models';
 import type { RequestWithUser } from '../types';
 
 export class AuthRouter extends AuthMiddleware {

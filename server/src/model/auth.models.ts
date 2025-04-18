@@ -126,7 +126,6 @@ export class UserSchema {
         pk_user_id: dbUser.pk_user_id,
         name: dbUser.name ?? '',
         email: dbUser.email as string,
-        password: dbUser.password as string,
         timezone: dbUser.timezone ?? 'UTC',
         created_at: dbUser.created_at as string,
       },

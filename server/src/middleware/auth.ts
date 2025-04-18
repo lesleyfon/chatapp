@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm';
 import type { NextFunction, Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
 import jwt from 'jsonwebtoken';
-import { UserSchema } from '../model/auth.model';
+import { UserSchema } from '../model/auth.models';
 import { user } from '../schema';
 import type { JWT_RETURN_USER, RequestWithUser, UserInterface } from '../types';
 
