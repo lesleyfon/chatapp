@@ -58,10 +58,12 @@ export function useSocketAuth({ socket }: { socket: Socket | null }) {
       return;
     }
 
-    socket.on('connect_error', (err: Error) => handleConnectError({ err, logout, navigate }));
+    const onConnectError = (err: Error) => handleConnectError({ err, logout, navigate });
+
+    socket.on('connect_error', onConnectError);
 
     return () => {
-      socket.off('connect_error', (err) => handleConnectError({ err, logout, navigate }));
+      socket.off('connect_error', onConnectError);
     };
   }, [token, userId, navigate, socket, logout]);
 }

@@ -59,7 +59,7 @@ export const SidebarItemLink = React.memo(({ data }: { data: SidebarItemLinkProp
             >
               {data.message.message_text}
             </p>
-            <p className='text-[10px] text-muted-foreground text-right '>{sentAt}</p>
+            <p className='text-[10px] text-muted-foreground text-right'>{sentAt}</p>
           </div>
         ) : null}
       </div>

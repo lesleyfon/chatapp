@@ -116,7 +116,7 @@ export function SearchRoom() {
           <DialogTitle>Look up room to join</DialogTitle>
           <DialogDescription>Search a new room to join and chat with others</DialogDescription>
         </DialogHeader>
-        <Command className='p-0 border '>
+        <Command className='p-0 border'>
           <CommandInput
             {...register(SEARCH_INPUT_NAME, {
               onChange: () => {

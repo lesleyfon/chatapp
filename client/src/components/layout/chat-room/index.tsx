@@ -40,7 +40,7 @@ function ChatRoomLayout() {
   if (recipientData?.msg && recipientData.msg.length >= 0 && recipientId) {
     const data = recipientData?.msg ?? [];
     return (
-      <section className='overflow-y-hidden grid grid-rows-[12fr_1fr] md:grid-rows-[11fr_1fr] '>
+      <section className='overflow-y-hidden grid grid-rows-[12fr_1fr] md:grid-rows-[11fr_1fr]'>
         <PrivateMessageSection data={data ?? []} />
         <ChatMessageInput chatId={recipientId} chatName={''} isPrivateChat />
       </section>
@@ -48,7 +48,7 @@ function ChatRoomLayout() {
   }
   const roomName = chatData?.msg?.[0]?.chats?.chat_name ?? '';
   return (
-    <section className='overflow-y-hidden grid grid-rows-[12fr_1fr] md:grid-rows-[11fr_1fr] '>
+    <section className='overflow-y-hidden grid grid-rows-[12fr_1fr] md:grid-rows-[11fr_1fr]'>
       <ChatRoomSection data={chatData?.msg ?? []} />
       {chatId && chatId.length > 0 ? (
         <ChatMessageInput chatId={chatId} chatName={roomName} />

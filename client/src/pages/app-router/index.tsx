@@ -4,7 +4,7 @@ import { Navigate, Outlet, createBrowserRouter } from 'react-router-dom';
 import ChatRoomLayout from '../../components/layout/chat-room';
 import Header from '../../components/layout/nav';
 import Sidebar from '../../components/layout/nav/sidebar';
-import { isAuthenticated } from '../../lib';
+import { isAuthenticated } from '../../lib/auth';
 import Authentication from '../authentication/index';
 
 export const ProtectedRoute: FC<{ isAuthenticated: () => boolean }> = ({ isAuthenticated }) => {
