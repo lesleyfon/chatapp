@@ -4,8 +4,7 @@ import { RouterProvider } from 'react-router-dom';
 import { SidebarProvider } from './components/ui/sidebar';
 import { AppRouter } from './pages/app-router';
 
-import './App.css';
-
+import './app.css';
 // Create a client
 const queryClient = new QueryClient();
 

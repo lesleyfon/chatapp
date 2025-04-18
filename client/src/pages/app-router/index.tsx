@@ -5,7 +5,7 @@ import ChatRoomLayout from '../../components/layout/chat-room';
 import Header from '../../components/layout/nav';
 import Sidebar from '../../components/layout/nav/sidebar';
 import { isAuthenticated } from '../../lib';
-import Authentication from '../authentication/authentication';
+import Authentication from '../authentication/authentication.tsx';
 
 export const ProtectedRoute: FC<{ isAuthenticated: () => boolean }> = ({ isAuthenticated }) => {
   return isAuthenticated() ? <Outlet /> : <Navigate to='/' replace />;
