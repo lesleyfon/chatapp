@@ -1,5 +1,5 @@
 "use strict";
-!function(){try{var e="undefined"!=typeof window?window:"undefined"!=typeof global?global:"undefined"!=typeof globalThis?globalThis:"undefined"!=typeof self?self:{},n=(new e.Error).stack;n&&(e._sentryDebugIds=e._sentryDebugIds||{},e._sentryDebugIds[n]="c38ab154-bcf0-52cf-bc14-74079d104824")}catch(e){}}();
+!function(){try{var e="undefined"!=typeof window?window:"undefined"!=typeof global?global:"undefined"!=typeof globalThis?globalThis:"undefined"!=typeof self?self:{},n=(new e.Error).stack;n&&(e._sentryDebugIds=e._sentryDebugIds||{},e._sentryDebugIds[n]="4d3f4c06-c67d-5026-8a3d-dde9d5c7f4e5")}catch(e){}}();
 
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
@@ -35,20 +35,23 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-const Sentry = __importStar(require("@sentry/node"));
-const get_envs_1 = require("./utils/get-envs");
-const { SENTRY_DSN } = (0, get_envs_1.getEnvs)();
-const ENV = process.env.ENVIRONMENT;
-if (SENTRY_DSN) {
-    Sentry.init({
-        dsn: SENTRY_DSN,
-        tracesSampleRate: ENV === 'production' ? 0.1 : 1,
-        environment: ENV,
-    });
-    console.log(`Sentry initialized in ${process.env.ENVIRONMENT} environment`);
+exports.getEnvs = getEnvs;
+const dotenv = __importStar(require("dotenv"));
+dotenv.config();
+function getEnvs() {
+    const { MONGO_CONNECTION_URL, PORT, JWT_SECRET, JWT_LIFETIME, DATABASE_HOST, DATABASE_USERNAME, DATABASE_PASSWORD, DB_URL, DATABASE_URL, SENTRY_DSN, } = JSON.parse(process.env.APP_ENV);
+    return {
+        MONGO_CONNECTION_URL,
+        PORT,
+        JWT_SECRET,
+        JWT_LIFETIME,
+        DATABASE_HOST,
+        DATABASE_USERNAME,
+        DATABASE_PASSWORD,
+        DB_URL,
+        DATABASE_URL,
+        SENTRY_DSN: SENTRY_DSN || '',
+    };
 }
-else {
-    console.warn('Sentry DSN not provided, error tracking disabled');
-}
-//# sourceMappingURL=instrument.js.map
-//# debugId=c38ab154-bcf0-52cf-bc14-74079d104824
+//# sourceMappingURL=get-envs.js.map
+//# debugId=4d3f4c06-c67d-5026-8a3d-dde9d5c7f4e5

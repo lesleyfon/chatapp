@@ -1,13 +1,14 @@
 "use strict";
-!function(){try{var e="undefined"!=typeof window?window:"undefined"!=typeof global?global:"undefined"!=typeof globalThis?globalThis:"undefined"!=typeof self?self:{},n=(new e.Error).stack;n&&(e._sentryDebugIds=e._sentryDebugIds||{},e._sentryDebugIds[n]="f2ac3de4-d059-573a-8114-e1b2bde7827d")}catch(e){}}();
+!function(){try{var e="undefined"!=typeof window?window:"undefined"!=typeof global?global:"undefined"!=typeof globalThis?globalThis:"undefined"!=typeof self?self:{},n=(new e.Error).stack;n&&(e._sentryDebugIds=e._sentryDebugIds||{},e._sentryDebugIds[n]="482c66b2-9513-5c9e-9b9e-b22b4899bf1f")}catch(e){}}();
 
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.db = exports.connectToDB = void 0;
+exports.db = void 0;
+exports.connectToDB = connectToDB;
 const node_postgres_1 = require("drizzle-orm/node-postgres");
 const pg_1 = require("pg");
-const getEnvs_1 = require("./utils/getEnvs");
-const { DATABASE_URL } = (0, getEnvs_1.getEnvs)();
-const connectToDB = () => {
+const get_envs_1 = require("./utils/get-envs");
+const { DATABASE_URL } = (0, get_envs_1.getEnvs)();
+function connectToDB() {
     const client = new pg_1.Client({
         connectionString: DATABASE_URL,
     });
@@ -17,15 +18,12 @@ const connectToDB = () => {
         }
     });
     return (0, node_postgres_1.drizzle)(client);
-};
-exports.connectToDB = connectToDB;
+}
 const client = new pg_1.Client({
     connectionString: DATABASE_URL,
-    ssl: process.env.ENVIRONMENT === "production"
-        ? { rejectUnauthorized: false }
-        : undefined,
+    ssl: process.env.ENVIRONMENT === 'production' ? { rejectUnauthorized: false } : undefined,
 });
 client.connect();
 exports.db = (0, node_postgres_1.drizzle)(client);
 //# sourceMappingURL=db.js.map
-//# debugId=f2ac3de4-d059-573a-8114-e1b2bde7827d
+//# debugId=482c66b2-9513-5c9e-9b9e-b22b4899bf1f

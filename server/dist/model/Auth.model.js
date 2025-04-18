@@ -1,6 +1,4 @@
 "use strict";
-!function(){try{var e="undefined"!=typeof window?window:"undefined"!=typeof global?global:"undefined"!=typeof globalThis?globalThis:"undefined"!=typeof self?self:{},n=(new e.Error).stack;n&&(e._sentryDebugIds=e._sentryDebugIds||{},e._sentryDebugIds[n]="9dbd3284-67e3-51ac-811b-6c8bd597e6d5")}catch(e){}}();
-
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);
@@ -45,8 +43,8 @@ const http_status_codes_1 = require("http-status-codes");
 const jsonwebtoken_1 = __importStar(require("jsonwebtoken"));
 const db_1 = require("../db");
 const schema_1 = require("../schema");
-const getEnvs_1 = require("../utils/getEnvs");
-const { JWT_SECRET } = (0, getEnvs_1.getEnvs)();
+const get_envs_1 = require("../utils/get-envs");
+const { JWT_SECRET } = (0, get_envs_1.getEnvs)();
 class UserSchema {
     constructor() {
         this.db = (0, db_1.connectToDB)();
@@ -72,7 +70,7 @@ class UserSchema {
             };
         }
         catch (err) {
-            if (typeof err === "object" && Object.keys(err).length) {
+            if (typeof err === 'object' && Object.keys(err).length > 0) {
                 throw new Error(JSON.stringify(err));
             }
         }
@@ -80,33 +78,27 @@ class UserSchema {
     }
     async getUser({ email }) {
         try {
-            const userExist = await this.db
-                .select()
-                .from(schema_1.user)
-                .where((0, drizzle_orm_1.eq)(schema_1.user.email, email));
+            const userExist = await this.db.select().from(schema_1.user).where((0, drizzle_orm_1.eq)(schema_1.user.email, email));
             if (userExist.length === 0) {
                 return undefined;
             }
             return userExist[0];
         }
         catch (err) {
-            if (typeof err === "object" && Object.keys(err).length) {
+            if (typeof err === 'object' && Object.keys(err).length > 0) {
                 throw new Error(JSON.stringify(err));
             }
             return {
-                reason: "Failed to retrieve user",
+                reason: 'Failed to retrieve user',
                 code: http_status_codes_1.StatusCodes.INTERNAL_SERVER_ERROR,
             };
         }
     }
     async getAuthUser({ email, password, }) {
         var _a, _b, _c;
-        const userExist = await this.db
-            .select()
-            .from(schema_1.user)
-            .where((0, drizzle_orm_1.eq)(schema_1.user.email, email));
+        const userExist = await this.db.select().from(schema_1.user).where((0, drizzle_orm_1.eq)(schema_1.user.email, email));
         if (userExist.length === 0) {
-            return { code: http_status_codes_1.StatusCodes.NOT_FOUND, reason: "User does not exist" };
+            return { code: http_status_codes_1.StatusCodes.NOT_FOUND, reason: 'User does not exist' };
         }
         const dbUser = Object.assign(Object.assign({}, userExist[0]), { pk_user_id: userExist[0].pk_user_id });
         const isPasswordCorrect = await this.comparePassword({
@@ -115,12 +107,12 @@ class UserSchema {
         });
         if (!isPasswordCorrect) {
             return {
-                reason: "Incorrect password",
+                reason: 'Incorrect password',
                 code: http_status_codes_1.StatusCodes.UNAUTHORIZED,
             };
         }
         const token = await this.createJWT({
-            name: (_a = dbUser.name) !== null && _a !== void 0 ? _a : "",
+            name: (_a = dbUser.name) !== null && _a !== void 0 ? _a : '',
             email: dbUser === null || dbUser === void 0 ? void 0 : dbUser.email,
             userId: dbUser.pk_user_id,
             timezone: dbUser.timezone,
@@ -130,16 +122,15 @@ class UserSchema {
             user: {
                 id: dbUser.pk_user_id,
                 pk_user_id: dbUser.pk_user_id,
-                name: (_b = dbUser.name) !== null && _b !== void 0 ? _b : "",
+                name: (_b = dbUser.name) !== null && _b !== void 0 ? _b : '',
                 email: dbUser.email,
-                password: dbUser.password,
-                timezone: (_c = dbUser.timezone) !== null && _c !== void 0 ? _c : "UTC",
+                timezone: (_c = dbUser.timezone) !== null && _c !== void 0 ? _c : 'UTC',
                 created_at: dbUser.created_at,
             },
             token,
         };
     }
-    async createJWT({ name, email, userId, timezone, created_at, }) {
+    createJWT({ name, email, userId, timezone, created_at, }) {
         const token = jsonwebtoken_1.default.sign({
             userId,
             name: name,
@@ -147,8 +138,8 @@ class UserSchema {
             timezone,
             created_at,
         }, JWT_SECRET, {
-            expiresIn: "24h",
-            algorithm: "HS256",
+            expiresIn: '24h',
+            algorithm: 'HS256',
         });
         return token;
     }
@@ -163,7 +154,7 @@ class UserSchema {
         catch (err) {
             if (err instanceof jsonwebtoken_1.TokenExpiredError) {
                 return {
-                    reason: "Unauthorized",
+                    reason: 'Unauthorized',
                     code: http_status_codes_1.StatusCodes.UNAUTHORIZED,
                 };
             }
@@ -181,5 +172,6 @@ class UserSchema {
     }
 }
 exports.UserSchema = UserSchema;
-//# sourceMappingURL=Auth.model.js.map
-//# debugId=9dbd3284-67e3-51ac-811b-6c8bd597e6d5
+!function(){try{var e="undefined"!=typeof window?window:"undefined"!=typeof global?global:"undefined"!=typeof globalThis?globalThis:"undefined"!=typeof self?self:{},n=(new e.Error).stack;n&&(e._sentryDebugIds=e._sentryDebugIds||{},e._sentryDebugIds[n]="8525c58b-b7f0-553e-a412-adf7ff4bf7ec")}catch(e){}}();
+//# sourceMappingURL=auth.model.js.map
+//# debugId=8525c58b-b7f0-553e-a412-adf7ff4bf7ec
