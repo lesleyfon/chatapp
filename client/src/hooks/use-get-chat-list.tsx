@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { useNavigate } from "react-router-dom";
-import { ChatListType } from "./../types/index";
-import { Socket } from "socket.io-client";
-import { useSocketAuth } from "./useSocketAuth";
+import { useNavigate } from 'react-router-dom';
+import type { Socket } from 'socket.io-client';
+import type { ChatListType } from '../types/index';
+import { useSocketAuth } from './use-socket-auth';
 
 export const useGetChatList = ({ socket }: { socket: Socket | null }) => {
   const [chatroomList, setChatList] = useState<ChatListType>([]);
@@ -16,9 +16,7 @@ export const useGetChatList = ({ socket }: { socket: Socket | null }) => {
 
     setChatList((prevChatList) => {
       const updatedChatList = prevChatList.map((chat) =>
-        chat.chats?.pk_chats_id === response[0].chats?.pk_chats_id
-          ? response[0]
-          : chat,
+        chat.chats?.pk_chats_id === response[0].chats?.pk_chats_id ? response[0] : chat,
       );
       return updatedChatList;
     });
@@ -26,10 +24,11 @@ export const useGetChatList = ({ socket }: { socket: Socket | null }) => {
 
   useSocketAuth({ socket });
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {
     // If the socket is null, return early
     if (socket === null) {
-      setError(new Error("Socket connection failed"));
+      setError(new Error('Socket connection failed'));
       return;
     }
     // If the socket is not connected, connect it
@@ -40,26 +39,24 @@ export const useGetChatList = ({ socket }: { socket: Socket | null }) => {
       // This socket is mean to fire only on initial render, to get the list of chatRooms for a user.
       // THOUGHT: Would it make sense to have this be an api?
 
-      socket.emit("get-chat-list", (response?: ChatListType) => {
-        if (!response || response.length == 0) {
+      socket.emit('get-chat-list', (response?: ChatListType) => {
+        if (response?.length === undefined || response.length === 0) {
           setChatList([]);
           return;
         }
         setChatList(response);
       });
 
-      socket.on("get-latest-chat-room-message", handleMessageUpdate);
+      socket.on('get-latest-chat-room-message', handleMessageUpdate);
       // Clear the error state
       setError(null);
     } catch (error) {
-      setError(
-        error instanceof Error ? error : new Error("Unknown error occurred"),
-      );
+      setError(error instanceof Error ? error : new Error('Unknown error occurred'));
     }
 
     // Cleanup function to avoid memory leaks
     return () => {
-      socket.off("get-latest-chat-room-message", handleMessageUpdate);
+      socket.off('get-latest-chat-room-message', handleMessageUpdate);
     };
   }, [handleMessageUpdate, navigate, socket]); // Added 'navigate' to the dependency array to ensure effect runs only when it changes
 

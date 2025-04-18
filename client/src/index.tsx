@@ -1,8 +1,8 @@
-import "./App.css";
-import { RouterProvider } from "react-router-dom";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { AppRouter } from "./pages/AppRouter";
-import { SidebarProvider } from "./components/ui/sidebar";
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { RouterProvider } from 'react-router-dom';
+
+import { SidebarProvider } from './components/ui/sidebar';
+import { AppRouter } from './pages/app-router';
 
 // Create a client
 const queryClient = new QueryClient();

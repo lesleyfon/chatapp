@@ -1,9 +1,5 @@
-import {
-  getBearer,
-  getBrowserTimeZone,
-  getCurrentDateTimeWithTimezone,
-} from "../lib";
-import { PrivateChatResultType } from "../types";
+import { getBearer, getBrowserTimeZone, getCurrentDateTimeWithTimezone } from '../lib';
+import type { PrivateChatResultType } from '../types';
 
 export interface UserInterface {
   id: number;
@@ -22,14 +18,14 @@ export interface SuccessResponse {
   msg: PrivateChatResultType[];
 }
 
-type AuthFormDataType = Pick<UserInterface, "password" | "email"> & {
+type AuthFormDataType = Pick<UserInterface, 'password' | 'email'> & {
   name?: string;
 };
 
 class HttpServer {
   apiBasePath: string;
-  apiHeaders = new Headers({ "Content-Type": "application/json" });
-  INPUT_NAME = "new-chat-name";
+  apiHeaders = new Headers({ 'Content-Type': 'application/json' });
+  INPUT_NAME = 'new-chat-name';
 
   constructor() {
     const APP_ENV = import.meta.env.VITE_APP_ENV;
@@ -37,7 +33,7 @@ class HttpServer {
     if (!API_BASE_PATH) {
       throw Error(`No API_BASE_PATH value: API_BASE_PATH: ${API_BASE_PATH}`);
     }
-    this.apiBasePath = API_BASE_PATH + "/api";
+    this.apiBasePath = `${API_BASE_PATH}/api`;
   }
 
   async login(userCredential: AuthFormDataType) {
@@ -45,10 +41,10 @@ class HttpServer {
       const raw = JSON.stringify(userCredential);
 
       const response = await fetch(`${this.apiBasePath}/auth/login`, {
-        method: "POST",
+        method: 'POST',
         headers: this.apiHeaders,
         body: raw,
-        redirect: "follow",
+        redirect: 'follow',
       });
       const result = await response.text();
       return result;
@@ -67,10 +63,10 @@ class HttpServer {
         created_at,
       });
       const response = await fetch(`${this.apiBasePath}/auth/register`, {
-        method: "POST",
+        method: 'POST',
         headers: this.apiHeaders,
         body: raw,
-        redirect: "follow",
+        redirect: 'follow',
       });
       const result = await response.text();
       return result;
@@ -84,9 +80,9 @@ class HttpServer {
    * already set.
    */
   setBearerTokenToHeader(): void {
-    const BEARER_TOKEN: string = getBearer() ?? "";
-    if (this.apiHeaders.get("Authorization") === null) {
-      this.apiHeaders.set("Authorization", BEARER_TOKEN);
+    const BEARER_TOKEN: string = getBearer() ?? '';
+    if (this.apiHeaders.get('Authorization') === null) {
+      this.apiHeaders.set('Authorization', BEARER_TOKEN);
     }
   }
 
@@ -115,12 +111,9 @@ class HttpServer {
   ): Promise<SuccessResponse | ErrorResponse> {
     this.setBearerTokenToHeader();
 
-    const response = await fetch(
-      `${this.apiBasePath}/chats/private-message/${recipientId}`,
-      {
-        headers: this.apiHeaders,
-      },
-    );
+    const response = await fetch(`${this.apiBasePath}/chats/private-message/${recipientId}`, {
+      headers: this.apiHeaders,
+    });
     const data = (await response.json()) as SuccessResponse | ErrorResponse;
 
     return data;
@@ -140,12 +133,9 @@ class HttpServer {
   async fetchAllPrivateChatroom() {
     this.setBearerTokenToHeader();
 
-    const response = await fetch(
-      `${this.apiBasePath}/chats/all/private-chat-rooms`,
-      {
-        headers: this.apiHeaders,
-      },
-    );
+    const response = await fetch(`${this.apiBasePath}/chats/all/private-chat-rooms`, {
+      headers: this.apiHeaders,
+    });
 
     const data = await response.json();
 
@@ -155,23 +145,20 @@ class HttpServer {
   createNewRoomMutationFn = async (data: { [key: string]: string }) => {
     const bearer = getBearer();
     if (!bearer) {
-      throw new Error("No authorization token found. Logout and login again.");
+      throw new Error('No authorization token found. Logout and login again.');
     }
     const timezone = getBrowserTimeZone();
     const created_at = getCurrentDateTimeWithTimezone();
 
-    const response = await fetch(
-      `${this.apiBasePath}/chats/chat/new-chatroom`,
-      {
-        method: "POST",
-        headers: this.apiHeaders,
-        body: JSON.stringify({
-          chat_name: data?.[this.INPUT_NAME],
-          created_at,
-          timezone,
-        }),
-      },
-    );
+    const response = await fetch(`${this.apiBasePath}/chats/chat/new-chatroom`, {
+      method: 'POST',
+      headers: this.apiHeaders,
+      body: JSON.stringify({
+        chat_name: data?.[this.INPUT_NAME],
+        created_at,
+        timezone,
+      }),
+    });
 
     if (!response.ok) {
       const errorResponse = await response.json();

@@ -1,18 +1,16 @@
-import { Request, Response, NextFunction } from "express";
-import { StatusCodes } from "http-status-codes";
-import { UserSchema } from "../model/Auth.model";
-import { user } from "../schema";
-import { eq } from "drizzle-orm";
-import jwt from "jsonwebtoken";
-import { type RequestWithUser } from "../types";
-import { type UserInterface, type JWT_RETURN_USER } from "../types";
+import { eq } from 'drizzle-orm';
+import type { NextFunction, Request, Response } from 'express';
+import { StatusCodes } from 'http-status-codes';
+import jwt from 'jsonwebtoken';
+import { UserSchema } from '../model/auth.models';
+import { user } from '../schema';
+import type { JWT_RETURN_USER, RequestWithUser, UserInterface } from '../types';
 
 export class AuthMiddleware extends UserSchema {
   constructor() {
     super();
     this.authenticateRequests = this.authenticateRequests.bind(this);
-    this.authenticateUserLoginMiddleware =
-      this.authenticateUserLoginMiddleware.bind(this);
+    this.authenticateUserLoginMiddleware = this.authenticateUserLoginMiddleware.bind(this);
   }
   /**
    * @description Authenticates the request by checking the authorization header.
@@ -21,24 +19,20 @@ export class AuthMiddleware extends UserSchema {
    * @param {NextFunction} next - The next function.
    * @returns {Promise<void>} - A promise that resolves to void.
    */
-  async authenticateRequests(
-    req: RequestWithUser,
-    res: Response,
-    next: NextFunction,
-  ) {
-    const authorization = req.headers["authorization"];
-    if (!authorization || !authorization.includes("Bearer")) {
+  async authenticateRequests(req: RequestWithUser, res: Response, next: NextFunction) {
+    const authorization = req.headers.authorization;
+    if (!authorization || !authorization.includes('Bearer')) {
       return res.status(StatusCodes.UNAUTHORIZED).json({
-        reason: "Unauthorized",
+        reason: 'Unauthorized',
         code: StatusCodes.UNAUTHORIZED,
       });
     }
-    const token = authorization.split(" ")[1];
+    const token = authorization.split(' ')[1];
     const user = jwt.decode(token) as JWT_RETURN_USER;
 
     if (!user) {
       return res.status(StatusCodes.UNAUTHORIZED).json({
-        reason: "Unauthorized",
+        reason: 'Unauthorized',
         code: StatusCodes.UNAUTHORIZED,
       });
     }
@@ -47,7 +41,7 @@ export class AuthMiddleware extends UserSchema {
 
     if (userExist === undefined) {
       return res.status(StatusCodes.UNAUTHORIZED).json({
-        reason: "Unauthorized",
+        reason: 'Unauthorized',
         code: StatusCodes.UNAUTHORIZED,
       });
     }
@@ -73,11 +67,11 @@ export class AuthMiddleware extends UserSchema {
     req: Request,
     res: Response,
     next: NextFunction,
-  ): Promise<Response<any, Record<string, any>> | void> {
+  ): Promise<Response<unknown, Record<string, unknown>> | void> {
     const { email, password } = req.body;
     if (!email || !password) {
       return res.status(StatusCodes.BAD_REQUEST).json({
-        reason: `Bad Request email and password are required`,
+        reason: 'Bad Request email and password are required',
         code: StatusCodes.BAD_REQUEST,
       });
     }
@@ -106,25 +100,22 @@ export class AuthMiddleware extends UserSchema {
     req: Request,
     res: Response,
     next: NextFunction,
-  ): Promise<Response<any, Record<string, any>> | void> {
+  ): Promise<Response<unknown, Record<string, unknown>> | void> {
     const { email, password, name, timezone, created_at } = req.body;
     if (!email || !password || !name) {
       return res.status(StatusCodes.BAD_REQUEST).json({
-        reason: `Bad Request email name, and password are required to register`,
+        reason: 'Bad Request email name, and password are required to register',
       });
     }
     if (!timezone || !created_at) {
       return res.status(StatusCodes.BAD_REQUEST).json({
-        reason: `Bad Request timezone, and created_at are required to register`,
+        reason: 'Bad Request timezone, and created_at are required to register',
       });
     }
-    const userExist = await this.db
-      .select()
-      .from(user)
-      .where(eq(user.email, email));
+    const userExist = await this.db.select().from(user).where(eq(user.email, email));
     if (userExist.length > 0) {
       return res.status(StatusCodes.FORBIDDEN).json({
-        reason: "User with email already exist. Try another email",
+        reason: 'User with email already exist. Try another email',
         code: StatusCodes.FORBIDDEN,
       });
     }
@@ -139,7 +130,7 @@ export class AuthMiddleware extends UserSchema {
 
     if (!userExist) {
       return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-        reason: "Error occurred while creating a new user",
+        reason: 'Error occurred while creating a new user',
         code: StatusCodes.INTERNAL_SERVER_ERROR,
       });
     }

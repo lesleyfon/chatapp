@@ -1,7 +1,8 @@
-import { useEffect } from "react";
-import { NavigateFunction, useNavigate } from "react-router";
-import { Socket } from "socket.io-client";
-import useAuthStorage from "../store/useAuthStorage";
+import { useEffect } from 'react';
+import { type NavigateFunction, useNavigate } from 'react-router';
+import type { Socket } from 'socket.io-client';
+
+import useAuthStorage from '../store/use-auth-storage';
 
 export function handleConnectError({
   err,
@@ -15,17 +16,17 @@ export function handleConnectError({
   try {
     const errObj = JSON.parse(err.message);
 
-    if (err instanceof Error && "code" in errObj) {
+    if (err instanceof Error && 'code' in errObj) {
       if (errObj.code === 401) {
         logout();
-        navigate("/");
+        navigate('/');
       } else if (errObj.code === 500) {
         // TODO: Implement toast message for internal server error
       }
     }
-  } catch (parseError) {
-    // eslint-disable-next-line no-console
-    console.error("Failed to parse socket error message:", err.message);
+  } catch (_parseError) {
+    // biome-ignore lint/suspicious/noConsole: <explanation>
+    console.error('Failed to parse socket error message:', err.message);
   }
 }
 
@@ -46,7 +47,7 @@ export function useSocketAuth({ socket }: { socket: Socket | null }) {
   const { token, userId, logout } = useAuthStorage((state) => state);
   useEffect(() => {
     if (!token || !userId) {
-      navigate("/");
+      navigate('/');
       return;
     }
 
@@ -57,14 +58,12 @@ export function useSocketAuth({ socket }: { socket: Socket | null }) {
       return;
     }
 
-    socket.on("connect_error", (err: Error) =>
-      handleConnectError({ err, logout, navigate }),
-    );
+    const onConnectError = (err: Error) => handleConnectError({ err, logout, navigate });
+
+    socket.on('connect_error', onConnectError);
 
     return () => {
-      socket.off("connect_error", (err) =>
-        handleConnectError({ err, logout, navigate }),
-      );
+      socket.off('connect_error', onConnectError);
     };
   }, [token, userId, navigate, socket, logout]);
 }

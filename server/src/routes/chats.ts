@@ -1,9 +1,11 @@
-import { Request, Response, Router } from "express";
-import { StatusCodes } from "http-status-codes";
-import * as Sentry from "@sentry/node";
-import AuthMiddleware from "../middleware/auth";
-import QueryHandlers from "../model/QueryHandlers.model";
-import { type RequestWithUser } from "../types";
+import * as Sentry from '@sentry/node';
+import type { Request, Response } from 'express';
+import { Router } from 'express';
+import { StatusCodes } from 'http-status-codes';
+
+import AuthMiddleware from '../middleware/auth';
+import QueryHandlers from '../model/query-handlers.model';
+import type { RequestWithUser } from '../types';
 
 export type ClassType = new (...args: unknown[]) => object;
 
@@ -42,34 +44,34 @@ export class Chat extends AuthMiddlewareMixin(QueryHandlersMixin(BaseClass)) {
     this.createChatRoom = this.createChatRoom.bind(this);
 
     // Middlewares
-    this.router.get("/", this.baseRoute);
+    this.router.get('/', this.baseRoute);
     this.router.get(
-      "/:chatId",
+      '/:chatId',
       // @ts-expect-error desc
       this.authMiddleware.authenticateRequests,
       this.getChatMessagesById,
     );
     this.router.get(
-      "/private-message/:recipientId",
+      '/private-message/:recipientId',
       // @ts-expect-error desc
       this.authMiddleware.authenticateRequests,
       this.getPrivateMessagesById,
     );
     this.router.get(
-      "/all/chat-rooms",
+      '/all/chat-rooms',
       // @ts-expect-error desc
       this.authMiddleware.authenticateRequests,
       this.getAllChatRooms,
     );
     // Get all private chat rooms
     this.router.get(
-      "/all/private-chat-rooms",
+      '/all/private-chat-rooms',
       // @ts-expect-error desc
       this.authMiddleware.authenticateRequests,
       this.getAllPrivateChatRooms,
     );
     this.router.post(
-      "/chat/new-chatroom",
+      '/chat/new-chatroom',
       // @ts-expect-error desc
       this.authMiddleware.authenticateRequests,
       this.createChatRoom,
@@ -89,7 +91,7 @@ export class Chat extends AuthMiddlewareMixin(QueryHandlersMixin(BaseClass)) {
       if (!chatId) {
         // Report Error to Sentry
         const eventId = Sentry.captureEvent({
-          level: "error",
+          level: 'error',
           extra: {
             message: `Bad Request: chatId is required chatId = ${chatId}`,
             chatId,
@@ -105,16 +107,15 @@ export class Chat extends AuthMiddlewareMixin(QueryHandlersMixin(BaseClass)) {
       }
 
       const userId = req.user.pk_user_id;
-      const chatMessages =
-        await this.queryHandlers.selectChatRoomMessagesByUserId(
-          userId,
-          parseInt(chatId),
-        );
+      const chatMessages = await this.queryHandlers.selectChatRoomMessagesByUserId(
+        userId,
+        Number.parseInt(chatId),
+      );
 
-      if ("error" in chatMessages) {
+      if ('error' in chatMessages) {
         // Report Error to Sentry
         const eventId = Sentry.captureEvent({
-          level: "error",
+          level: 'error',
           extra: {
             message: `Bad Request: chatMessages error = ${chatMessages}`,
             chatMessages,
@@ -130,7 +131,7 @@ export class Chat extends AuthMiddlewareMixin(QueryHandlersMixin(BaseClass)) {
       Sentry.captureMessage(
         `Success: retrieved chat messages for userId = ${userId} and chatId = ${chatId}`,
         {
-          level: "info",
+          level: 'info',
           extra: {
             message: `Success: retrieved chat messages for userId = ${userId} and chatId = ${chatId}`,
             userId,
@@ -143,13 +144,13 @@ export class Chat extends AuthMiddlewareMixin(QueryHandlersMixin(BaseClass)) {
     } catch (error) {
       Sentry.captureException(error, {
         extra: {
-          method: "getChatMessagesById",
+          method: 'getChatMessagesById',
           userId: req.user.pk_user_id,
           chatId: req.params.chatId,
         },
       });
       return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-        message: "Internal Server Error",
+        message: 'Internal Server Error',
       });
     }
   }
@@ -166,7 +167,7 @@ export class Chat extends AuthMiddlewareMixin(QueryHandlersMixin(BaseClass)) {
       if (!recipientId) {
         // Report Error to Sentry
         const eventId = Sentry.captureEvent({
-          level: "error",
+          level: 'error',
           extra: {
             messages: `Bad Request: recipientId is required: recipientId = ${recipientId}`,
             recipientId,
@@ -182,16 +183,15 @@ export class Chat extends AuthMiddlewareMixin(QueryHandlersMixin(BaseClass)) {
       }
 
       const userId = req.user.pk_user_id;
-      const privateMessages =
-        await this.queryHandlers.getPrivateRoomMessagesBySenderId({
-          userId,
-          recipientId: parseInt(recipientId),
-        });
+      const privateMessages = await this.queryHandlers.getPrivateRoomMessagesBySenderId({
+        userId,
+        recipientId: Number.parseInt(recipientId),
+      });
 
-      if ("error" in privateMessages) {
+      if ('error' in privateMessages) {
         // Report Error to Sentry
         const eventId = Sentry.captureEvent({
-          level: "error",
+          level: 'error',
           extra: {
             message: `Bad Request: privateMessages error = ${privateMessages}`,
             privateMessages,
@@ -209,7 +209,7 @@ export class Chat extends AuthMiddlewareMixin(QueryHandlersMixin(BaseClass)) {
       Sentry.captureMessage(
         `Success: retrieved private messages for userId = ${userId} and recipientId = ${recipientId}`,
         {
-          level: "info",
+          level: 'info',
           extra: {
             message: `Success: retrieved private messages for userId = ${userId} and recipientId = ${recipientId}`,
             userId,
@@ -224,18 +224,18 @@ export class Chat extends AuthMiddlewareMixin(QueryHandlersMixin(BaseClass)) {
         extra: {
           userId: req.user.pk_user_id,
           recipientId: req.params.recipientId,
-          method: "getPrivateMessagesById",
+          method: 'getPrivateMessagesById',
         },
       });
       return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-        message: "Internal Server Error",
+        message: 'Internal Server Error',
       });
     }
   }
 
   async getAllChatRooms(_req: Request, res: Response) {
     const chatRooms = await this.queryHandlers.getAllChatRooms();
-    if ("error" in chatRooms) {
+    if ('error' in chatRooms) {
       return res.status(StatusCodes.BAD_REQUEST).json(chatRooms);
     }
     return res.status(StatusCodes.OK).json(chatRooms);
@@ -248,7 +248,7 @@ export class Chat extends AuthMiddlewareMixin(QueryHandlersMixin(BaseClass)) {
         userId,
       });
 
-      if ("error" in privateChatRooms) {
+      if ('error' in privateChatRooms) {
         return res.status(StatusCodes.BAD_REQUEST).json(privateChatRooms);
       }
 
@@ -260,7 +260,7 @@ export class Chat extends AuthMiddlewareMixin(QueryHandlersMixin(BaseClass)) {
         });
       }
       return res.status(StatusCodes.BAD_REQUEST).json({
-        msg: "An unknown error occurred",
+        msg: 'An unknown error occurred',
       });
     }
   };
@@ -271,25 +271,24 @@ export class Chat extends AuthMiddlewareMixin(QueryHandlersMixin(BaseClass)) {
 
     if (chat_name?.length === 0) {
       return res.status(StatusCodes.BAD_REQUEST).json({
-        msg: "Room name cant be a falsy value",
+        msg: 'Room name cant be a falsy value',
       });
     }
 
     if (!timezone || !created_at) {
       return res.status(StatusCodes.BAD_REQUEST).json({
-        reason: `Bad Request: timezone, and created_at are required to create a chat room`,
+        reason: 'Bad Request: timezone, and created_at are required to create a chat room',
       });
     }
 
-    const chatRooms =
-      await this.queryHandlers.createNewChatroomRoomNameAndByUserId({
-        chatName: chat_name,
-        created_at,
-        timezone,
-        userId: userId,
-      });
+    const chatRooms = await this.queryHandlers.createNewChatroomRoomNameAndByUserId({
+      chatName: chat_name,
+      created_at,
+      timezone,
+      userId: userId,
+    });
 
-    if ("error" in chatRooms) {
+    if ('error' in chatRooms) {
       return res.status(StatusCodes.BAD_REQUEST).json(chatRooms);
     }
 
@@ -297,7 +296,7 @@ export class Chat extends AuthMiddlewareMixin(QueryHandlersMixin(BaseClass)) {
   }
 
   baseRoute(_req: Request, res: Response) {
-    res.json({ Base: "Routes" });
+    res.json({ Base: 'Routes' });
   }
 }
 

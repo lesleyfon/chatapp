@@ -1,16 +1,10 @@
-import { File } from "buffer";
-import { and, asc, desc, eq, inArray, ne, or, sql } from "drizzle-orm";
-import { NodePgDatabase } from "drizzle-orm/node-postgres";
-import { connectToDB } from "../db";
-import {
-  chatMembers,
-  chats,
-  messages,
-  privateChats,
-  privateMessages,
-  user,
-} from "../schema";
-import {
+import { File } from 'node:buffer';
+import { and, asc, desc, eq, inArray, ne, or, sql } from 'drizzle-orm';
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
+
+import { connectToDB } from '../db';
+import { chatMembers, chats, messages, privateChats, privateMessages, user } from '../schema';
+import type {
   ChatListType,
   ChatType,
   MessageType,
@@ -18,8 +12,8 @@ import {
   PrivateMessageType,
   SQLErrorType,
   TypedMessage,
-} from "../types";
-import { UserSchema } from "./Auth.model";
+} from '../types';
+import { UserSchema } from './auth.models';
 
 export class QueryHandlers extends UserSchema {
   db: NodePgDatabase;
@@ -31,9 +25,7 @@ export class QueryHandlers extends UserSchema {
   // Private helper methods
   private isValidInput(...args: (string | number)[]): boolean {
     return args.every(
-      (arg) =>
-        (typeof arg === "string" && arg.trim() !== "") ||
-        typeof arg === "number",
+      (arg) => (typeof arg === 'string' && arg.trim() !== '') || typeof arg === 'number',
     );
   }
 
@@ -96,7 +88,7 @@ export class QueryHandlers extends UserSchema {
         );
       `),
     ]);
-    
+
     return messageResponse;
   }
 
@@ -112,9 +104,7 @@ export class QueryHandlers extends UserSchema {
    *     console.error(error);
    *   });
    */
-  async selectUserChatRoomsWithLastSetMessages(
-    userId: number,
-  ): Promise<ChatListType[]> {
+  async selectUserChatRoomsWithLastSetMessages(userId: number): Promise<ChatListType[]> {
     const chatList = await this.db
       .select({
         chat_members: {
@@ -212,10 +202,7 @@ export class QueryHandlers extends UserSchema {
    * @returns {Promise<ChatType | null>} - The chat room or null if it does not exist.
    */
   async selectChatByChatName(chatName: string) {
-    const chatExist = await this.db
-      .select()
-      .from(chats)
-      .where(eq(chats.chat_name, chatName));
+    const chatExist = await this.db.select().from(chats).where(eq(chats.chat_name, chatName));
     return chatExist;
   }
 
@@ -236,10 +223,10 @@ export class QueryHandlers extends UserSchema {
         .from(chats)
         .where(eq(chats.pk_chats_id, chatRoomId));
 
-      if (!chatRoomExist.length) {
+      if (chatRoomExist.length === 0) {
         return {
           error: true,
-          reason: "Chat room does not exist",
+          reason: 'Chat room does not exist',
         };
       }
       const chatRoomMessages = await this.db
@@ -255,7 +242,7 @@ export class QueryHandlers extends UserSchema {
             fk_chat_id: messages.fk_chat_id,
             message_text: messages.message_text,
             sent_at: messages.sent_at,
-            timezone: messages.timezone
+            timezone: messages.timezone,
           },
           chat_user: {
             pk_user_id: user.pk_user_id,
@@ -274,7 +261,7 @@ export class QueryHandlers extends UserSchema {
         const dataUserId = data.chat_user?.pk_user_id;
         if (dataUserId === userId) {
           // @ts-expect-error ignore
-          data.chat_user.sender = "You";
+          data.chat_user.sender = 'You';
         }
         return {
           chats: {
@@ -306,7 +293,7 @@ export class QueryHandlers extends UserSchema {
       }));
       return typedMessages;
     } catch (err) {
-      if (typeof err === "object" && Object.keys(err as object).length) {
+      if (typeof err === 'object' && Object.keys(err as object).length > 0) {
         return {
           ...err,
           error: true,
@@ -336,10 +323,10 @@ export class QueryHandlers extends UserSchema {
         .select()
         .from(user)
         .where(eq(user.pk_user_id, recipientId));
-      if (!recipientExist.length) {
+      if (recipientExist.length === 0) {
         return {
           error: true,
-          reason: "Recipient does not exist",
+          reason: 'Recipient does not exist',
         };
       }
       const chatRoomMessages = await this.db
@@ -364,14 +351,8 @@ export class QueryHandlers extends UserSchema {
         .from(privateChats)
         .where(
           or(
-            and(
-              eq(privateChats.sender_id, userId),
-              eq(privateChats.recipient_id, recipientId),
-            ),
-            and(
-              eq(privateChats.recipient_id, userId),
-              eq(privateChats.sender_id, recipientId),
-            ),
+            and(eq(privateChats.sender_id, userId), eq(privateChats.recipient_id, recipientId)),
+            and(eq(privateChats.recipient_id, userId), eq(privateChats.sender_id, recipientId)),
           ),
         )
         .leftJoin(
@@ -391,56 +372,48 @@ export class QueryHandlers extends UserSchema {
           created_at: user.created_at,
         })
         .from(user)
-        .where(
-          or(eq(user.pk_user_id, userId), eq(user.pk_user_id, recipientId)),
-        );
+        .where(or(eq(user.pk_user_id, userId), eq(user.pk_user_id, recipientId)));
 
       const usersMap = new Map([
         [String(privateUserDetails[0]?.pk_user_id), privateUserDetails[0]],
         [String(privateUserDetails[1]?.pk_user_id), privateUserDetails[1]],
       ]);
 
-      const mappedMessages: PrivateMessageType[] = chatRoomMessages.map(
-        (data) => {
-          const user_id = data.private_messages?.fk_user_id ?? "";
-          const chat_user = usersMap.get(user_id.toString());
+      const mappedMessages: PrivateMessageType[] = chatRoomMessages.map((data) => {
+        const user_id = data.private_messages?.fk_user_id ?? '';
+        const chat_user = usersMap.get(user_id.toString());
 
-          if (data.private_messages?.image_file) {
-            // Convert Buffer to base64 string only if image_file exists and is a Buffer
-            if (Buffer.isBuffer(data.private_messages.image_file)) {
-              const base64Image =
-                data.private_messages.image_file.toString("base64");
-              // Cast to any to avoid type error when assigning string to Buffer type
-              (
-                data.private_messages as unknown as { image_file: string }
-              ).image_file = base64Image;
-            }
+        if (data.private_messages?.image_file) {
+          // Convert Buffer to base64 string only if image_file exists and is a Buffer
+          if (Buffer.isBuffer(data.private_messages.image_file)) {
+            const base64Image = data.private_messages.image_file.toString('base64');
+            // Cast to any to avoid type error when assigning string to Buffer type
+            (data.private_messages as unknown as { image_file: string }).image_file = base64Image;
           }
-          return {
-            private_chat: {
-              pk_private_chat_id: data.private_chat.pk_chats_id,
-              created_at: data.private_chat.createdAt,
-              sender_id: data.private_chat.sender_id,
-              recipient_id: data.private_chat.recipient_id,
-            },
-            private_messages: data.private_messages,
-            chat_user: chat_user
-              ? {
-                  ...chat_user,
-                  pk_user_id: chat_user.pk_user_id,
-                  sender:
-                    data.private_messages?.fk_user_id === userId ? "You" : "",
-                }
-              : null,
-          };
-        },
-      );
+        }
+        return {
+          private_chat: {
+            pk_private_chat_id: data.private_chat.pk_chats_id,
+            created_at: data.private_chat.createdAt,
+            sender_id: data.private_chat.sender_id,
+            recipient_id: data.private_chat.recipient_id,
+          },
+          private_messages: data.private_messages,
+          chat_user: chat_user
+            ? {
+                ...chat_user,
+                pk_user_id: chat_user.pk_user_id,
+                sender: data.private_messages?.fk_user_id === userId ? 'You' : '',
+              }
+            : null,
+        };
+      });
 
       return mappedMessages.filter(
         (data) => data.private_messages && data.private_chat && data.chat_user,
       );
     } catch (err) {
-      if (typeof err === "object" && Object.keys(err as object).length) {
+      if (typeof err === 'object' && Object.keys(err as object).length > 0) {
         // throw new Error(JSON.stringify(err as object));
         return {
           ...err,
@@ -545,7 +518,7 @@ export class QueryHandlers extends UserSchema {
       // TODO: ADD logging to the repo
       return {
         error: true,
-        reason: "Invalid input",
+        reason: 'Invalid input',
         userId,
       };
     }
@@ -560,7 +533,7 @@ export class QueryHandlers extends UserSchema {
     if (chatroomExist.length > 0) {
       return {
         error: true,
-        reason: "Chatroom already exists",
+        reason: 'Chatroom already exists',
         userId,
       };
     }
@@ -617,7 +590,7 @@ export class QueryHandlers extends UserSchema {
       const chatRooms = await this.db.select().from(chats);
       return chatRooms;
     } catch (err) {
-      if (typeof err === "object" && Object.keys(err as object).length) {
+      if (typeof err === 'object' && Object.keys(err as object).length > 0) {
         return {
           ...err,
           error: true,
@@ -650,7 +623,7 @@ export class QueryHandlers extends UserSchema {
 
       return allUsers;
     } catch (err) {
-      if (typeof err === "object" && Object.keys(err as object).length) {
+      if (typeof err === 'object' && Object.keys(err as object).length > 0) {
         return {
           ...err,
           error: true,
@@ -771,10 +744,9 @@ export class QueryHandlers extends UserSchema {
     `);
 
       const sortedPrivateChatData = latest_messages.rows.map((row) => ({
-        private_chat: row.private_chat as PrivateChatResult["private_chat"],
-        chat_user: row.chat_user as PrivateChatResult["chat_user"],
-        private_messages:
-          row.private_messages as PrivateChatResult["private_messages"],
+        private_chat: row.private_chat as PrivateChatResult['private_chat'],
+        chat_user: row.chat_user as PrivateChatResult['chat_user'],
+        private_messages: row.private_messages as PrivateChatResult['private_messages'],
       }));
 
       // Get unique recipient IDs that are not the current user
@@ -809,10 +781,7 @@ export class QueryHandlers extends UserSchema {
         );
       // Added the recipient details to a map for faster lookup
       const allRecipientMap = new Map(
-        allRecipients.map((recipient) => [
-          recipient.recipient.pk_user_id,
-          recipient.recipient,
-        ]),
+        allRecipients.map((recipient) => [recipient.recipient.pk_user_id, recipient.recipient]),
       );
 
       // Map sortedPrivateChatData and ensure unique recipients
@@ -835,17 +804,17 @@ export class QueryHandlers extends UserSchema {
           },
           chat_user: {
             pk_user_id: data.chat_user?.pk_user_id,
-            name: data.chat_user?.name ?? "",
-            email: data.chat_user?.email ?? "",
-            created_at: data.chat_user?.created_at ?? "",
+            name: data.chat_user?.name ?? '',
+            email: data.chat_user?.email ?? '',
+            created_at: data.chat_user?.created_at ?? '',
           },
           private_messages: {
             id: data.private_messages?.id as unknown as string,
-            fk_private_chat_id: data.private_messages?.fk_private_chat_id ?? "",
-            fk_user_id: data.private_messages?.fk_user_id ?? "",
-            message_text: data.private_messages?.message_text ?? "",
-            sent_at: data.private_messages?.sent_at ?? "",
-            timezone: data.private_messages?.timezone ?? "",
+            fk_private_chat_id: data.private_messages?.fk_private_chat_id ?? '',
+            fk_user_id: data.private_messages?.fk_user_id ?? '',
+            message_text: data.private_messages?.message_text ?? '',
+            sent_at: data.private_messages?.sent_at ?? '',
+            timezone: data.private_messages?.timezone ?? '',
           },
           recipient: recipientDetails, // Use the found recipient details
         };
@@ -873,7 +842,7 @@ export class QueryHandlers extends UserSchema {
 
       return uniqueRecipients as unknown as PrivateChatResult[];
     } catch (err) {
-      if (typeof err === "object" && Object.keys(err as object).length) {
+      if (typeof err === 'object' && Object.keys(err as object).length > 0) {
         return {
           ...err,
           error: true,
@@ -997,38 +966,36 @@ export class QueryHandlers extends UserSchema {
     imageName?: string;
   }) {
     try {
-      
-      if(imageFile instanceof File){
+      if (imageFile instanceof File) {
         const arrayBuffer = await imageFile.arrayBuffer();
         imageFile = Buffer.from(arrayBuffer);
-      } else if (typeof imageFile === "string") {
+      } else if (typeof imageFile === 'string') {
         const cleanBase64 = imageFile.replace(/^data:image\/\w+;base64,/, '');
-        imageFile = Buffer.from(cleanBase64, "base64");
+        imageFile = Buffer.from(cleanBase64, 'base64');
       }
-    return await this.db
-      .insert(privateMessages)
-      .values({
-        fk_private_chat_id: privateChatsInsertResponse.pk_private_chat_id,
-        fk_user_id: senderId,
-        message_text: message,
-        image_file: imageFile,
-        image_name: imageName,
-        sent_at: created_at,
-        timezone: timezone,
-      })
-      .returning({
-        id: privateMessages.id,
-        fk_private_chat_id: privateMessages.fk_private_chat_id,
-        fk_user_id: privateMessages.fk_user_id,
-        message_text: privateMessages.message_text,
-        sent_at: privateMessages.sent_at,
-        timezone: privateMessages.timezone,
-        image_file: privateMessages.image_file,
-        image_name: privateMessages.image_name,
-      });
+      return await this.db
+        .insert(privateMessages)
+        .values({
+          fk_private_chat_id: privateChatsInsertResponse.pk_private_chat_id,
+          fk_user_id: senderId,
+          message_text: message,
+          image_file: imageFile,
+          image_name: imageName,
+          sent_at: created_at,
+          timezone: timezone,
+        })
+        .returning({
+          id: privateMessages.id,
+          fk_private_chat_id: privateMessages.fk_private_chat_id,
+          fk_user_id: privateMessages.fk_user_id,
+          message_text: privateMessages.message_text,
+          sent_at: privateMessages.sent_at,
+          timezone: privateMessages.timezone,
+          image_file: privateMessages.image_file,
+          image_name: privateMessages.image_name,
+        });
     } catch (err) {
       // TODO: Add SENTRY logging
-      console.log(err);
       return {
         error: true,
         reason: err.message,
