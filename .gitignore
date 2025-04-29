@@ -16,3 +16,6 @@ backup.sql
 db-structure.sql
 terminal-commands.txt
 .vercel
+
+# cache
+.cache_ggshield
