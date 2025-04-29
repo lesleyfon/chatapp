@@ -1,9 +1,9 @@
+import { type Server as HTTPServer, createServer } from 'node:http';
 import * as Sentry from '@sentry/node';
 import cors, { type CorsOptions } from 'cors';
 import dotenv from 'dotenv';
 import express, { type NextFunction, type Request, type Response } from 'express';
 import multer from 'multer';
-import { type Server as HTTPServer, createServer } from 'node:http';
 import { Server as SocketIOServer } from 'socket.io';
 
 import './instrument';
@@ -59,16 +59,18 @@ class SocketServer {
   constructor(port: number, corsOptions: CorsOptions = defaultCorsOptions) {
     const upload = multer({
       dest: 'uploads/', // TODO: DO WE NEED TO CHANGE THIS?
-      limits: { fileSize: 1024 * 1024 * 5 },
+      limits: { fileSize: 1024 * 1024 * 20, fieldSize: 1024 * 1024 * 20 },
     });
 
     this.port = port;
     this.corsOptions = corsOptions;
     this.app = express();
-    this.app.use(express.json());
-    this.app.use(upload.single('file'));
 
     // Middlewares
+    this.app.use(express.json());
+    this.app.use(express.json({ limit: '10mb' }));
+    this.app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+    this.app.use(upload.single('file'));
     this.app.use(cors());
     this.app.use((req: Request, res: Response, next: NextFunction): Response | void => {
       res.header('Access-Control-Allow-Origin', origin?.[0] ?? '');
@@ -116,7 +118,14 @@ class SocketServer {
     });
 
     this.httpServer = createServer(this.app);
-    this.setupAppSocketConnection(new SocketIOServer(this.httpServer));
+    this.setupAppSocketConnection(
+      new SocketIOServer(this.httpServer, {
+        cors: corsOptions,
+        maxHttpBufferSize: 1e8, // 100 MB
+        pingTimeout: 60000,
+        connectTimeout: 60000,
+      }),
+    );
   }
 
   setupAppSocketConnection(socketInstance: SocketIOServer) {
