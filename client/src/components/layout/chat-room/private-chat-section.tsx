@@ -47,7 +47,13 @@ function ConversationCard({ data, isSender }: { data: PrivateChatResultType; isS
           isSender={isSender}
         />
       ) : null}
-      <div className={cn('flex py-4 ', isSender ? 'justify-end' : 'justify-start')}>
+      <div
+        className={cn(
+          'flex py-4',
+          isSender ? 'justify-end' : 'justify-start',
+          image_file ? 'py-0' : 'py-4',
+        )}
+      >
         <Card className={cn('max-w-[70%]', isSender ? 'bg-slate-300 text-black' : '')}>
           <CardContent className='p-3'>
             <div
