@@ -2,3 +2,5 @@
 
 # Sentry Config File
 .sentryclirc
+
+.cache_ggshield
