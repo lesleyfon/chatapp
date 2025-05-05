@@ -1,8 +1,10 @@
+import { useParams } from 'react-router';
 import type { Socket } from 'socket.io-client';
 
 import { getBrowserTimeZone, getCurrentDateTimeWithTimezone } from '../lib';
 import useAuthStorage from '../store/use-auth-storage';
 import type { MessageInputProps } from '../types/index';
+import { useAddPrivateMessageResponse } from './use-add-private-message-response';
 import { useSocketAuth } from './use-socket-auth';
 
 function convertGifToBase64(file: File): Promise<string> {
@@ -25,8 +27,15 @@ function convertGifToBase64(file: File): Promise<string> {
 
 export function useSendMessage({ socket }: { socket: Socket | null }) {
   const { userId } = useAuthStorage((state) => state);
-
+  const { recipientId } = useParams();
   useSocketAuth({ socket });
+
+  const { privateMessageOptimisticUIUpdate } = useAddPrivateMessageResponse({
+    socket,
+    recipientId: recipientId as string,
+    userId: userId as string,
+    vListRef: null,
+  });
 
   /**
    * Sends a private message over a Socket.IO connection.
@@ -52,6 +61,45 @@ export function useSendMessage({ socket }: { socket: Socket | null }) {
     if (socket === null) return;
     // If the socket is not connected, connect it
     if (socket.connected === false) socket.connect();
+    // Convert Image to a urlObject
+
+    // Only perform optimistic update for the sender
+    if (userId !== data.recipientId) {
+      let imageFile = data?.imageFile;
+      if (imageFile instanceof File) {
+        imageFile = URL.createObjectURL(imageFile);
+      }
+      privateMessageOptimisticUIUpdate({
+        private_chat: {
+          pk_private_chat_id: crypto.randomUUID() as string,
+          sender_id: userId as string,
+          recipient_id: data.recipientId,
+          created_at: new Date(created_at),
+        },
+        private_messages: {
+          id: crypto.randomUUID() as string,
+          fk_private_chat_id: crypto.randomUUID() as string,
+          message_text: data.message_text,
+          sent_at: new Date(created_at),
+          fk_user_id: userId as string,
+          image_file: imageFile as string,
+          image_name: data.imageName as string,
+          timezone,
+        },
+        chat_user: {
+          name: '',
+          pk_user_id: userId as string,
+          email: '',
+          sender: userId as string,
+        },
+        recipient: {
+          name: '',
+          pk_user_id: data.recipientId as string,
+          email: '',
+          sender: userId as string,
+        },
+      });
+    }
 
     /**
      * IF the imageFile is a gif, convert to base64
