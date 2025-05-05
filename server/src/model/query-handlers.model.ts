@@ -1,4 +1,5 @@
 import { File } from 'node:buffer';
+import * as Sentry from '@sentry/node';
 import { and, asc, desc, eq, inArray, ne, or, sql } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 
@@ -13,6 +14,7 @@ import type {
   SQLErrorType,
   TypedMessage,
 } from '../types';
+import { getEnvs } from '../utils/get-envs';
 import { UserSchema } from './auth.models';
 
 export class QueryHandlers extends UserSchema {
@@ -317,6 +319,7 @@ export class QueryHandlers extends UserSchema {
     userId: number;
     recipientId: number;
   }): Promise<PrivateMessageType[] | SQLErrorType> {
+    // TODO: This query is very slow. Taking 25+ seconds to complete. Optimize it. Maybe use pagination or a different approach.
     try {
       // If recipientId does not exist, return an error
       const recipientExist = await this.db
@@ -329,50 +332,52 @@ export class QueryHandlers extends UserSchema {
           reason: 'Recipient does not exist',
         };
       }
-      const chatRoomMessages = await this.db
-        .select({
-          private_chat: {
-            pk_chats_id: privateChats.pk_private_chat_id,
-            createdAt: privateChats.created_at,
-            sender_id: privateChats.sender_id,
-            recipient_id: privateChats.recipient_id,
-          },
-          private_messages: {
-            id: privateMessages.id,
-            fk_private_chat_id: privateMessages.fk_private_chat_id,
-            message_text: privateMessages.message_text,
-            sent_at: privateMessages.sent_at,
-            fk_user_id: privateMessages.fk_user_id,
-            image_file: privateMessages.image_file,
-            image_name: privateMessages.image_name,
-            timezone: privateMessages.timezone,
-          },
-        })
-        .from(privateChats)
-        .where(
-          or(
-            and(eq(privateChats.sender_id, userId), eq(privateChats.recipient_id, recipientId)),
-            and(eq(privateChats.recipient_id, userId), eq(privateChats.sender_id, recipientId)),
-          ),
-        )
-        .leftJoin(
-          privateMessages,
-          eq(
-            privateChats.pk_private_chat_id,
-            sql<number>`cast(${privateMessages.fk_private_chat_id} as int)`,
-          ),
-        )
-        .orderBy(asc(privateMessages.sent_at));
-
-      const privateUserDetails = await this.db
-        .select({
-          pk_user_id: user.pk_user_id,
-          name: user.name,
-          email: user.email,
-          created_at: user.created_at,
-        })
-        .from(user)
-        .where(or(eq(user.pk_user_id, userId), eq(user.pk_user_id, recipientId)));
+      const [chatRoomMessages, privateUserDetails] = await Promise.all([
+        this.db
+          .select({
+            private_chat: {
+              pk_chats_id: privateChats.pk_private_chat_id,
+              createdAt: privateChats.created_at,
+              sender_id: privateChats.sender_id,
+              recipient_id: privateChats.recipient_id,
+            },
+            private_messages: {
+              id: privateMessages.id,
+              fk_private_chat_id: privateMessages.fk_private_chat_id,
+              message_text: privateMessages.message_text,
+              sent_at: privateMessages.sent_at,
+              fk_user_id: privateMessages.fk_user_id,
+              image_file: privateMessages.image_file,
+              image_url: privateMessages.image_url,
+              image_name: privateMessages.image_name,
+              timezone: privateMessages.timezone,
+            },
+          })
+          .from(privateChats)
+          .where(
+            or(
+              and(eq(privateChats.sender_id, userId), eq(privateChats.recipient_id, recipientId)),
+              and(eq(privateChats.recipient_id, userId), eq(privateChats.sender_id, recipientId)),
+            ),
+          )
+          .leftJoin(
+            privateMessages,
+            eq(
+              privateChats.pk_private_chat_id,
+              sql<number>`cast(${privateMessages.fk_private_chat_id} as int)`,
+            ),
+          )
+          .orderBy(asc(privateMessages.sent_at)),
+        this.db
+          .select({
+            pk_user_id: user.pk_user_id,
+            name: user.name,
+            email: user.email,
+            created_at: user.created_at,
+          })
+          .from(user)
+          .where(or(eq(user.pk_user_id, userId), eq(user.pk_user_id, recipientId))),
+      ]);
 
       const usersMap = new Map([
         [String(privateUserDetails[0]?.pk_user_id), privateUserDetails[0]],
@@ -384,8 +389,10 @@ export class QueryHandlers extends UserSchema {
         const chat_user = usersMap.get(user_id.toString());
 
         if (data.private_messages?.image_file) {
-          // Convert Buffer to base64 string only if image_file exists and is a Buffer
-          if (Buffer.isBuffer(data.private_messages.image_file)) {
+          if (data.private_messages.image_url) {
+            data.private_messages.image_url = `${this.SUPABASE_BUCKET_URL}/storage/v1/object/public/${data.private_messages.image_url}`;
+          } else if (Buffer.isBuffer(data.private_messages.image_file)) {
+            // Convert Buffer to base64 string only if image_file exists and is a Buffer
             const base64Image = data.private_messages.image_file.toString('base64');
             // Cast to any to avoid type error when assigning string to Buffer type
             (data.private_messages as unknown as { image_file: string }).image_file = base64Image;
@@ -413,8 +420,13 @@ export class QueryHandlers extends UserSchema {
         (data) => data.private_messages && data.private_chat && data.chat_user,
       );
     } catch (err) {
+      Sentry.captureException(err, {
+        tags: {
+          method: 'getPrivateRoomMessagesBySenderId',
+        },
+      });
+
       if (typeof err === 'object' && Object.keys(err as object).length > 0) {
-        // throw new Error(JSON.stringify(err as object));
         return {
           ...err,
           error: true,
@@ -966,21 +978,34 @@ export class QueryHandlers extends UserSchema {
     imageName?: string;
   }) {
     try {
-      if (imageFile instanceof File) {
-        const arrayBuffer = await imageFile.arrayBuffer();
-        imageFile = Buffer.from(arrayBuffer);
-      } else if (typeof imageFile === 'string') {
-        const cleanBase64 = imageFile.replace(/^data:image\/\w+;base64,/, '');
-        imageFile = Buffer.from(cleanBase64, 'base64');
+      let imageProcessingPromise: Promise<Buffer | null> | null = null;
+
+      // Start image processing early
+      if (imageFile) {
+        imageProcessingPromise = (async () => {
+          if (imageFile instanceof Buffer) {
+            return imageFile;
+          } else if (imageFile instanceof File) {
+            const arrayBuffer = await imageFile.arrayBuffer();
+            return Buffer.from(arrayBuffer);
+          } else if (typeof imageFile === 'string') {
+            const cleanBase64 = imageFile.replace(/^data:image\/\w+;base64,/, '');
+            return Buffer.from(cleanBase64, 'base64');
+          }
+          return null;
+        })();
       }
-      return await this.db
+
+      // Start DB insertion immediately
+      const dbInsertPromise = this.db
         .insert(privateMessages)
         .values({
           fk_private_chat_id: privateChatsInsertResponse.pk_private_chat_id,
           fk_user_id: senderId,
           message_text: message,
-          image_file: imageFile,
+          image_file: null,
           image_name: imageName,
+          image_url: null,
           sent_at: created_at,
           timezone: timezone,
         })
@@ -993,9 +1018,55 @@ export class QueryHandlers extends UserSchema {
           timezone: privateMessages.timezone,
           image_file: privateMessages.image_file,
           image_name: privateMessages.image_name,
+          image_url: privateMessages.image_url,
         });
+
+      // Process image and DB insertion in parallel
+      const [processedImage, dbResponse] = await Promise.all([
+        imageProcessingPromise,
+        dbInsertPromise,
+      ]);
+
+      // If we have an image to upload, do it after DB insertion
+      if (processedImage && imageName) {
+        //TODO: look into streaming the image from the response to the client
+        const bucketResponse = await this.uploadImageToPrivateImageBucket(
+          processedImage,
+          imageName,
+        );
+
+        if (bucketResponse) {
+          const { SUPABASE_BUCKET_URL } = getEnvs();
+          const fullFilePath = `${SUPABASE_BUCKET_URL}/storage/v1/object/public/${bucketResponse.fullPath}`;
+
+          const updateResponse = await this.db
+            .update(privateMessages)
+            .set({ image_url: fullFilePath })
+            .where(eq(privateMessages.id, dbResponse[0].id))
+            .returning({
+              id: privateMessages.id,
+              fk_private_chat_id: privateMessages.fk_private_chat_id,
+              fk_user_id: privateMessages.fk_user_id,
+              message_text: privateMessages.message_text,
+              sent_at: privateMessages.sent_at,
+              timezone: privateMessages.timezone,
+              image_file: privateMessages.image_file,
+              image_name: privateMessages.image_name,
+              image_url: privateMessages.image_url,
+            });
+
+          dbResponse[0].image_url = fullFilePath;
+          return updateResponse;
+        }
+      }
+      return dbResponse;
     } catch (err) {
-      // TODO: Add SENTRY logging
+      Sentry.captureException(err, {
+        tags: {
+          method: 'createPrivateMessage',
+          senderId,
+        },
+      });
       return {
         error: true,
         reason: err.message,
