@@ -388,15 +388,12 @@ export class QueryHandlers extends UserSchema {
         const user_id = data.private_messages?.fk_user_id ?? '';
         const chat_user = usersMap.get(user_id.toString());
 
-        if (data.private_messages?.image_file) {
-          if (data.private_messages.image_url) {
-            data.private_messages.image_url = `${this.SUPABASE_BUCKET_URL}/storage/v1/object/public/${data.private_messages.image_url}`;
-          } else if (Buffer.isBuffer(data.private_messages.image_file)) {
-            // Convert Buffer to base64 string only if image_file exists and is a Buffer
-            const base64Image = data.private_messages.image_file.toString('base64');
-            // Cast to any to avoid type error when assigning string to Buffer type
-            (data.private_messages as unknown as { image_file: string }).image_file = base64Image;
-          }
+        if (
+          data.private_messages?.image_file &&
+          Buffer.isBuffer(data.private_messages.image_file)
+        ) {
+          (data.private_messages.image_file as unknown as string) =
+            data.private_messages.image_file.toString('base64');
         }
         return {
           private_chat: {
