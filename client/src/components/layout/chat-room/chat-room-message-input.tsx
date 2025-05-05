@@ -147,7 +147,6 @@ export function ChatMessageInput({ chatId, chatName, isPrivateChat }: ChatInputP
     }
     const message_img = getValues(FILE_INPUT_NAME) as unknown as File;
     if (isPrivateChat) {
-      // TODO: Instead of waiting for the response to complete, we optimisticly show the message in the chat while waiting for the response to complete.
       sendPrivateMessage(
         {
           message_text: data.message_text,
