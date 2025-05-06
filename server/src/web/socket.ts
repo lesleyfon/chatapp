@@ -1,4 +1,3 @@
-import { Buffer, File } from 'node:buffer';
 import * as Sentry from '@sentry/node';
 import { StatusCodes } from 'http-status-codes';
 import type { Socket, Server as SocketIOServer } from 'socket.io';
@@ -236,20 +235,6 @@ export class AppSocketBase extends QueryHandlers {
             return this.emitAddMessageErrorResponse(null, response.reason);
           }
           const privateMessageInsertResponse = response[0];
-          let base64Image: string | null = null;
-          if (privateMessageInsertResponse?.image_file) {
-            // Convert Buffer to base64 string only if image_file exists and is a Buffer or a File
-            if (
-              privateMessageInsertResponse.image_file instanceof File ||
-              Buffer.isBuffer(privateMessageInsertResponse.image_file)
-            ) {
-              base64Image = privateMessageInsertResponse.image_file.toString('base64');
-            } else if (typeof privateMessageInsertResponse?.image_file === 'string') {
-              // If image_file is already a string, no need to convert to base64
-              // Just use it as-is since it's likely already in base64 format
-              base64Image = privateMessageInsertResponse.image_file;
-            }
-          }
 
           const addPrivateMessageSocketResponse = {
             private_chat: {
@@ -270,7 +255,6 @@ export class AppSocketBase extends QueryHandlers {
               fk_user_id: privateMessageInsertResponse.fk_user_id,
               message_text: privateMessageInsertResponse.message_text,
               sent_at: privateMessageInsertResponse.sent_at,
-              image_file: base64Image,
               image_name: privateMessageInsertResponse.image_name,
               timezone: privateMessageInsertResponse.timezone,
             },
