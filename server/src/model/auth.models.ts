@@ -8,12 +8,14 @@ import { connectToDB } from '../db';
 import { user } from '../schema';
 import type { JWT_RETURN_USER, UserInterface } from '../types';
 import { getEnvs } from '../utils/get-envs';
+import { FileUploadModel } from './file-upload.model';
 
 const { JWT_SECRET } = getEnvs();
 
-export class UserSchema {
+export class UserSchema extends FileUploadModel {
   db: NodePgDatabase<Record<string, never>>;
   constructor() {
+    super();
     this.db = connectToDB();
   }
 

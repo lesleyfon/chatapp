@@ -96,6 +96,7 @@ export const privateMessages = pgTable('private_messages', {
   message_text: text('message_text'),
   image_name: text('image_name'),
   image_file: bytea('image_file'),
+  image_url: text('image_url'),
   sent_at: timestamp('sent_at', { mode: 'string' }).notNull(),
   timezone: text('timezone').notNull(),
 });

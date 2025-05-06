@@ -1,14 +1,28 @@
-import { set } from 'lodash';
 import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router';
 import { VList, type VListHandle } from 'virtua';
 
+import { useAddPrivateMessageResponse } from '../../../hooks/use-add-private-message-response';
 import { useSocket } from '../../../hooks/use-socket';
 import { cn, formatDate } from '../../../lib';
 import useAuthStorage from '../../../store/use-auth-storage';
+import { usePrivateMessagesStore } from '../../../store/use-private-messages-store';
 import type { PrivateChatResultType } from '../../../types';
 import { Card, CardContent } from '../../ui/card';
 import { ScrollArea } from '../../ui/scroll-area';
+
+export function getImageSrc(imageUrl: string, imageName?: string): string {
+  if (imageUrl.startsWith('blob:') || imageUrl.startsWith('https://')) {
+    return imageUrl;
+  }
+  // Fall back for images uploaded before migration
+  const imageNameParts = imageName?.split('.');
+  const imageType =
+    imageNameParts?.length !== undefined && imageNameParts.length > 0
+      ? imageNameParts.pop()
+      : 'jpeg';
+  return `data:image/${imageType};base64,${imageUrl}`;
+}
 
 export default function ImageCard({
   imageUrl,
@@ -19,12 +33,13 @@ export default function ImageCard({
   imageName: string;
   isSender: boolean;
 }) {
-  const imageType = imageName.split('.')[1];
+  const src = getImageSrc(imageUrl, imageName);
+
   return (
     <div className={cn('flex justify-end', isSender ? 'justify-end' : 'justify-start')}>
       <div className='bg-white rounded-lg shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl dark:bg-gray-950 w-[400px] h-[250px]'>
         <img
-          src={`data:image/${imageType};base64,${imageUrl}`}
+          src={src}
           alt={imageName}
           width={400}
           height={250}
@@ -37,17 +52,26 @@ export default function ImageCard({
 }
 
 function ConversationCard({ data, isSender }: { data: PrivateChatResultType; isSender: boolean }) {
-  const { image_file, image_name, message_text, sent_at, timezone } = data.private_messages;
+  const { image_file, image_name, message_text, sent_at, timezone, image_url } =
+    data.private_messages;
+  const hasImage = image_file || image_url;
   return (
     <>
-      {image_file ? (
+      {hasImage ? (
         <ImageCard
-          imageUrl={image_file as string}
+          // Default to using the image_url if it exists, otherwise use the image_file
+          imageUrl={image_url ?? (image_file as string)}
           imageName={image_name as string}
           isSender={isSender}
         />
       ) : null}
-      <div className={cn('flex py-4 ', isSender ? 'justify-end' : 'justify-start')}>
+      <div
+        className={cn(
+          'flex py-4',
+          isSender ? 'justify-end' : 'justify-start',
+          hasImage ? 'py-0' : 'py-4',
+        )}
+      >
         <Card className={cn('max-w-[70%]', isSender ? 'bg-slate-300 text-black' : '')}>
           <CardContent className='p-3'>
             <div
@@ -70,18 +94,23 @@ function ConversationCard({ data, isSender }: { data: PrivateChatResultType; isS
 }
 
 export const PrivateMessageSection = ({ data }: { data: PrivateChatResultType[] }) => {
-  const [allRoomMessages, setAllRoomMessages] = useState<PrivateChatResultType[]>([]);
-
   const vListRef = useRef<VListHandle>(null);
   const userId = useAuthStorage((state) => state.userId);
+  const socket = useSocket();
   const { recipientId } = useParams();
 
+  useAddPrivateMessageResponse({
+    socket,
+    userId: userId as string,
+    vListRef: vListRef,
+    recipientId: recipientId as string,
+  });
+  const { allRoomMessages, setAllRoomMessages } = usePrivateMessagesStore();
+
   useEffect(() => {
-    if (data?.length === undefined || data?.length === 0) {
-      return setAllRoomMessages([]);
-    }
+    if (data?.length === undefined || data?.length === 0) return;
     setAllRoomMessages(data);
-  }, [data]);
+  }, [data, setAllRoomMessages]);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {
@@ -99,52 +128,6 @@ export const PrivateMessageSection = ({ data }: { data: PrivateChatResultType[] 
       }, 100);
     }
   }, [allRoomMessages.length]); // Triggered after data is loaded
-
-  const socket = useSocket();
-
-  useEffect(() => {
-    if (socket?.connected === false) socket?.connect();
-    if (!userId) return; // Maybe logout?
-
-    socket?.on('add-private-message-response', (response: PrivateChatResultType) => {
-      const { sender_id: responseSenderId, recipient_id: responseRecipientId } =
-        response.private_chat;
-
-      const chatUser = new Set([responseSenderId, responseRecipientId]);
-
-      // IF users are not the same, return early
-      if (!chatUser.has(userId)) {
-        return;
-      }
-      // Prevent messages from showing in other users chats
-      const chatToUpdate =
-        (responseSenderId.toString() === userId.toString() &&
-          responseRecipientId.toString() === recipientId?.toString()) ||
-        (responseSenderId.toString() === recipientId?.toString() &&
-          responseRecipientId.toString() === userId.toString());
-
-      if (chatToUpdate === false) return;
-
-      setAllRoomMessages((previousRoomMessages) => {
-        const responseCopy = { ...response };
-        if (String(response.chat_user.pk_user_id) === String(userId)) {
-          set(responseCopy, 'chat_user.name', 'You');
-        }
-        return [...previousRoomMessages, responseCopy];
-      });
-
-      if (vListRef.current) {
-        // Scroll to bottom after new message is added
-        vListRef.current.scrollToIndex(allRoomMessages.length, {
-          smooth: true,
-          align: 'start',
-        });
-      }
-    });
-    return () => {
-      socket?.off('add-private-message-response');
-    };
-  }, [socket, userId, allRoomMessages, recipientId]);
 
   const scrollAreaRef = useRef(null);
   const [scrollAreaHeight, setScrollAreaHeight] = useState(0);
@@ -191,7 +174,7 @@ export const PrivateMessageSection = ({ data }: { data: PrivateChatResultType[] 
             shift={true}
           >
             {allRoomMessages.map((data) => {
-              const isSender = data?.chat_user?.pk_user_id.toString() === String(userId);
+              const isSender = String(data?.chat_user?.pk_user_id ?? '') === String(userId);
               return (
                 <ConversationCard key={data?.private_messages.id} data={data} isSender={isSender} />
               );

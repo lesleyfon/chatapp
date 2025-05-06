@@ -16,6 +16,8 @@ export function getEnvs() {
     DB_URL,
     DATABASE_URL,
     SENTRY_DSN,
+    SUPABASE_BUCKET_SECRET,
+    SUPABASE_BUCKET_URL,
   }: ENV_VARS = JSON.parse(process.env.APP_ENV as string);
 
   return {
@@ -29,5 +31,7 @@ export function getEnvs() {
     DB_URL,
     DATABASE_URL,
     SENTRY_DSN: SENTRY_DSN || '',
+    SUPABASE_BUCKET_SECRET: SUPABASE_BUCKET_SECRET || '',
+    SUPABASE_BUCKET_URL: SUPABASE_BUCKET_URL || '',
   };
 }

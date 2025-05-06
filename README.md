@@ -44,6 +44,36 @@ A modern, feature-rich real-time chat application built with React, Node.js, and
 - MySQL or PostgreSQL database
 - npm or yarn package manager
 
+## Secret Scanning with ggshield
+
+To help prevent accidentally committing secrets (API keys, passwords, etc.) to your repository, this project uses [ggshield](https://github.com/GitGuardian/ggshield) for secret scanning.
+
+### Installation
+
+Install ggshield globally using pip (recommended):
+
+```bash
+pip install ggshield
+```
+
+Or, if you use Homebrew on macOS:
+
+```bash
+brew install ggshield
+```
+
+### Usage
+
+ggshield is integrated as a pre-commit hook. Before you push code to GitHub, ggshield will automatically scan your codebase for secrets. If any secrets are detected, the push will be blocked, and you will be notified.
+
+You can also run a manual scan at any time:
+
+```bash
+ggshield secret scan repo .
+```
+
+For more information, see the [ggshield documentation](https://github.com/GitGuardian/ggshield).
+
 ## Getting Started
 
 1. Clone the repository

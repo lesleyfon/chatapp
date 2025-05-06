@@ -1,6 +1,8 @@
-import { StatusCodes } from 'http-status-codes';
 import { Buffer, File } from 'node:buffer';
+import * as Sentry from '@sentry/node';
+import { StatusCodes } from 'http-status-codes';
 import type { Socket, Server as SocketIOServer } from 'socket.io';
+
 import type { ExtendedError } from 'socket.io/dist/namespace';
 import { QueryHandlers } from '../model/query-handlers.model';
 import type { AddPrivateMessageType, CbType, ChatListType, JWT_RETURN_USER } from '../types';
@@ -11,6 +13,20 @@ export class AppSocketBase extends QueryHandlers {
     super();
     this.io = socket;
     this.io.use(this.socketAuthMiddleware);
+
+    this.io.engine.on('connection', (socket) => {
+      socket.on('error', (error: Error) => {
+        Sentry.captureException(error);
+      });
+
+      socket.on('disconnect', (reason: string) => {
+        Sentry.captureException({
+          message: 'User disconnected',
+          reason,
+          userId: socket.handshake.auth?.userId,
+        });
+      });
+    });
   }
 
   socketAuthMiddleware = async (socket: Socket, next: (err?: ExtendedError) => void) => {
@@ -201,6 +217,7 @@ export class AppSocketBase extends QueryHandlers {
           const privateChatsInsertResponse = (
             await this.createPrivateChatEntry(sender, receiver)
           )[0];
+
           const response = await this.createPrivateMessage({
             privateChatsInsertResponse: {
               ...privateChatsInsertResponse,
@@ -266,8 +283,24 @@ export class AppSocketBase extends QueryHandlers {
           this.io.emit('add-private-message-response', addPrivateMessageSocketResponse);
           // Emits an event to display the most recent message sent
           this.io.emit('get-latest-private-message-sent', addPrivateMessageSocketResponse);
-        } catch (_error) {
-          // TODO: Add SENTRY logging
+        } catch (error) {
+          const hasFiles = imageFile !== null;
+          Sentry.captureException(error, {
+            extra: {
+              senderId,
+              hasFiles,
+              timezone,
+              imageName,
+              created_at,
+              recipientId,
+              method: 'addPrivateMessage',
+            },
+          });
+
+          this.io.emit('add-private-message-error', {
+            error: true,
+            message: 'Failed to send message. Please try again.',
+          });
         }
       },
     );
@@ -279,9 +312,5 @@ export class AppSocketBase extends QueryHandlers {
       this.getAUserChatList(socket);
       this.getPrivateMessageList(socket);
     });
-  }
-
-  connectToRooms(socket: SocketIOServer) {
-    socket.to(['person-1', 'person-1']);
   }
 }

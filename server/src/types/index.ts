@@ -1,5 +1,5 @@
-import type { Request } from 'express';
 import type { File } from 'node:buffer';
+import type { Request } from 'express';
 
 export type RequestWithUser = Request & {
   user: Omit<UserInterface, 'created_at' | 'updated_at'>;
@@ -17,6 +17,8 @@ export interface ENV_VARS {
   DB_URL: string;
   DATABASE_URL: string;
   SENTRY_DSN: string;
+  SUPABASE_BUCKET_SECRET: string;
+  SUPABASE_BUCKET_URL: string;
 }
 
 export type SQLErrorType = {
