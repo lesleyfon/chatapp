@@ -11,6 +11,15 @@ import type { PrivateChatResultType } from '../../../types';
 import { Card, CardContent } from '../../ui/card';
 import { ScrollArea } from '../../ui/scroll-area';
 
+export function getImageSrc(imageUrl: string, imageName?: string): string {
+  if (imageUrl.startsWith('blob:') || imageUrl.startsWith('https://')) {
+    return imageUrl;
+  }
+  // Fall back for images uploaded before migration
+  const imageType = imageName?.split('.')[1] || 'jpeg';
+  return `data:image/${imageType};base64,${imageUrl}`;
+}
+
 export default function ImageCard({
   imageUrl,
   imageName,
@@ -20,18 +29,7 @@ export default function ImageCard({
   imageName: string;
   isSender: boolean;
 }) {
-  const imageType = imageName.split('.')[1];
-  let src = '';
-
-  // If the imageUrl starts with blob:, it is a blob URL and should be used as is
-  if (imageUrl.startsWith('blob:')) {
-    src = imageUrl;
-  } else if (imageUrl.startsWith('https://')) {
-    src = imageUrl;
-  } else {
-    // Fall back for images uploaded before migration
-    src = `data:image/${imageType};base64,${imageUrl}`;
-  }
+  const src = getImageSrc(imageUrl, imageName);
 
   return (
     <div className={cn('flex justify-end', isSender ? 'justify-end' : 'justify-start')}>
