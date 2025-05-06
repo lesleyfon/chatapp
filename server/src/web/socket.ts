@@ -217,9 +217,8 @@ export class AppSocketBase extends QueryHandlers {
           const privateChatsInsertResponse = (
             await this.createPrivateChatEntry(sender, receiver)
           )[0];
-          // const response = await this.createPrivateMessageAlt({ takes about 1.22 secons
+
           const response = await this.createPrivateMessage({
-            // Takes about 1.6 seconds
             privateChatsInsertResponse: {
               ...privateChatsInsertResponse,
               pk_private_chat_id: privateChatsInsertResponse.pk_private_chat_id,
@@ -296,6 +295,11 @@ export class AppSocketBase extends QueryHandlers {
               recipientId,
               method: 'addPrivateMessage',
             },
+          });
+
+          this.io.emit('add-private-message-error', {
+            error: true,
+            message: 'Failed to send message. Please try again.',
           });
         }
       },
