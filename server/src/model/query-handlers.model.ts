@@ -10,7 +10,7 @@ import type {
   ChatType,
   MessageType,
   PrivateChatResult,
-  PrivateMessageType,
+  PrivateMessageTypeWithoutImageFile,
   SQLErrorType,
   TypedMessage,
 } from '../types';
@@ -310,7 +310,7 @@ export class QueryHandlers extends UserSchema {
    * @description Retrieves private messages for a specific chat room by sender ID.
    * @param {number} userId - The ID of the user.
    * @param {number} recipientId - The ID of the recipient.
-   * @returns {Promise<PrivateMessageType[] | SQLErrorType>} - An array of private messages or an error object.
+   * @returns {Promise<PrivateMessageTypeWithoutImageFile[] | SQLErrorType>} - An array of private messages or an error object.
    */
   async getPrivateRoomMessagesBySenderId({
     userId,
@@ -318,8 +318,7 @@ export class QueryHandlers extends UserSchema {
   }: {
     userId: number;
     recipientId: number;
-  }): Promise<PrivateMessageType[] | SQLErrorType> {
-    // TODO: This query is very slow. Taking 25+ seconds to complete. Optimize it. Maybe use pagination or a different approach.
+  }): Promise<PrivateMessageTypeWithoutImageFile[] | SQLErrorType> {
     try {
       // If recipientId does not exist, return an error
       const recipientExist = await this.db
@@ -332,6 +331,7 @@ export class QueryHandlers extends UserSchema {
           reason: 'Recipient does not exist',
         };
       }
+
       const [chatRoomMessages, privateUserDetails] = await Promise.all([
         this.db
           .select({
@@ -347,7 +347,6 @@ export class QueryHandlers extends UserSchema {
               message_text: privateMessages.message_text,
               sent_at: privateMessages.sent_at,
               fk_user_id: privateMessages.fk_user_id,
-              image_file: privateMessages.image_file,
               image_url: privateMessages.image_url,
               image_name: privateMessages.image_name,
               timezone: privateMessages.timezone,
@@ -384,17 +383,10 @@ export class QueryHandlers extends UserSchema {
         [String(privateUserDetails[1]?.pk_user_id), privateUserDetails[1]],
       ]);
 
-      const mappedMessages: PrivateMessageType[] = chatRoomMessages.map((data) => {
+      const mappedMessages: PrivateMessageTypeWithoutImageFile[] = chatRoomMessages.map((data) => {
         const user_id = data.private_messages?.fk_user_id ?? '';
         const chat_user = usersMap.get(user_id.toString());
 
-        if (
-          data.private_messages?.image_file &&
-          Buffer.isBuffer(data.private_messages.image_file)
-        ) {
-          (data.private_messages.image_file as unknown as string) =
-            data.private_messages.image_file.toString('base64');
-        }
         return {
           private_chat: {
             pk_private_chat_id: data.private_chat.pk_chats_id,

@@ -115,6 +115,12 @@ export interface PrivateMessageType {
   chat_user: UserBase | null;
 }
 
+export interface PrivateMessageTypeWithoutImageFile {
+  private_chat: PrivateChatBase | null;
+  private_messages: Omit<PrivateMessageBase, 'image_file'> | null;
+  chat_user: UserBase | null;
+}
+
 export interface PrivateChatResult {
   private_chat: PrivateChatBase;
   chat_user: UserBase;
