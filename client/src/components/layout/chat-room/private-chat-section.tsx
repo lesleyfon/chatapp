@@ -16,7 +16,11 @@ export function getImageSrc(imageUrl: string, imageName?: string): string {
     return imageUrl;
   }
   // Fall back for images uploaded before migration
-  const imageType = imageName?.split('.')[1] || 'jpeg';
+  const imageNameParts = imageName?.split('.');
+  const imageType =
+    imageNameParts?.length !== undefined && imageNameParts.length > 0
+      ? imageNameParts.pop()
+      : 'jpeg';
   return `data:image/${imageType};base64,${imageUrl}`;
 }
 
