@@ -1,7 +1,7 @@
-import { createStore } from 'zustand';
+import { create } from 'zustand';
 import type { PrivateChatResultType } from '../types';
 
-export const usePrivateMessagesStore = createStore<{
+export const usePrivateMessagesStore = create<{
   allRoomMessages: PrivateChatResultType[];
   setAllRoomMessages: (msgs: PrivateChatResultType[]) => void;
   optimisticUpdate: (msg: PrivateChatResultType) => void;
