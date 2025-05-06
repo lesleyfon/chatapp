@@ -53,7 +53,7 @@ export class FileUploadModel {
             method: 'uploadImageToPrivateImageBucket',
           },
         });
-        throw error;
+        return null;
       })
       .finally(() => {
         Sentry.captureMessage('Image uploaded to private image bucket', {
