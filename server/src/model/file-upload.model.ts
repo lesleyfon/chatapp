@@ -10,6 +10,12 @@ export class FileUploadModel {
   SUPABASE_BUCKET_SECRET = getEnvs().SUPABASE_BUCKET_SECRET;
 
   constructor() {
+    if (!this.SUPABASE_BUCKET_URL || !this.SUPABASE_BUCKET_SECRET) {
+      Sentry.captureMessage('Missing Supabase credentials', {
+        level: 'warning',
+        tags: { method: 'FileUploadModel constructor' },
+      });
+    }
     this.supabase = createClient(this.SUPABASE_BUCKET_URL, this.SUPABASE_BUCKET_SECRET);
   }
   /**
