@@ -1,5 +1,17 @@
 #!/usr/bin/env sh
 . "$(dirname "$0")/_/husky.sh"
 
+# Verify ggshield is installed
+if
+  ! command -v ggshield &
+  >/dev/null
+then
+  echo "ggshield is not installed. Install with 'pip install ggshield' or $(brew install ggshield) for macos or  see https://github.com/GitGuardian/ggshield"
+  exit 1
+fi
+
+# Scan the code for secrets
 ggshield secret scan repo chatapp
+
+# Run lint-staged
 npx lint-staged
