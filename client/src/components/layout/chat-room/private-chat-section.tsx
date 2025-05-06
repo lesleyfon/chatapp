@@ -172,7 +172,7 @@ export const PrivateMessageSection = ({ data }: { data: PrivateChatResultType[] 
             shift={true}
           >
             {allRoomMessages.map((data) => {
-              const isSender = data?.chat_user?.pk_user_id.toString() === String(userId);
+              const isSender = String(data?.chat_user?.pk_user_id ?? '') === String(userId);
               return (
                 <ConversationCard key={data?.private_messages.id} data={data} isSender={isSender} />
               );
