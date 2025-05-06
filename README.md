@@ -64,7 +64,7 @@ brew install ggshield
 
 ### Usage
 
-ggshield is integrated as a pre-commit hook. Before you push code to GitHub, ggshield will automatically scan your codebase for secrets. If any secrets are detected, the push will be blocked and you will be notified.
+ggshield is integrated as a pre-commit hook. Before you push code to GitHub, ggshield will automatically scan your codebase for secrets. If any secrets are detected, the push will be blocked, and you will be notified.
 
 You can also run a manual scan at any time:
 
