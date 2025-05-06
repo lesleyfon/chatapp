@@ -1,5 +1,5 @@
+import set from 'lodash/set';
 import { useEffect } from 'react';
-import { set } from 'react-hook-form';
 import type { Socket } from 'socket.io-client';
 import type { VListHandle } from 'virtua';
 import { usePrivateMessagesStore } from '../store/use-private-messages-store';
