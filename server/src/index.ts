@@ -67,7 +67,6 @@ class SocketServer {
     this.app = express();
 
     // Middlewares
-    this.app.use(express.json());
     this.app.use(express.json({ limit: '10mb' }));
     this.app.use(express.urlencoded({ extended: true, limit: '10mb' }));
     this.app.use(upload.single('file'));

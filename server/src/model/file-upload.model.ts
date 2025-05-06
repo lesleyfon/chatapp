@@ -45,6 +45,12 @@ export class FileUploadModel {
           });
           return null;
         }
+        Sentry.captureMessage('Image uploaded to private image bucket', {
+          tags: {
+            method: 'uploadImageToPrivateImageBucket',
+            filePath,
+          },
+        });
         return data;
       })
       .catch((error) => {
@@ -54,14 +60,6 @@ export class FileUploadModel {
           },
         });
         return null;
-      })
-      .finally(() => {
-        Sentry.captureMessage('Image uploaded to private image bucket', {
-          tags: {
-            method: 'uploadImageToPrivateImageBucket',
-            filePath,
-          },
-        });
       });
   }
 }
