@@ -895,7 +895,7 @@ export class QueryHandlers extends UserSchema {
    * @description Creates a new private chat entry.
    * @param {UserBase} sender - The sender of the chat.
    * @param {UserBase} receiver - The receiver of the chat.
-   * @returns {Promise<{ pk_private_chat_id: number; sender_id: number; recipient_id: number; created_at: Date; }>} - The created chat entry.
+   * @returns {Promise<{ pk_private_chat_id: number; user_a_id: number; user_b_id: number; created_at: Date; }>} - The created chat entry.
    */
   async createPrivateChatEntry(
     sender: {

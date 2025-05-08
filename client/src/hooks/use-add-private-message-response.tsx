@@ -35,8 +35,7 @@ export function useAddPrivateMessageResponse({
     if (!userId) return; // Maybe logout?
 
     socket?.on('add-private-message-response', (response: PrivateChatResultType) => {
-      const { sender_id: responseSenderId, recipient_id: responseRecipientId } =
-        response.private_chat;
+      const { user_a_id: responseSenderId, user_b_id: responseRecipientId } = response.private_chat;
 
       // since we are using optimistic UI updates to show the latest message sent, we can simply return early if the sender is the same as the current user
       if (responseSenderId === userId) return;

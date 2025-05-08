@@ -72,8 +72,8 @@ export function useSendMessage({ socket }: { socket: Socket | null }) {
       privateMessageOptimisticUIUpdate({
         private_chat: {
           pk_private_chat_id: crypto.randomUUID() as string,
-          sender_id: userId as string,
-          recipient_id: data.recipientId,
+          user_a_id: userId as string,
+          user_b_id: data.recipientId,
           created_at: new Date(created_at),
         },
         private_messages: {
