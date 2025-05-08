@@ -221,8 +221,8 @@ export class AppSocketBase extends QueryHandlers {
             privateChatsInsertResponse: {
               ...privateChatsInsertResponse,
               pk_private_chat_id: privateChatsInsertResponse.pk_private_chat_id,
-              sender_id: privateChatsInsertResponse.sender_id,
-              recipient_id: privateChatsInsertResponse.recipient_id,
+              user_a_id: privateChatsInsertResponse.user_a_id,
+              user_b_id: privateChatsInsertResponse.user_b_id,
             },
             senderId,
             message,
@@ -239,8 +239,8 @@ export class AppSocketBase extends QueryHandlers {
           const addPrivateMessageSocketResponse = {
             private_chat: {
               pk_private_chat_id: privateChatsInsertResponse.pk_private_chat_id,
-              sender_id: privateChatsInsertResponse.sender_id,
-              recipient_id: privateChatsInsertResponse.recipient_id,
+              user_a_id: privateChatsInsertResponse.user_a_id,
+              user_b_id: privateChatsInsertResponse.user_b_id,
               created_at: privateChatsInsertResponse.created_at,
             },
             chat_user: {

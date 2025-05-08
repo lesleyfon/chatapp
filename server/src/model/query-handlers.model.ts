@@ -1,6 +1,6 @@
 import { File } from 'node:buffer';
 import * as Sentry from '@sentry/node';
-import { and, asc, desc, eq, inArray, ne, or, sql } from 'drizzle-orm';
+import { asc, desc, eq, inArray, ne, or, sql } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 
 import { connectToDB } from '../db';
@@ -15,6 +15,7 @@ import type {
   TypedMessage,
 } from '../types';
 import { getEnvs } from '../utils/get-envs';
+import { ObfuscatedChatKey } from '../utils/obfuscated-chat-key';
 import { UserSchema } from './auth.models';
 
 export class QueryHandlers extends UserSchema {
@@ -331,6 +332,8 @@ export class QueryHandlers extends UserSchema {
           reason: 'Recipient does not exist',
         };
       }
+      const [sorted_user_a_id, sorted_user_b_id] = [userId, recipientId].sort((a, b) => a - b);
+      const chat_key = ObfuscatedChatKey.getObfuscatedChatKey(sorted_user_a_id, sorted_user_b_id);
 
       const [chatRoomMessages, privateUserDetails] = await Promise.all([
         this.db
@@ -338,8 +341,9 @@ export class QueryHandlers extends UserSchema {
             private_chat: {
               pk_chats_id: privateChats.pk_private_chat_id,
               createdAt: privateChats.created_at,
-              sender_id: privateChats.sender_id,
-              recipient_id: privateChats.recipient_id,
+              // TODO: we do not need this. We can use the chat_key instead
+              user_a_id: privateChats.user_a_id,
+              user_b_id: privateChats.user_b_id,
             },
             private_messages: {
               id: privateMessages.id,
@@ -353,18 +357,10 @@ export class QueryHandlers extends UserSchema {
             },
           })
           .from(privateChats)
-          .where(
-            or(
-              and(eq(privateChats.sender_id, userId), eq(privateChats.recipient_id, recipientId)),
-              and(eq(privateChats.recipient_id, userId), eq(privateChats.sender_id, recipientId)),
-            ),
-          )
+          .where(eq(privateChats.unique_chat_key, chat_key)) // gives a single unique chat key
           .leftJoin(
             privateMessages,
-            eq(
-              privateChats.pk_private_chat_id,
-              sql<number>`cast(${privateMessages.fk_private_chat_id} as int)`,
-            ),
+            eq(privateMessages.fk_unique_chat_key, privateChats.unique_chat_key), // joins on the unique chat key
           )
           .orderBy(asc(privateMessages.sent_at)),
         this.db
@@ -375,7 +371,7 @@ export class QueryHandlers extends UserSchema {
             created_at: user.created_at,
           })
           .from(user)
-          .where(or(eq(user.pk_user_id, userId), eq(user.pk_user_id, recipientId))),
+          .where(or(eq(user.pk_user_id, sorted_user_a_id), eq(user.pk_user_id, sorted_user_b_id))),
       ]);
 
       const usersMap = new Map([
@@ -391,8 +387,8 @@ export class QueryHandlers extends UserSchema {
           private_chat: {
             pk_private_chat_id: data.private_chat.pk_chats_id,
             created_at: data.private_chat.createdAt,
-            sender_id: data.private_chat.sender_id,
-            recipient_id: data.private_chat.recipient_id,
+            user_a_id: data.private_chat.user_a_id,
+            user_b_id: data.private_chat.user_b_id,
           },
           private_messages: data.private_messages,
           chat_user: chat_user
@@ -641,17 +637,18 @@ export class QueryHandlers extends UserSchema {
    * @returns {Promise<PrivateChatResult[]>} - An array of private chat rooms.
    */
   async getPrivateChatsForUser(userId: number) {
+    //TODO: UPDATE THIS TO USE unique_chat_key
     const latest_messages = await this.db.execute(sql`
       SELECT *
       FROM (
         SELECT DISTINCT ON (
-          LEAST(${privateChats.sender_id}, ${privateChats.recipient_id}),
-          GREATEST(${privateChats.sender_id}, ${privateChats.recipient_id})
+          LEAST(${privateChats.user_a_id}, ${privateChats.user_b_id}),
+          GREATEST(${privateChats.user_a_id}, ${privateChats.user_b_id})
         )
           json_build_object(
             'pk_private_chat_id', ${privateChats.pk_private_chat_id},
-            'sender_id', ${privateChats.sender_id},
-            'recipient_id', ${privateChats.recipient_id},
+            'user_a_id', ${privateChats.user_a_id},
+            'user_b_id', ${privateChats.user_b_id},
             'created_at', ${privateChats.created_at}
           ) AS "private_chat",
 
@@ -676,11 +673,11 @@ export class QueryHandlers extends UserSchema {
         LEFT JOIN ${privateChats}
           ON ${privateMessages.fk_private_chat_id} = ${privateChats.pk_private_chat_id}
         LEFT JOIN ${user}
-          ON ${user.pk_user_id} = ${userId}
-        WHERE ${privateChats.sender_id} = ${userId} OR ${privateChats.recipient_id} = ${userId}
+          ON ${user.pk_user_id} = ${userId} -- TODO: this is not correct. We need to join on the other user in the private chat
+        WHERE ${privateChats.user_a_id} = ${userId} OR ${privateChats.user_b_id} = ${userId}
         ORDER BY
-          LEAST(${privateChats.sender_id}, ${privateChats.recipient_id}),
-          GREATEST(${privateChats.sender_id}, ${privateChats.recipient_id}),
+          LEAST(${privateChats.user_a_id}, ${privateChats.user_b_id}),
+          GREATEST(${privateChats.user_a_id}, ${privateChats.user_b_id}),
           ${privateMessages.sent_at} DESC
       ) AS latest_messages
       ORDER BY latest_messages."_ordering_sent_at" DESC
@@ -704,46 +701,48 @@ export class QueryHandlers extends UserSchema {
     try {
       const latest_messages = await this.db.execute(sql`
       SELECT *
-      FROM (
-        SELECT DISTINCT ON (
-          LEAST(${privateChats.sender_id}, ${privateChats.recipient_id}),
-          GREATEST(${privateChats.sender_id}, ${privateChats.recipient_id})
-        )
-          json_build_object(
-            'pk_private_chat_id', ${privateChats.pk_private_chat_id},
-            'sender_id', ${privateChats.sender_id},
-            'recipient_id', ${privateChats.recipient_id},
-            'created_at', ${privateChats.created_at}
-          ) AS "private_chat",
-          json_build_object(
-            'pk_user_id', ${user.pk_user_id},
-            'name', ${user.name},
-            'email', ${user.email},
-            'created_at', ${user.created_at}
-          ) AS "chat_user",
-          json_build_object(
-            'id', ${privateMessages.id},
-            'fk_private_chat_id', ${privateMessages.fk_private_chat_id},
-            'fk_user_id', ${privateMessages.fk_user_id},
-            'message_text', ${privateMessages.message_text},
-            'sent_at', ${privateMessages.sent_at},
-            'timezone', ${privateMessages.timezone}
-          ) AS "private_messages",
-          ${privateMessages.sent_at} AS "_ordering_sent_at"  -- Hidden field for ordering
-        FROM ${privateMessages}
-        LEFT JOIN ${privateChats}
-          ON ${privateMessages.fk_private_chat_id} = ${privateChats.pk_private_chat_id}
-        LEFT JOIN ${user}
-          ON ${user.pk_user_id} = ${userId}
-        WHERE ${privateChats.sender_id} = ${userId} OR ${privateChats.recipient_id} = ${userId}
-        ORDER BY
-          LEAST(${privateChats.sender_id}, ${privateChats.recipient_id}),
-          GREATEST(${privateChats.sender_id}, ${privateChats.recipient_id}),
-          ${privateMessages.sent_at} DESC
-      ) AS latest_messages
-      ORDER BY latest_messages."_ordering_sent_at" DESC
-    `);
+        FROM (
+          SELECT DISTINCT ON (c.unique_chat_key)
+            json_build_object(
+              'pk_private_chat_id', c.pk_private_chat_id,
+              'user_a_id', c.user_a_id,
+              'user_b_id', c.user_b_id,
+              'created_at', c.created_at -- from private_chat table
+            ) AS private_chat,
+            json_build_object(
+              'pk_user_id', u_other.pk_user_id,
+              'name', u_other.name,
+              'email', u_other.email,
+              'created_at', u_other.created_at -- from chat_user table (u_other)
+            ) AS chat_user,
+            json_build_object(
+              'id', m.id,
+              'fk_private_chat_id', m.fk_private_chat_id,
+              'fk_user_id', m.fk_user_id,
+              'message_text', m.message_text,
+              'sent_at', m.sent_at, -- from private_messages table
+              'timezone', m.timezone
+            ) AS private_messages,
+            m.sent_at -- This is private_messages.sent_at, used for outer sort
+          FROM private_chat c
+          JOIN private_messages m
+            ON m.fk_unique_chat_key = c.unique_chat_key
+          LEFT JOIN chat_user u_other
+            ON u_other.pk_user_id = 
+              CASE 
+                WHEN c.user_a_id = ${userId} THEN c.user_b_id
+                ELSE c.user_a_id
+              END
+          WHERE c.user_a_id = ${userId} OR c.user_b_id = ${userId}
+          ORDER BY c.unique_chat_key, m.sent_at DESC 
+        ) as aggregatedData3
+        ORDER BY sent_at DESC;
 
+    `);
+      // return early
+      if (!latest_messages.rows || latest_messages.rows.length === 0) {
+        return [];
+      }
       const sortedPrivateChatData = latest_messages.rows.map((row) => ({
         private_chat: row.private_chat as PrivateChatResult['private_chat'],
         chat_user: row.chat_user as PrivateChatResult['chat_user'],
@@ -754,9 +753,9 @@ export class QueryHandlers extends UserSchema {
       const recipientIds = new Set(
         sortedPrivateChatData.map((data) =>
           // if the current user is the sender, then get the recipient id, otherwise get the sender id
-          data.private_chat.sender_id === userId
-            ? data.private_chat.recipient_id
-            : data.private_chat.sender_id,
+          data.private_chat.user_a_id === userId
+            ? data.private_chat.user_b_id
+            : data.private_chat.user_a_id,
         ),
       );
 
@@ -789,9 +788,9 @@ export class QueryHandlers extends UserSchema {
       const returnData = sortedPrivateChatData.map((data) => {
         // Get the ID of the other user in the private chat
         const otherPrivateChatUserId =
-          data.private_chat.sender_id === userId
-            ? data.private_chat.recipient_id
-            : data.private_chat.sender_id;
+          data.private_chat.user_a_id === userId
+            ? data.private_chat.user_b_id
+            : data.private_chat.user_a_id;
 
         // Get the recipient details from the allRecipients array
         const recipientDetails = allRecipientMap.get(otherPrivateChatUserId);
@@ -799,8 +798,8 @@ export class QueryHandlers extends UserSchema {
         return {
           private_chat: {
             pk_private_chat_id: data.private_chat.pk_private_chat_id,
-            sender_id: data.private_chat.sender_id,
-            recipient_id: data.private_chat.recipient_id,
+            user_a_id: data.private_chat.user_a_id,
+            user_b_id: data.private_chat.user_b_id,
             created_at: data.private_chat.created_at,
           },
           chat_user: {
@@ -921,15 +920,19 @@ export class QueryHandlers extends UserSchema {
     return await this.db
       .insert(privateChats)
       .values({
-        sender_id: sender.pk_user_id,
-        recipient_id: receiver.pk_user_id,
+        user_a_id: sender.pk_user_id,
+        user_b_id: receiver.pk_user_id,
         created_at: sender.created_at,
         timezone: sender.timezone,
+        unique_chat_key: ObfuscatedChatKey.getObfuscatedChatKey(
+          sender.pk_user_id,
+          receiver.pk_user_id,
+        ),
       })
       .returning({
         pk_private_chat_id: privateChats.pk_private_chat_id,
-        sender_id: privateChats.sender_id,
-        recipient_id: privateChats.recipient_id,
+        user_a_id: privateChats.user_a_id,
+        user_b_id: privateChats.user_b_id,
         created_at: privateChats.created_at,
         timezone: privateChats.timezone,
       });
@@ -955,8 +958,8 @@ export class QueryHandlers extends UserSchema {
   }: {
     privateChatsInsertResponse: {
       pk_private_chat_id: number;
-      sender_id: number;
-      recipient_id: number;
+      user_a_id: number;
+      user_b_id: number;
       created_at: string;
     };
     senderId: number;
@@ -997,6 +1000,10 @@ export class QueryHandlers extends UserSchema {
           image_url: null,
           sent_at: created_at,
           timezone: timezone,
+          fk_unique_chat_key: ObfuscatedChatKey.getObfuscatedChatKey(
+            privateChatsInsertResponse.user_a_id,
+            privateChatsInsertResponse.user_b_id,
+          ),
         })
         .returning({
           id: privateMessages.id,
