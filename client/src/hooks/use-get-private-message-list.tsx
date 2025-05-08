@@ -22,12 +22,12 @@ const isChatParticipant = (userId: string, chatUsers: string[]) => {
  * @returns true if the chats are the same, false otherwise
  */
 const doChatsMatch = (
-  chat1: { sender_id: string; recipient_id: string },
-  chat2: { sender_id: string; recipient_id: string },
+  chat1: { user_a_id: string; user_b_id: string },
+  chat2: { user_a_id: string; user_b_id: string },
 ) => {
   return (
-    (chat1.sender_id === chat2.sender_id && chat1.recipient_id === chat2.recipient_id) ||
-    (chat1.sender_id === chat2.recipient_id && chat1.recipient_id === chat2.sender_id)
+    (chat1.user_a_id === chat2.user_a_id && chat1.user_b_id === chat2.user_b_id) ||
+    (chat1.user_a_id === chat2.user_b_id && chat1.user_b_id === chat2.user_a_id)
   );
 };
 
@@ -40,10 +40,10 @@ function updateChatList({
   state: PrivateChatResultType;
   response: PrivateChatResultType;
 }) {
-  const responseSenderId = response.private_chat.sender_id,
-    responseRecipientId = response.private_chat.recipient_id,
-    stateSenderId = state.private_chat.sender_id,
-    stateRecipientId = state.private_chat.recipient_id;
+  const responseSenderId = response.private_chat.user_a_id ?? '',
+    responseRecipientId = response.private_chat.user_b_id ?? '',
+    stateSenderId = state.private_chat.user_a_id ?? '',
+    stateRecipientId = state.private_chat.user_b_id ?? '';
 
   const isChatUser = isChatParticipant(userId, [stateSenderId, stateRecipientId]);
 
@@ -67,6 +67,7 @@ function updateChatList({
 }
 
 export const useGetPrivateMessageList = ({ socket }: { socket: Socket | null }) => {
+  // TODO: use zustand to store the private room list
   const [privateRoomList, setPrivateRoomList] = useState<PrivateChatResultType[]>([]);
   const { userId } = useAuthStorage((state) => state);
 
@@ -74,8 +75,7 @@ export const useGetPrivateMessageList = ({ socket }: { socket: Socket | null }) 
     (response: PrivateChatResultType) => {
       if (!userId) return;
 
-      const { sender_id: responseSenderId, recipient_id: responseRecipientId } =
-        response.private_chat;
+      const { user_a_id: responseSenderId, user_b_id: responseRecipientId } = response.private_chat;
       const privateMessageUserIds = [responseSenderId, responseRecipientId];
 
       // Check if the user is a participant in the chat If not, return early
