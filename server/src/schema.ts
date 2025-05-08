@@ -43,14 +43,15 @@ export const user = pgTable('chat_user', {
  */
 export const privateChats = pgTable('private_chat', {
   pk_private_chat_id: serial('pk_private_chat_id').primaryKey(),
-  sender_id: integer('sender_id')
+  user_a_id: integer('user_a_id')
     .references(() => user.pk_user_id, { onDelete: 'cascade' })
     .notNull(),
-  recipient_id: integer('recipient_id')
+  user_b_id: integer('user_b_id')
     .references(() => user.pk_user_id, { onDelete: 'cascade' })
     .notNull(),
   created_at: timestamp('created_at', { mode: 'string' }).notNull(),
   timezone: text('timezone').notNull(),
+  unique_chat_key: text('unique_chat_key').notNull(),
 });
 
 export const chatMembers = pgTable(
@@ -92,6 +93,9 @@ export const privateMessages = pgTable('private_messages', {
     .notNull(),
   fk_user_id: integer('fk_user_id')
     .references(() => user.pk_user_id, { onDelete: 'cascade' })
+    .notNull(),
+  fk_unique_chat_key: text('fk_unique_chat_key')
+    .references(() => privateChats.unique_chat_key, { onDelete: 'cascade' })
     .notNull(),
   message_text: text('message_text'),
   image_name: text('image_name'),
