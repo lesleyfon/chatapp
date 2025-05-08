@@ -27,8 +27,8 @@ export type ChatRoomType = {
 
 export type PrivateChatType = {
   pk_private_chat_id: string; // Assuming UUID or similar
-  sender_id: string;
-  recipient_id: string;
+  user_a_id: string;
+  user_b_id: string;
   created_at: Date; // Assuming it's a timestamp
 };
 

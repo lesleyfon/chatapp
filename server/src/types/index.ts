@@ -1,5 +1,5 @@
-import type { File } from 'node:buffer';
 import type { Request } from 'express';
+import type { File } from 'node:buffer';
 
 export type RequestWithUser = Request & {
   user: Omit<UserInterface, 'created_at' | 'updated_at'>;
@@ -95,8 +95,8 @@ export interface ChatMembersType {
 
 export interface PrivateChatBase {
   pk_private_chat_id: number;
-  sender_id: number;
-  recipient_id: number;
+  user_a_id: number;
+  user_b_id: number;
   created_at: string;
 }
 
