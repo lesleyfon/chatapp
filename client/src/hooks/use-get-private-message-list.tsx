@@ -90,7 +90,7 @@ export const useGetPrivateMessageList = ({ socket }: { socket: Socket | null }) 
         );
 
         // If the user does not exist, update the chat list with the new message
-        if (userExist === false) {
+        if (!userExist) {
           return [updateChatList({ userId, response, state: response }), ...prevList];
         }
 
