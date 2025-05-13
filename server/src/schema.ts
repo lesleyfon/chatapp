@@ -94,7 +94,7 @@ export const privateMessages = pgTable('private_messages', {
   fk_user_id: integer('fk_user_id')
     .references(() => user.pk_user_id, { onDelete: 'cascade' })
     .notNull(),
-  fk_unique_chat_key: text('fk_unique_chat_key')
+  fk_private_chat_unique_key: text('fk_private_chat_unique_key')
     .references(() => privateChats.unique_chat_key, { onDelete: 'cascade' })
     .notNull(),
   message_text: text('message_text'),

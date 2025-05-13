@@ -360,7 +360,7 @@ export class QueryHandlers extends UserSchema {
           .where(eq(privateChats.unique_chat_key, chat_key)) // gives a single unique chat key
           .leftJoin(
             privateMessages,
-            eq(privateMessages.fk_unique_chat_key, privateChats.unique_chat_key), // joins on the unique chat key
+            eq(privateMessages.fk_private_chat_unique_key, privateChats.unique_chat_key), // joins on the unique chat key
           )
           .orderBy(asc(privateMessages.sent_at)),
         this.db
@@ -726,7 +726,7 @@ export class QueryHandlers extends UserSchema {
             m.sent_at -- This is private_messages.sent_at, used for outer sort
           FROM private_chat c
           JOIN private_messages m
-            ON m.fk_unique_chat_key = c.unique_chat_key
+            ON m.fk_private_chat_unique_key = c.unique_chat_key
           LEFT JOIN chat_user u_other
             ON u_other.pk_user_id = 
               CASE 
@@ -1000,7 +1000,7 @@ export class QueryHandlers extends UserSchema {
           image_url: null,
           sent_at: created_at,
           timezone: timezone,
-          fk_unique_chat_key: ObfuscatedChatKey.getObfuscatedChatKey(
+          fk_private_chat_unique_key: ObfuscatedChatKey.getObfuscatedChatKey(
             privateChatsInsertResponse.user_a_id,
             privateChatsInsertResponse.user_b_id,
           ),
