@@ -51,6 +51,7 @@ export function useSendMessage({ socket }: { socket: Socket | null }) {
       recipientId: string;
       imageFile?: HTMLImageElement | File | string;
       imageName?: string;
+      uniqueChatKey?: string;
     },
     socket: Socket | null,
   ) {
@@ -75,6 +76,7 @@ export function useSendMessage({ socket }: { socket: Socket | null }) {
           user_a_id: userId as string,
           user_b_id: data.recipientId,
           created_at: new Date(created_at),
+          unique_chat_key: data.uniqueChatKey as string,
         },
         private_messages: {
           id: crypto.randomUUID() as string,

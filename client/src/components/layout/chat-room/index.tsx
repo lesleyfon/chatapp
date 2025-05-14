@@ -39,10 +39,16 @@ function ChatRoomLayout() {
 
   if (recipientData?.msg && recipientData.msg.length >= 0 && recipientId) {
     const data = recipientData?.msg ?? [];
+    const uniqueChatKey = data[0].private_chat.unique_chat_key;
     return (
       <section className='overflow-y-hidden grid grid-rows-[12fr_1fr] md:grid-rows-[11fr_1fr]'>
         <PrivateMessageSection data={data ?? []} />
-        <ChatMessageInput chatId={recipientId} chatName={''} isPrivateChat />
+        <ChatMessageInput
+          isPrivateChat
+          chatName={''}
+          chatId={recipientId}
+          uniqueChatKey={uniqueChatKey}
+        />
       </section>
     );
   }

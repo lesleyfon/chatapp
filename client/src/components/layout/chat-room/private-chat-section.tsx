@@ -105,12 +105,13 @@ export const PrivateMessageSection = ({ data }: { data: PrivateChatResultType[] 
     vListRef: vListRef,
     recipientId: recipientId as string,
   });
-  const { allRoomMessages, setAllRoomMessages } = usePrivateMessagesStore();
+  const { allPrivateMessagesRoomMessages, setAllPrivateMessagesRoomMessages } =
+    usePrivateMessagesStore();
 
   useEffect(() => {
     if (data?.length === undefined || data?.length === 0) return;
-    setAllRoomMessages(data);
-  }, [data, setAllRoomMessages]);
+    setAllPrivateMessagesRoomMessages(data);
+  }, [data, setAllPrivateMessagesRoomMessages]);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {
@@ -127,7 +128,7 @@ export const PrivateMessageSection = ({ data }: { data: PrivateChatResultType[] 
         }
       }, 100);
     }
-  }, [allRoomMessages.length]); // Triggered after data is loaded
+  }, [allPrivateMessagesRoomMessages.length]); // Triggered after data is loaded
 
   const scrollAreaRef = useRef(null);
   const [scrollAreaHeight, setScrollAreaHeight] = useState(0);
@@ -164,16 +165,16 @@ export const PrivateMessageSection = ({ data }: { data: PrivateChatResultType[] 
 
   return (
     <ScrollArea className='flex-1 px-4' ref={scrollAreaRef}>
-      {allRoomMessages.length > 0 ? (
+      {allPrivateMessagesRoomMessages.length > 0 ? (
         <section>
           <VList
             style={{ height: scrollAreaHeight, flexDirection: 'column' }}
             ref={vListRef}
-            count={allRoomMessages.length}
+            count={allPrivateMessagesRoomMessages.length}
             onScroll={handleScroll}
             shift={true}
           >
-            {allRoomMessages.map((data) => {
+            {allPrivateMessagesRoomMessages.map((data) => {
               const isSender = String(data?.chat_user?.pk_user_id ?? '') === String(userId);
               return (
                 <ConversationCard key={data?.private_messages.id} data={data} isSender={isSender} />

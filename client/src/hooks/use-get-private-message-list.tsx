@@ -21,14 +21,8 @@ const isChatParticipant = (userId: string, chatUsers: string[]) => {
  * @param chat2 - The second chat
  * @returns true if the chats are the same, false otherwise
  */
-const doChatsMatch = (
-  chat1: { user_a_id: string; user_b_id: string },
-  chat2: { user_a_id: string; user_b_id: string },
-) => {
-  return (
-    (chat1.user_a_id === chat2.user_a_id && chat1.user_b_id === chat2.user_b_id) ||
-    (chat1.user_a_id === chat2.user_b_id && chat1.user_b_id === chat2.user_a_id)
-  );
+const doChatsMatch = (chat1: { unique_chat_key: string }, chat2: { unique_chat_key: string }) => {
+  return chat1.unique_chat_key === chat2.unique_chat_key;
 };
 
 function updateChatList({
