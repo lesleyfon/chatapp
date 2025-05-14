@@ -39,7 +39,22 @@ function ChatRoomLayout() {
 
   if (recipientData?.msg && recipientData.msg.length >= 0 && recipientId) {
     const data = recipientData?.msg ?? [];
-    const uniqueChatKey = data[0].private_chat.unique_chat_key;
+    const uniqueChatKey = data.length > 0 ? data[0].private_chat.unique_chat_key : undefined;
+    if (!uniqueChatKey) {
+      // biome-ignore lint/suspicious/noConsole: <explanation>
+      console.error('No unique chat key found');
+      return (
+        <div className='flex flex-col items-center justify-center h-full'>
+          <h2 className='flex items-center justify-center text-red-500 text-8xl'>
+            500 <TriangleAlert className='w-24 h-24' />
+          </h2>
+          <p className='flex items-center justify-center text-red-500 text-2xl'>
+            Internal Server Error
+          </p>
+        </div>
+      );
+    }
+
     return (
       <section className='overflow-y-hidden grid grid-rows-[12fr_1fr] md:grid-rows-[11fr_1fr]'>
         <PrivateMessageSection data={data ?? []} />

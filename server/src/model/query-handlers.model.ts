@@ -884,14 +884,11 @@ export class QueryHandlers extends UserSchema {
     return await this.db
       .insert(privateChats)
       .values({
-        user_a_id: sender.pk_user_id,
-        user_b_id: receiver.pk_user_id,
+        user_a_id: user_a_id,
+        user_b_id: user_b_id,
         created_at: sender.created_at,
         timezone: sender.timezone,
-        unique_chat_key: ObfuscatedChatKey.getObfuscatedChatKey(
-          sender.pk_user_id,
-          receiver.pk_user_id,
-        ),
+        unique_chat_key: ObfuscatedChatKey.getObfuscatedChatKey(user_a_id, user_b_id),
       })
       .returning({
         pk_private_chat_id: privateChats.pk_private_chat_id,
@@ -926,6 +923,7 @@ export class QueryHandlers extends UserSchema {
       user_a_id: number;
       user_b_id: number;
       created_at: string;
+      unique_chat_key: string;
     };
     senderId: number;
     message: string;
@@ -965,10 +963,7 @@ export class QueryHandlers extends UserSchema {
           image_url: null,
           sent_at: created_at,
           timezone: timezone,
-          fk_private_chat_unique_key: ObfuscatedChatKey.getObfuscatedChatKey(
-            privateChatsInsertResponse.user_a_id,
-            privateChatsInsertResponse.user_b_id,
-          ),
+          fk_private_chat_unique_key: privateChatsInsertResponse.unique_chat_key,
         })
         .returning({
           id: privateMessages.id,
