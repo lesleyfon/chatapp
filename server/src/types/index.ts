@@ -143,4 +143,5 @@ export type AddPrivateMessageType = {
   timezone: string;
   imageFile?: Buffer | File | string;
   imageName?: string;
+  uniquePrivateChatKey: string;
 };

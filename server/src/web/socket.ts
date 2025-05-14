@@ -5,6 +5,7 @@ import type { Socket, Server as SocketIOServer } from 'socket.io';
 import type { ExtendedError } from 'socket.io/dist/namespace';
 import { QueryHandlers } from '../model/query-handlers.model';
 import type { AddPrivateMessageType, CbType, ChatListType, JWT_RETURN_USER } from '../types';
+import { ObfuscatedChatKey } from '../utils/obfuscated-chat-key';
 
 export class AppSocketBase extends QueryHandlers {
   io: SocketIOServer;
@@ -192,13 +193,13 @@ export class AppSocketBase extends QueryHandlers {
     socket.on(
       'add-private-message',
       async ({
-        recipientId,
         senderId,
         message,
         imageFile,
         imageName,
         created_at,
         timezone,
+        uniquePrivateChatKey,
       }: AddPrivateMessageType) => {
         try {
           if (!created_at || !timezone) {
@@ -207,22 +208,53 @@ export class AppSocketBase extends QueryHandlers {
               'created_at and timezone cannot be empty',
             );
           }
+          const isNewPrivateChat = uniquePrivateChatKey.includes('new_private_chat');
+          let uniquePrivateChatKeyCopy = uniquePrivateChatKey;
+          const senderIdCopy = senderId;
+          const timezoneCopy = timezone;
+          const defaultChatEntry = {
+            created_at: created_at,
+            updated_at: created_at,
+            timezone: timezoneCopy,
+          };
+          let recipientId: number;
+          if (isNewPrivateChat) {
+            recipientId = Number.parseInt(
+              uniquePrivateChatKeyCopy.split('new_private_chat_').at(-1) as string,
+            );
+            uniquePrivateChatKeyCopy = ObfuscatedChatKey.getObfuscatedChatKey(
+              recipientId,
+              senderIdCopy,
+            );
+          } else {
+            // Fetch the existing chat entry
+            const privateChatEntry = await this.getPrivateChatEntryByUniquePrivateChatKey({
+              uniquePrivateChatKey: uniquePrivateChatKeyCopy,
+            });
+            if (privateChatEntry.length === 0) {
+              return this.emitAddMessageErrorResponse(null, 'Private chat not found');
+            }
+            const { user_a_id, user_b_id } = privateChatEntry[0];
+            recipientId = user_a_id === senderIdCopy ? user_b_id : user_a_id;
+          }
 
-          // Ensure that you do not return the passwords when selecting users
-          const [sender, receiver] = (
-            await this.getUserByUserIds({ userIdList: [senderId, recipientId] })
-          ).flat();
+          const [[sender], [receiver]] = await this.getUserByUserIds({
+            senderId: senderIdCopy,
+            recipientId,
+          });
 
-          const privateChatsInsertResponse = (
-            await this.createPrivateChatEntry(sender, receiver)
-          )[0];
-
+          const privateChatsInsertResponse = await this.createPrivateChatEntry(
+            { ...defaultChatEntry, pk_user_id: sender.pk_user_id },
+            { ...defaultChatEntry, pk_user_id: receiver.pk_user_id },
+            uniquePrivateChatKeyCopy,
+          );
+          const privateChatsInsertResponseObject = privateChatsInsertResponse[0];
           const response = await this.createPrivateMessage({
             privateChatsInsertResponse: {
-              ...privateChatsInsertResponse,
-              pk_private_chat_id: privateChatsInsertResponse.pk_private_chat_id,
-              user_a_id: privateChatsInsertResponse.user_a_id,
-              user_b_id: privateChatsInsertResponse.user_b_id,
+              ...privateChatsInsertResponseObject,
+              pk_private_chat_id: privateChatsInsertResponseObject.pk_private_chat_id,
+              user_a_id: privateChatsInsertResponseObject.user_a_id,
+              user_b_id: privateChatsInsertResponseObject.user_b_id,
             },
             senderId,
             message,
@@ -238,11 +270,12 @@ export class AppSocketBase extends QueryHandlers {
 
           const addPrivateMessageSocketResponse = {
             private_chat: {
-              pk_private_chat_id: privateChatsInsertResponse.pk_private_chat_id,
-              user_a_id: privateChatsInsertResponse.user_a_id,
-              user_b_id: privateChatsInsertResponse.user_b_id,
-              created_at: privateChatsInsertResponse.created_at,
-              unique_chat_key: privateChatsInsertResponse.unique_chat_key,
+              pk_private_chat_id: privateChatsInsertResponseObject.pk_private_chat_id,
+              user_a_id: privateChatsInsertResponseObject.user_a_id,
+              user_b_id: privateChatsInsertResponseObject.user_b_id,
+              created_at: privateChatsInsertResponseObject.created_at,
+              unique_chat_key: privateChatsInsertResponseObject.unique_chat_key,
+              isNewPrivateChat,
             },
             chat_user: {
               pk_user_id: sender.pk_user_id,
@@ -278,7 +311,7 @@ export class AppSocketBase extends QueryHandlers {
               timezone,
               imageName,
               created_at,
-              recipientId,
+              uniquePrivateChatKey,
               method: 'addPrivateMessage',
             },
           });
