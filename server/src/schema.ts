@@ -51,6 +51,7 @@ export const privateChats = pgTable('private_chat', {
     .notNull(),
   created_at: timestamp('created_at', { mode: 'string' }).notNull(),
   timezone: text('timezone').notNull(),
+  // TODO: rename this to unique_private_chat_key
   unique_chat_key: text('unique_chat_key').notNull().unique(),
 });
 
