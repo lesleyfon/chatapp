@@ -1,6 +1,6 @@
 import { File } from 'node:buffer';
 import * as Sentry from '@sentry/node';
-import { and, asc, desc, eq, inArray, ne, or, sql } from 'drizzle-orm';
+import { asc, desc, eq, inArray, ne, or, sql } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 
 import { connectToDB } from '../db';
@@ -315,13 +315,26 @@ export class QueryHandlers extends UserSchema {
    */
   async getPrivateRoomMessagesBySenderId({
     userId,
-    recipientId,
+    uniquePrivateChatKey,
   }: {
     userId: number;
-    recipientId: number;
+    uniquePrivateChatKey: string;
   }): Promise<PrivateMessageTypeWithoutImageFile[] | SQLErrorType> {
     try {
+      const privateChatData = await this.getPrivateChatEntryByUniquePrivateChatKey({
+        uniquePrivateChatKey,
+      });
+
       // If recipientId does not exist, return an error
+      if (privateChatData.length === 0) {
+        return {
+          error: true,
+          reason: 'Private chat does not exist',
+        };
+      }
+      const { user_a_id, user_b_id } = privateChatData[0];
+      const recipientId = userId === user_a_id ? user_b_id : user_a_id;
+
       const recipientExist = await this.db
         .select()
         .from(user)
@@ -332,8 +345,6 @@ export class QueryHandlers extends UserSchema {
           reason: 'Recipient does not exist',
         };
       }
-      const [sorted_user_a_id, sorted_user_b_id] = [userId, recipientId].sort((a, b) => a - b);
-      const chat_key = ObfuscatedChatKey.getObfuscatedChatKey(sorted_user_a_id, sorted_user_b_id);
 
       const [chatRoomMessages, privateUserDetails] = await Promise.all([
         this.db
@@ -357,7 +368,7 @@ export class QueryHandlers extends UserSchema {
             },
           })
           .from(privateChats)
-          .where(eq(privateChats.unique_chat_key, chat_key)) // gives a single unique chat key
+          .where(eq(privateChats.unique_chat_key, uniquePrivateChatKey)) // gives a single unique chat key
           .leftJoin(
             privateMessages,
             eq(privateMessages.fk_private_chat_unique_key, privateChats.unique_chat_key), // joins on the unique chat key
@@ -371,7 +382,7 @@ export class QueryHandlers extends UserSchema {
             created_at: user.created_at,
           })
           .from(user)
-          .where(or(eq(user.pk_user_id, sorted_user_a_id), eq(user.pk_user_id, sorted_user_b_id))),
+          .where(or(eq(user.pk_user_id, user_a_id), eq(user.pk_user_id, user_b_id))),
       ]);
 
       const usersMap = new Map([
@@ -615,8 +626,16 @@ export class QueryHandlers extends UserSchema {
           pk_user_id: user.pk_user_id,
           name: user.name,
           email: user.email,
+          unique_chat_key: privateChats.unique_chat_key,
         })
         .from(user)
+        .leftJoin(
+          privateChats,
+          or(
+            eq(privateChats.user_a_id, user.pk_user_id),
+            eq(privateChats.user_b_id, user.pk_user_id),
+          ),
+        )
         .where(ne(user.pk_user_id, userId));
 
       return allUsers;
@@ -806,7 +825,10 @@ export class QueryHandlers extends UserSchema {
    * @param {number[]} userIdList - An array of user IDs.
    * @returns {Promise<{ name: string | null; pk_user_id: number; email: string | null; password: string | null; created_at: Date; updated_at: Date; }[][]>} - An array of user details.
    */
-  async getUserByUserIds({ userIdList }: { userIdList: number[] }): Promise<
+  async getUserByUserIds({
+    senderId,
+    recipientId,
+  }: { senderId: number; recipientId: number }): Promise<
     {
       name: string | null;
       pk_user_id: number;
@@ -817,9 +839,10 @@ export class QueryHandlers extends UserSchema {
       timezone: string;
     }[][]
   > {
-    const userListPromises = userIdList.map((userId) =>
-      this.db.select().from(user).where(eq(user.pk_user_id, userId)),
-    );
+    const userListPromises = [
+      this.db.select().from(user).where(eq(user.pk_user_id, senderId)),
+      this.db.select().from(user).where(eq(user.pk_user_id, recipientId)),
+    ];
 
     const userListResponse = await Promise.all(userListPromises);
 
@@ -837,6 +860,41 @@ export class QueryHandlers extends UserSchema {
   }
 
   /**
+   * @description Retrieves a private chat entry by unique chat key.
+   * @param {string} uniqueChatKey - The unique chat key.
+   * @returns {Promise<{ pk_private_chat_id: number; user_a_id: number; user_b_id: number; created_at: Date; unique_chat_key: string }>} - The private chat entry.
+   */
+  async getPrivateChatEntryByUniquePrivateChatKey({
+    uniquePrivateChatKey,
+  }: { uniquePrivateChatKey: string }): Promise<
+    {
+      pk_private_chat_id: number;
+      user_a_id: number;
+      user_b_id: number;
+      created_at: string;
+      timezone: string;
+      unique_chat_key: string;
+    }[]
+  > {
+    try {
+      const privateChatEntry = await this.db
+        .select()
+        .from(privateChats)
+        .where(eq(privateChats.unique_chat_key, uniquePrivateChatKey));
+      return privateChatEntry;
+    } catch (err) {
+      if (typeof err === 'object' && Object.keys(err as object).length > 0) {
+        return {
+          ...err,
+          error: true,
+          reason: err.message,
+        };
+      }
+      return err;
+    }
+  }
+
+  /**
    * @description Creates a new private chat entry.
    * @param {UserBase} sender - The sender of the chat.
    * @param {UserBase} receiver - The receiver of the chat.
@@ -844,23 +902,18 @@ export class QueryHandlers extends UserSchema {
    */
   async createPrivateChatEntry(
     sender: {
-      name: string | null;
       pk_user_id: number;
-      email: string | null;
-      password: string | null;
       created_at: string;
       updated_at: string;
       timezone: string;
     },
     receiver: {
-      name: string | null;
       pk_user_id: number;
-      email: string | null;
-      password: string | null;
       created_at: string;
       updated_at: string;
       timezone: string;
     },
+    uniquePrivateChatKey: string,
   ): Promise<
     {
       pk_private_chat_id: number;
@@ -871,15 +924,15 @@ export class QueryHandlers extends UserSchema {
     }[]
   > {
     // If an entry already exists, return the existing entry
-    const [user_a_id, user_b_id] = [sender.pk_user_id, receiver.pk_user_id].sort((a, b) => a - b);
-    const existingEntry = await this.db
-      .select()
-      .from(privateChats)
-      .where(and(eq(privateChats.user_a_id, user_a_id), eq(privateChats.user_b_id, user_b_id)));
+    const existingEntry = await this.getPrivateChatEntryByUniquePrivateChatKey({
+      uniquePrivateChatKey,
+    });
 
     if (existingEntry.length > 0) {
       return existingEntry;
     }
+
+    const [user_a_id, user_b_id] = [sender.pk_user_id, receiver.pk_user_id].sort((a, b) => a - b);
 
     return await this.db
       .insert(privateChats)
