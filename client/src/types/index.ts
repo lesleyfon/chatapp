@@ -30,6 +30,7 @@ export type PrivateChatType = {
   user_a_id: string;
   user_b_id: string;
   created_at: Date; // Assuming it's a timestamp
+  unique_chat_key: string;
 };
 
 export type PrivateMessageType = {
@@ -125,6 +126,7 @@ export interface ChatInputProps {
   chatId: string;
   chatName: string;
   isPrivateChat?: boolean;
+  uniqueChatKey?: string;
 }
 
 export type ErrorMessagesProps = { errors: FieldErrors<MessageInputProps> };
