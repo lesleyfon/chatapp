@@ -1,7 +1,4 @@
-import dotenv from 'dotenv';
 import { v5 as uuidv5 } from 'uuid';
-
-dotenv.config();
 
 export class ObfuscatedChatKey {
   private static readonly NAMESPACE = process.env.OBFUSCATED_CHAT_KEY_NAMESPACE;
