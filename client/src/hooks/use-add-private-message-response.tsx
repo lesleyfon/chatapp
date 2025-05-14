@@ -16,7 +16,8 @@ export function useAddPrivateMessageResponse({
   socket: Socket | null;
   vListRef: React.RefObject<VListHandle> | null;
 }) {
-  const { allRoomMessages, setAllRoomMessages } = usePrivateMessagesStore();
+  const { allPrivateMessagesRoomMessages, setAllPrivateMessagesRoomMessages } =
+    usePrivateMessagesStore();
 
   /**
    * @description Optimistic UI update for private messages
@@ -27,7 +28,7 @@ export function useAddPrivateMessageResponse({
     if (String(response.chat_user.pk_user_id) === String(userId)) {
       set(responseCopy, 'chat_user.name', 'You');
     }
-    setAllRoomMessages([...allRoomMessages, responseCopy]);
+    setAllPrivateMessagesRoomMessages([...allPrivateMessagesRoomMessages, responseCopy]);
   }
   // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {
@@ -35,7 +36,9 @@ export function useAddPrivateMessageResponse({
     if (!userId) return; // Maybe logout?
 
     socket?.on('add-private-message-response', (response: PrivateChatResultType) => {
-      const { user_a_id: responseSenderId, user_b_id: responseRecipientId } = response.private_chat;
+      const responseSenderId = response.private_messages.fk_user_id;
+      const { user_a_id, user_b_id } = response.private_chat;
+      const responseRecipientId = user_a_id === responseSenderId ? user_b_id : user_a_id;
 
       // since we are using optimistic UI updates to show the latest message sent, we can simply return early if the sender is the same as the current user
       if (responseSenderId === userId) return;
@@ -59,8 +62,8 @@ export function useAddPrivateMessageResponse({
       if (String(response.chat_user.pk_user_id) === String(userId)) {
         set(responseCopy, 'chat_user.name', 'You');
       }
-      const updatedRoomMessages = [...allRoomMessages, responseCopy];
-      setAllRoomMessages(updatedRoomMessages);
+      const updatedRoomMessages = [...allPrivateMessagesRoomMessages, responseCopy];
+      setAllPrivateMessagesRoomMessages(updatedRoomMessages);
 
       if (vListRef?.current) {
         // Scroll to bottom after new message is added
@@ -73,6 +76,10 @@ export function useAddPrivateMessageResponse({
     return () => {
       socket?.off('add-private-message-response');
     };
-  }, [socket, userId, allRoomMessages, recipientId]);
-  return { allRoomMessages, setAllRoomMessages, privateMessageOptimisticUIUpdate };
+  }, [socket, userId, allPrivateMessagesRoomMessages, recipientId]);
+  return {
+    allPrivateMessagesRoomMessages,
+    setAllPrivateMessagesRoomMessages,
+    privateMessageOptimisticUIUpdate,
+  };
 }
