@@ -630,63 +630,6 @@ export class QueryHandlers extends UserSchema {
       return err;
     }
   }
-  /**
-   * @description [WIP]Retrieves private chat rooms for a specific user.
-   * Includes timezone information for proper message timestamp display.
-   * @param {number} userId - The ID of the user.
-   * @returns {Promise<PrivateChatResult[]>} - An array of private chat rooms.
-   */
-  async getPrivateChatsForUser(userId: number) {
-    //TODO: UPDATE THIS TO USE unique_chat_key
-    const latest_messages = await this.db.execute(sql`
-      SELECT *
-      FROM (
-        SELECT DISTINCT ON (
-          LEAST(${privateChats.user_a_id}, ${privateChats.user_b_id}),
-          GREATEST(${privateChats.user_a_id}, ${privateChats.user_b_id})
-        )
-          json_build_object(
-            'pk_private_chat_id', ${privateChats.pk_private_chat_id},
-            'user_a_id', ${privateChats.user_a_id},
-            'user_b_id', ${privateChats.user_b_id},
-            'created_at', ${privateChats.created_at}
-          ) AS "private_chat",
-
-          json_build_object(
-            'pk_user_id', ${user.pk_user_id},
-            'name', ${user.name},
-            'email', ${user.email},
-            'created_at', ${user.created_at}
-          ) AS "chat_user",
-
-          json_build_object(
-            'id', ${privateMessages.id},
-            'fk_private_chat_id', ${privateMessages.fk_private_chat_id},
-            'fk_user_id', ${privateMessages.fk_user_id},
-            'message_text', ${privateMessages.message_text},
-            'sent_at', ${privateMessages.sent_at}
-          ) AS "private_messages",
-
-          ${privateMessages.sent_at} AS "_ordering_sent_at"  -- Hidden field for ordering
-
-        FROM ${privateMessages}
-        LEFT JOIN ${privateChats}
-          ON ${privateMessages.fk_private_chat_id} = ${privateChats.pk_private_chat_id}
-        LEFT JOIN ${user}
-          ON ${user.pk_user_id} = ${userId} -- TODO: this is not correct. We need to join on the other user in the private chat
-        WHERE ${privateChats.user_a_id} = ${userId} OR ${privateChats.user_b_id} = ${userId}
-        ORDER BY
-          LEAST(${privateChats.user_a_id}, ${privateChats.user_b_id}),
-          GREATEST(${privateChats.user_a_id}, ${privateChats.user_b_id}),
-          ${privateMessages.sent_at} DESC
-      ) AS latest_messages
-      ORDER BY latest_messages."_ordering_sent_at" DESC
-    `);
-
-    const privateChatsData = latest_messages.rows;
-
-    return privateChatsData;
-  }
 
   /**
    * @description Retrieves the latest private chat messages sent by a user.
