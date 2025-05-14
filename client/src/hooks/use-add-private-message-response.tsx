@@ -1,7 +1,10 @@
 import set from 'lodash/set';
 import { useEffect } from 'react';
+import { useParams } from 'react-router';
+import { useNavigate } from 'react-router-dom';
 import type { Socket } from 'socket.io-client';
 import type { VListHandle } from 'virtua';
+
 import { usePrivateMessagesStore } from '../store/use-private-messages-store';
 import type { PrivateChatResultType } from '../types';
 
@@ -9,15 +12,15 @@ export function useAddPrivateMessageResponse({
   socket,
   userId,
   vListRef,
-  recipientId,
 }: {
   userId: string;
-  recipientId: string;
   socket: Socket | null;
   vListRef: React.RefObject<VListHandle> | null;
 }) {
+  const navigate = useNavigate();
   const { allPrivateMessagesRoomMessages, setAllPrivateMessagesRoomMessages } =
     usePrivateMessagesStore();
+  const { uniquePrivateChatKey } = useParams();
 
   /**
    * @description Optimistic UI update for private messages
@@ -36,27 +39,26 @@ export function useAddPrivateMessageResponse({
     if (!userId) return; // Maybe logout?
 
     socket?.on('add-private-message-response', (response: PrivateChatResultType) => {
+      const { user_a_id, user_b_id, unique_chat_key } = response.private_chat;
+      const isNewPrivateChat = response.private_chat?.isNewPrivateChat as boolean;
       const responseSenderId = response.private_messages.fk_user_id;
-      const { user_a_id, user_b_id } = response.private_chat;
       const responseRecipientId = user_a_id === responseSenderId ? user_b_id : user_a_id;
 
+      // If the unique chat key is not the same, return early and it is not a new private chat
+      if (uniquePrivateChatKey !== unique_chat_key && !isNewPrivateChat) return;
       // since we are using optimistic UI updates to show the latest message sent, we can simply return early if the sender is the same as the current user
-      if (responseSenderId === userId) return;
-
+      if (responseSenderId === userId) {
+        if (isNewPrivateChat) {
+          navigate(`/private-chats/${unique_chat_key}`);
+        }
+        return;
+      }
       const chatUser = new Set([responseSenderId, responseRecipientId]);
 
       // IF users are not the same, return early
       if (!chatUser.has(userId)) {
         return;
       }
-      // Prevent messages from showing in other users chats
-      const chatToUpdate =
-        (responseSenderId.toString() === userId.toString() &&
-          responseRecipientId.toString() === recipientId?.toString()) ||
-        (responseSenderId.toString() === recipientId?.toString() &&
-          responseRecipientId.toString() === userId.toString());
-
-      if (chatToUpdate === false) return;
 
       const responseCopy = { ...response };
       if (String(response.chat_user.pk_user_id) === String(userId)) {
@@ -76,7 +78,7 @@ export function useAddPrivateMessageResponse({
     return () => {
       socket?.off('add-private-message-response');
     };
-  }, [socket, userId, allPrivateMessagesRoomMessages, recipientId]);
+  }, [socket, userId, allPrivateMessagesRoomMessages, uniquePrivateChatKey]);
   return {
     allPrivateMessagesRoomMessages,
     setAllPrivateMessagesRoomMessages,

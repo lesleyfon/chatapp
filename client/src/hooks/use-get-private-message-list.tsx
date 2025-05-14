@@ -1,19 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { Socket } from 'socket.io-client';
 
+import { useParams } from 'react-router';
 import useAuthStorage from '../store/use-auth-storage';
 import type { PrivateChatResultType } from '../types/index';
-
-/**
- * Checks if the user is a participant in the chat
- * @param userId - The user's ID
- * @param chatUsers - An array of user IDs that are part of the chat
- * @returns true if the user is a participant in the chat, false otherwise
- */
-const isChatParticipant = (userId: string, chatUsers: string[]) => {
-  const chatUserSet = new Set(chatUsers);
-  return chatUserSet.has(userId);
-};
 
 /**
  * Checks if two chats are the same
@@ -28,25 +18,10 @@ const doChatsMatch = (chat1: { unique_chat_key: string }, chat2: { unique_chat_k
 function updateChatList({
   state,
   response,
-  userId,
-}: {
-  userId: string;
-  state: PrivateChatResultType;
-  response: PrivateChatResultType;
-}) {
-  const responseSenderId = response.private_chat.user_a_id ?? '',
-    responseRecipientId = response.private_chat.user_b_id ?? '',
-    stateSenderId = state.private_chat.user_a_id ?? '',
-    stateRecipientId = state.private_chat.user_b_id ?? '';
+}: { state: PrivateChatResultType; response: PrivateChatResultType }) {
+  const chatToUpdate = doChatsMatch(state.private_chat, response.private_chat);
 
-  const isChatUser = isChatParticipant(userId, [stateSenderId, stateRecipientId]);
-
-  const chatToUpdate =
-    (responseSenderId === stateSenderId && responseRecipientId === stateRecipientId) ||
-    (responseSenderId === stateRecipientId && responseRecipientId === stateSenderId);
-
-  if (isChatUser && chatToUpdate) {
-    // This Updates the most recent message sent
+  if (chatToUpdate) {
     return {
       ...state, // Create a new object
       private_messages: {
@@ -63,19 +38,17 @@ function updateChatList({
 export const useGetPrivateMessageList = ({ socket }: { socket: Socket | null }) => {
   // TODO: use zustand to store the private room list
   const [privateRoomList, setPrivateRoomList] = useState<PrivateChatResultType[]>([]);
+  const { uniquePrivateChatKey } = useParams();
   const { userId } = useAuthStorage((state) => state);
 
   const handleMessageUpdate = useCallback(
     (response: PrivateChatResultType) => {
       if (!userId) return;
 
-      const { user_a_id: responseSenderId, user_b_id: responseRecipientId } = response.private_chat;
-      const privateMessageUserIds = [responseSenderId, responseRecipientId];
+      const { unique_chat_key } = response.private_chat;
 
       // Check if the user is a participant in the chat If not, return early
-      if (!isChatParticipant(userId, privateMessageUserIds)) {
-        return;
-      }
+      if (uniquePrivateChatKey !== unique_chat_key) return;
 
       setPrivateRoomList((prevList) => {
         // Check if the new response is part of a message sent by an already existing chat.
@@ -85,7 +58,7 @@ export const useGetPrivateMessageList = ({ socket }: { socket: Socket | null }) 
 
         // If the user does not exist, update the chat list with the new message
         if (!userExist) {
-          return [updateChatList({ userId, response, state: response }), ...prevList];
+          return [updateChatList({ response, state: response }), ...prevList];
         }
 
         //Filter out the chat that has the same sender and recipient from the list. This is the response that we want to update.
@@ -94,10 +67,10 @@ export const useGetPrivateMessageList = ({ socket }: { socket: Socket | null }) 
         );
 
         // Update the chat list with the new message
-        return [updateChatList({ userId, response, state: response }), ...updatedList];
+        return [updateChatList({ response, state: response }), ...updatedList];
       });
     },
-    [userId],
+    [userId, uniquePrivateChatKey],
   );
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>

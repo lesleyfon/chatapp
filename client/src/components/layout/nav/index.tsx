@@ -11,6 +11,7 @@ import { Button } from '../../ui/button';
 import { useSidebar } from '../../ui/sidebar';
 import { MobileSidebar } from './mobile-nav';
 
+import useAuthStorage from '../../../store/use-auth-storage';
 import './style.css';
 
 export function NavActions(): ReactNode {
@@ -72,8 +73,8 @@ function Desktop({ roomName }: { roomName: string }): ReactNode {
 }
 
 function Header(): ReactNode {
-  const { chatId, recipientId } = useParams();
-
+  const { chatId, uniquePrivateChatKey } = useParams();
+  const { userId } = useAuthStorage((state) => state);
   const { isPending, data, isFetching } = useQuery({
     queryKey: [chatId], // Makes another call when chatId changes
     queryFn: chatId ? () => api.fetchChatListsDataFromChatId(chatId) : async () => null,
@@ -84,9 +85,9 @@ function Header(): ReactNode {
     data: recipientData,
     isFetching: isRecipientFetching,
   } = useQuery({
-    queryKey: [recipientId], // Makes another call when recipientId changes
-    queryFn: recipientId
-      ? () => api.fetchPrivateMessageListsDataFromRecipientId(recipientId)
+    queryKey: [uniquePrivateChatKey], // Makes another call when recipientId changes
+    queryFn: uniquePrivateChatKey
+      ? () => api.fetchPrivateMessageListsDataFromUniquePrivateChatKey(uniquePrivateChatKey)
       : async () => null,
   });
 
@@ -95,7 +96,7 @@ function Header(): ReactNode {
 
   if (
     (chatId && (isFetching || isPending)) ||
-    (recipientId && (isRecipientFetching || isRecipientPending))
+    (uniquePrivateChatKey && (isRecipientFetching || isRecipientPending))
   ) {
     return <Desktop roomName='FETCHING DATA' />;
   }
@@ -119,8 +120,11 @@ function Header(): ReactNode {
 
   if (recipientData && 'msg' in recipientData) {
     userName =
-      recipientData.msg.find((item) => Number(item.chat_user.pk_user_id) === Number(recipientId))
-        ?.chat_user?.name ?? 'Chat App';
+      recipientData.msg.find(
+        (item) =>
+          item.private_chat.unique_chat_key === uniquePrivateChatKey &&
+          item.private_messages.fk_user_id !== userId,
+      )?.chat_user?.name ?? 'Chat App';
   }
   const roomName = data?.msg?.[0]?.chats?.chat_name ?? userName;
 

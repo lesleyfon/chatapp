@@ -1,4 +1,3 @@
-import { useParams } from 'react-router';
 import type { Socket } from 'socket.io-client';
 
 import { getBrowserTimeZone, getCurrentDateTimeWithTimezone } from '../lib';
@@ -27,12 +26,10 @@ function convertGifToBase64(file: File): Promise<string> {
 
 export function useSendMessage({ socket }: { socket: Socket | null }) {
   const { userId } = useAuthStorage((state) => state);
-  const { recipientId } = useParams();
   useSocketAuth({ socket });
 
   const { privateMessageOptimisticUIUpdate } = useAddPrivateMessageResponse({
     socket,
-    recipientId: recipientId as string,
     userId: userId as string,
     vListRef: null,
   });
@@ -51,7 +48,7 @@ export function useSendMessage({ socket }: { socket: Socket | null }) {
       recipientId: string;
       imageFile?: HTMLImageElement | File | string;
       imageName?: string;
-      uniqueChatKey?: string;
+      uniquePrivateChatKey?: string;
     },
     socket: Socket | null,
   ) {
@@ -63,7 +60,6 @@ export function useSendMessage({ socket }: { socket: Socket | null }) {
     // If the socket is not connected, connect it
     if (socket.connected === false) socket.connect();
     // Convert Image to a urlObject
-
     // Only perform optimistic update for the sender
     if (userId !== data.recipientId) {
       let imageFile = data?.imageFile;
@@ -76,7 +72,7 @@ export function useSendMessage({ socket }: { socket: Socket | null }) {
           user_a_id: userId as string,
           user_b_id: data.recipientId,
           created_at: new Date(created_at),
-          unique_chat_key: data.uniqueChatKey as string,
+          unique_chat_key: data.uniquePrivateChatKey as string,
         },
         private_messages: {
           id: crypto.randomUUID() as string,
@@ -93,12 +89,14 @@ export function useSendMessage({ socket }: { socket: Socket | null }) {
           pk_user_id: userId as string,
           email: '',
           sender: userId as string,
+          unique_chat_key: data.uniquePrivateChatKey as string,
         },
         recipient: {
           name: '',
           pk_user_id: data.recipientId as string,
           email: '',
           sender: userId as string,
+          unique_chat_key: data.uniquePrivateChatKey as string,
         },
       });
     }
@@ -115,11 +113,12 @@ export function useSendMessage({ socket }: { socket: Socket | null }) {
     }
 
     socket.emit('add-private-message', {
-      recipientId: data.recipientId,
       senderId: userId,
-      message: data.message_text,
       imageFile: file,
+      recipientId: data.recipientId, // TODO: remove this. Since we are using the unique chat key to identify the chat
+      message: data.message_text,
       imageName: data?.imageName,
+      uniquePrivateChatKey: data?.uniquePrivateChatKey,
       created_at,
       timezone,
     });

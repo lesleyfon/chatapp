@@ -140,13 +140,14 @@ const PrivateChatList = memo(({ data }: { data: PrivateChatResultType[] }) => {
   return data.map((d) => {
     if (d.private_messages) {
       const isRecipient = d.recipient.pk_user_id === userId;
-      const targetUser = isRecipient ? d.chat_user : d.recipient;
+      const recipientId = isRecipient ? d.chat_user : d.recipient;
+      const uniquePrivateChatKey = d.private_chat.unique_chat_key;
 
       return (
         <SidebarItemLink
           data={{
-            to: `/private-chats/${targetUser.pk_user_id}`,
-            linkTitle: targetUser.name as string,
+            to: `/private-chats/${uniquePrivateChatKey}`,
+            linkTitle: recipientId.name as string,
             message: {
               message_text: d.private_messages.message_text as string,
               sent_at: d.private_messages.sent_at,

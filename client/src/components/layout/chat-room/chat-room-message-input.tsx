@@ -70,7 +70,8 @@ export function ChatMessageInput({
   chatId,
   chatName,
   isPrivateChat,
-  uniqueChatKey,
+  uniquePrivateChatKey,
+  recipientId,
 }: ChatInputProps) {
   const [svgUrl, setSvgUrl] = useState(DEFAULT_SVG_URL);
   const socket = useSocket();
@@ -155,11 +156,11 @@ export function ChatMessageInput({
       sendPrivateMessage(
         {
           message_text: data.message_text,
-          recipientId: chatId,
+          recipientId: recipientId as string,
           imageFile: message_img,
           imageName: message_img?.name,
           sent_at: getCurrentDateTimeWithTimezone(),
-          uniqueChatKey: uniqueChatKey,
+          uniquePrivateChatKey: uniquePrivateChatKey,
         },
         socket,
       );

@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import { useParams } from 'react-router';
 import { VList, type VListHandle } from 'virtua';
 
 import { useAddPrivateMessageResponse } from '../../../hooks/use-add-private-message-response';
@@ -97,13 +96,11 @@ export const PrivateMessageSection = ({ data }: { data: PrivateChatResultType[] 
   const vListRef = useRef<VListHandle>(null);
   const userId = useAuthStorage((state) => state.userId);
   const socket = useSocket();
-  const { recipientId } = useParams();
 
   useAddPrivateMessageResponse({
     socket,
     userId: userId as string,
     vListRef: vListRef,
-    recipientId: recipientId as string,
   });
   const { allPrivateMessagesRoomMessages, setAllPrivateMessagesRoomMessages } =
     usePrivateMessagesStore();
