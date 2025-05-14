@@ -242,6 +242,7 @@ export class AppSocketBase extends QueryHandlers {
               user_a_id: privateChatsInsertResponse.user_a_id,
               user_b_id: privateChatsInsertResponse.user_b_id,
               created_at: privateChatsInsertResponse.created_at,
+              unique_chat_key: privateChatsInsertResponse.unique_chat_key,
             },
             chat_user: {
               pk_user_id: sender.pk_user_id,
@@ -264,6 +265,7 @@ export class AppSocketBase extends QueryHandlers {
               email: receiver.email,
             },
           };
+
           this.io.emit('add-private-message-response', addPrivateMessageSocketResponse);
           // Emits an event to display the most recent message sent
           this.io.emit('get-latest-private-message-sent', addPrivateMessageSocketResponse);
@@ -281,6 +283,7 @@ export class AppSocketBase extends QueryHandlers {
             },
           });
 
+          // TODO: Make this an internal server error and create a new UI for the error.
           this.io.emit('add-private-message-error', {
             error: true,
             message: 'Failed to send message. Please try again.',
