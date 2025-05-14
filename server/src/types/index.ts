@@ -1,5 +1,5 @@
-import type { Request } from 'express';
 import type { File } from 'node:buffer';
+import type { Request } from 'express';
 
 export type RequestWithUser = Request & {
   user: Omit<UserInterface, 'created_at' | 'updated_at'>;
@@ -98,6 +98,7 @@ export interface PrivateChatBase {
   user_a_id: number;
   user_b_id: number;
   created_at: string;
+  unique_chat_key: string;
 }
 
 // Composite Types

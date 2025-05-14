@@ -1,6 +1,6 @@
 import { File } from 'node:buffer';
 import * as Sentry from '@sentry/node';
-import { asc, desc, eq, inArray, ne, or, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, ne, or, sql } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 
 import { connectToDB } from '../db';
@@ -341,9 +341,9 @@ export class QueryHandlers extends UserSchema {
             private_chat: {
               pk_chats_id: privateChats.pk_private_chat_id,
               createdAt: privateChats.created_at,
-              // TODO: we do not need this. We can use the chat_key instead
               user_a_id: privateChats.user_a_id,
               user_b_id: privateChats.user_b_id,
+              unique_chat_key: privateChats.unique_chat_key,
             },
             private_messages: {
               id: privateMessages.id,
@@ -389,6 +389,7 @@ export class QueryHandlers extends UserSchema {
             created_at: data.private_chat.createdAt,
             user_a_id: data.private_chat.user_a_id,
             user_b_id: data.private_chat.user_b_id,
+            unique_chat_key: data.private_chat.unique_chat_key,
           },
           private_messages: data.private_messages,
           chat_user: chat_user
@@ -650,6 +651,7 @@ export class QueryHandlers extends UserSchema {
               'pk_private_chat_id', c.pk_private_chat_id,
               'user_a_id', c.user_a_id,
               'user_b_id', c.user_b_id,
+              'unique_chat_key', c.unique_chat_key,
               'created_at', c.created_at -- from private_chat table
             ) AS private_chat,
             json_build_object(
@@ -737,13 +739,13 @@ export class QueryHandlers extends UserSchema {
 
         // Get the recipient details from the allRecipients array
         const recipientDetails = allRecipientMap.get(otherPrivateChatUserId);
-
         return {
           private_chat: {
             pk_private_chat_id: data.private_chat.pk_private_chat_id,
             user_a_id: data.private_chat.user_a_id,
             user_b_id: data.private_chat.user_b_id,
             created_at: data.private_chat.created_at,
+            unique_chat_key: data.private_chat.unique_chat_key,
           },
           chat_user: {
             pk_user_id: data.chat_user?.pk_user_id,
@@ -838,7 +840,7 @@ export class QueryHandlers extends UserSchema {
    * @description Creates a new private chat entry.
    * @param {UserBase} sender - The sender of the chat.
    * @param {UserBase} receiver - The receiver of the chat.
-   * @returns {Promise<{ pk_private_chat_id: number; user_a_id: number; user_b_id: number; created_at: Date; }>} - The created chat entry.
+   * @returns {Promise<{ pk_private_chat_id: number; user_a_id: number; user_b_id: number; created_at: Date; unique_chat_key: string }>} - The created chat entry.
    */
   async createPrivateChatEntry(
     sender: {
@@ -859,7 +861,26 @@ export class QueryHandlers extends UserSchema {
       updated_at: string;
       timezone: string;
     },
-  ) {
+  ): Promise<
+    {
+      pk_private_chat_id: number;
+      user_a_id: number;
+      user_b_id: number;
+      created_at: string;
+      unique_chat_key: string;
+    }[]
+  > {
+    // If an entry already exists, return the existing entry
+    const [user_a_id, user_b_id] = [sender.pk_user_id, receiver.pk_user_id].sort((a, b) => a - b);
+    const existingEntry = await this.db
+      .select()
+      .from(privateChats)
+      .where(and(eq(privateChats.user_a_id, user_a_id), eq(privateChats.user_b_id, user_b_id)));
+
+    if (existingEntry.length > 0) {
+      return existingEntry;
+    }
+
     return await this.db
       .insert(privateChats)
       .values({
@@ -878,6 +899,7 @@ export class QueryHandlers extends UserSchema {
         user_b_id: privateChats.user_b_id,
         created_at: privateChats.created_at,
         timezone: privateChats.timezone,
+        unique_chat_key: privateChats.unique_chat_key,
       });
   }
 
