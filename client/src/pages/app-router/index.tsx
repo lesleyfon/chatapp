@@ -43,7 +43,7 @@ export const AppRouter = createBrowserRouter([
             element: <ChatRoomLayout />, // OUTLET
           },
           {
-            path: '/private-chats/:recipientId',
+            path: '/private-chats/:uniquePrivateChatKey',
             element: <ChatRoomLayout />, // OUTLET
           },
         ],

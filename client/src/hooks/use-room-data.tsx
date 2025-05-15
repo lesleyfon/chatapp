@@ -4,10 +4,12 @@ import { useParams } from 'react-router-dom';
 import api from '../api/http-methods';
 
 function useRoomData() {
-  const { chatId, recipientId } = useParams<{
+  const { chatId, recipientId, uniquePrivateChatKey } = useParams<{
     chatId?: string;
     recipientId?: string;
+    uniquePrivateChatKey?: string;
   }>();
+  const isNewPrivateChat = uniquePrivateChatKey?.includes('new_private_chat');
 
   const {
     isPending: isChatPending,
@@ -16,18 +18,20 @@ function useRoomData() {
   } = useQuery({
     queryKey: [chatId],
     queryFn: chatId ? () => api.fetchChatListsDataFromChatId(chatId) : async () => null,
+    initialData: { msg: [] },
   });
 
   const { isPending: isRecipientPending, data: recipientData } = useQuery({
-    queryKey: [recipientId],
-    queryFn: recipientId
-      ? () => api.fetchPrivateMessageListsDataFromRecipientId(recipientId)
-      : async () => null,
+    queryKey: [uniquePrivateChatKey],
+    queryFn:
+      uniquePrivateChatKey && isNewPrivateChat === false
+        ? () => api.fetchPrivateMessageListsDataFromUniquePrivateChatKey(uniquePrivateChatKey)
+        : async () => null,
   });
 
   const loadingState = [
     chatId && (isChatFetching || isChatPending),
-    recipientId && isRecipientPending,
+    uniquePrivateChatKey && isRecipientPending,
   ].some(Boolean);
 
   return {
@@ -36,6 +40,8 @@ function useRoomData() {
     recipientData,
     chatId,
     recipientId,
+    uniquePrivateChatKey,
+    isNewPrivateChat,
   };
 }
 

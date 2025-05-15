@@ -66,7 +66,13 @@ const FileInputElement = ({
   );
 };
 
-export function ChatMessageInput({ chatId, chatName, isPrivateChat }: ChatInputProps) {
+export function ChatMessageInput({
+  chatId,
+  chatName,
+  isPrivateChat,
+  uniquePrivateChatKey,
+  recipientId,
+}: ChatInputProps) {
   const [svgUrl, setSvgUrl] = useState(DEFAULT_SVG_URL);
   const socket = useSocket();
   const { sendMessage, sendPrivateMessage } = useSendMessage({ socket });
@@ -150,10 +156,11 @@ export function ChatMessageInput({ chatId, chatName, isPrivateChat }: ChatInputP
       sendPrivateMessage(
         {
           message_text: data.message_text,
-          recipientId: chatId,
+          recipientId: recipientId as string,
           imageFile: message_img,
           imageName: message_img?.name,
           sent_at: getCurrentDateTimeWithTimezone(),
+          uniquePrivateChatKey: uniquePrivateChatKey,
         },
         socket,
       );

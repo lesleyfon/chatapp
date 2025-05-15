@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import { useParams } from 'react-router';
 import { VList, type VListHandle } from 'virtua';
 
 import { useAddPrivateMessageResponse } from '../../../hooks/use-add-private-message-response';
@@ -97,20 +96,19 @@ export const PrivateMessageSection = ({ data }: { data: PrivateChatResultType[] 
   const vListRef = useRef<VListHandle>(null);
   const userId = useAuthStorage((state) => state.userId);
   const socket = useSocket();
-  const { recipientId } = useParams();
 
   useAddPrivateMessageResponse({
     socket,
     userId: userId as string,
     vListRef: vListRef,
-    recipientId: recipientId as string,
   });
-  const { allRoomMessages, setAllRoomMessages } = usePrivateMessagesStore();
+  const { allPrivateMessagesRoomMessages, setAllPrivateMessagesRoomMessages } =
+    usePrivateMessagesStore();
 
   useEffect(() => {
     if (data?.length === undefined || data?.length === 0) return;
-    setAllRoomMessages(data);
-  }, [data, setAllRoomMessages]);
+    setAllPrivateMessagesRoomMessages(data);
+  }, [data, setAllPrivateMessagesRoomMessages]);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {
@@ -127,7 +125,7 @@ export const PrivateMessageSection = ({ data }: { data: PrivateChatResultType[] 
         }
       }, 100);
     }
-  }, [allRoomMessages.length]); // Triggered after data is loaded
+  }, [allPrivateMessagesRoomMessages.length]); // Triggered after data is loaded
 
   const scrollAreaRef = useRef(null);
   const [scrollAreaHeight, setScrollAreaHeight] = useState(0);
@@ -164,16 +162,16 @@ export const PrivateMessageSection = ({ data }: { data: PrivateChatResultType[] 
 
   return (
     <ScrollArea className='flex-1 px-4' ref={scrollAreaRef}>
-      {allRoomMessages.length > 0 ? (
+      {allPrivateMessagesRoomMessages.length > 0 ? (
         <section>
           <VList
             style={{ height: scrollAreaHeight, flexDirection: 'column' }}
             ref={vListRef}
-            count={allRoomMessages.length}
+            count={allPrivateMessagesRoomMessages.length}
             onScroll={handleScroll}
             shift={true}
           >
-            {allRoomMessages.map((data) => {
+            {allPrivateMessagesRoomMessages.map((data) => {
               const isSender = String(data?.chat_user?.pk_user_id ?? '') === String(userId);
               return (
                 <ConversationCard key={data?.private_messages.id} data={data} isSender={isSender} />

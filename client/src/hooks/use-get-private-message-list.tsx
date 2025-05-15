@@ -1,19 +1,16 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect } from 'react';
 import type { Socket } from 'socket.io-client';
-
+import { create } from 'zustand';
 import useAuthStorage from '../store/use-auth-storage';
 import type { PrivateChatResultType } from '../types/index';
 
-/**
- * Checks if the user is a participant in the chat
- * @param userId - The user's ID
- * @param chatUsers - An array of user IDs that are part of the chat
- * @returns true if the user is a participant in the chat, false otherwise
- */
-const isChatParticipant = (userId: string, chatUsers: string[]) => {
-  const chatUserSet = new Set(chatUsers);
-  return chatUserSet.has(userId);
-};
+export const usePrivateMessageListStore = create<{
+  privateRoomList: PrivateChatResultType[];
+  setPrivateRoomList: (privateRoomList: PrivateChatResultType[]) => void;
+}>((set) => ({
+  privateRoomList: [],
+  setPrivateRoomList: (privateRoomList) => set({ privateRoomList }),
+}));
 
 /**
  * Checks if two chats are the same
@@ -21,92 +18,49 @@ const isChatParticipant = (userId: string, chatUsers: string[]) => {
  * @param chat2 - The second chat
  * @returns true if the chats are the same, false otherwise
  */
-const doChatsMatch = (
-  chat1: { sender_id: string; recipient_id: string },
-  chat2: { sender_id: string; recipient_id: string },
-) => {
-  return (
-    (chat1.sender_id === chat2.sender_id && chat1.recipient_id === chat2.recipient_id) ||
-    (chat1.sender_id === chat2.recipient_id && chat1.recipient_id === chat2.sender_id)
-  );
+const doChatsMatch = (chat1: { unique_chat_key: string }, chat2: { unique_chat_key: string }) => {
+  return chat1.unique_chat_key === chat2.unique_chat_key;
 };
 
-function updateChatList({
-  state,
-  response,
-  userId,
-}: {
-  userId: string;
-  state: PrivateChatResultType;
-  response: PrivateChatResultType;
-}) {
-  const responseSenderId = response.private_chat.sender_id,
-    responseRecipientId = response.private_chat.recipient_id,
-    stateSenderId = state.private_chat.sender_id,
-    stateRecipientId = state.private_chat.recipient_id;
-
-  const isChatUser = isChatParticipant(userId, [stateSenderId, stateRecipientId]);
-
-  const chatToUpdate =
-    (responseSenderId === stateSenderId && responseRecipientId === stateRecipientId) ||
-    (responseSenderId === stateRecipientId && responseRecipientId === stateSenderId);
-
-  if (isChatUser && chatToUpdate) {
-    // This Updates the most recent message sent
-    return {
-      ...state, // Create a new object
-      private_messages: {
-        ...state.private_messages, // Preserve existing messages
-        message_text: response.private_messages.message_text, // Update the message
-        sent_at: response.private_messages.sent_at, // Update the sent_at
-      },
-    };
-  }
-
-  return state; // Return unchanged data if not the same chat
-}
-
 export const useGetPrivateMessageList = ({ socket }: { socket: Socket | null }) => {
-  const [privateRoomList, setPrivateRoomList] = useState<PrivateChatResultType[]>([]);
+  const { privateRoomList, setPrivateRoomList } = usePrivateMessageListStore();
   const { userId } = useAuthStorage((state) => state);
 
   const handleMessageUpdate = useCallback(
     (response: PrivateChatResultType) => {
+      // If the user is not logged in, return early
       if (!userId) return;
 
-      const { sender_id: responseSenderId, recipient_id: responseRecipientId } =
-        response.private_chat;
-      const privateMessageUserIds = [responseSenderId, responseRecipientId];
+      const { user_a_id, user_b_id } = response.private_chat;
+      const userIsParticipant = [user_a_id, user_b_id].some(
+        (id) => Number.parseInt(id, 10) === Number.parseInt(userId, 10),
+      );
+      // If the user is not a participant, return early
+      if (!userIsParticipant) return;
 
-      // Check if the user is a participant in the chat If not, return early
-      if (!isChatParticipant(userId, privateMessageUserIds)) {
+      // Check if the new response is part of a message sent by an already existing chat.
+      const privateChatExists = privateRoomList.some((chat) =>
+        doChatsMatch(chat.private_chat, response.private_chat),
+      );
+
+      // If the user does not exist, update the chat list with the new message
+      if (!privateChatExists) {
+        setPrivateRoomList([response, ...privateRoomList]);
         return;
       }
 
-      setPrivateRoomList((prevList) => {
-        // Check if the new response is part of a message sent by an already existing chat.
-        const userExist = prevList.some((chat) =>
-          doChatsMatch(chat.private_chat, response.private_chat),
-        );
-
-        // If the user does not exist, update the chat list with the new message
-        if (userExist === false) {
-          return [updateChatList({ userId, response, state: response }), ...prevList];
-        }
-
-        //Filter out the chat that has the same sender and recipient from the list. This is the response that we want to update.
-        const updatedList = prevList.filter(
-          (chat) => !doChatsMatch(chat.private_chat, response.private_chat),
-        );
-
-        // Update the chat list with the new message
-        return [updateChatList({ userId, response, state: response }), ...updatedList];
-      });
+      // Filter out the chat that has the same sender and recipient from the list. This is the response that we want to update.
+      const updatedList = privateRoomList.filter(
+        (chat) => !doChatsMatch(chat.private_chat, response.private_chat),
+      );
+      // Update the chat list with the new message
+      const newState = [response, ...updatedList];
+      setPrivateRoomList(newState);
     },
-    [userId],
+    [userId, privateRoomList, setPrivateRoomList],
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
+  // biome-ignore lint/correctness/useExhaustiveDependencies: privateRoomList and setPrivateRoomList are intentionally omitted to prevent unnecessary re-renders
   useEffect(() => {
     if (socket === null) return;
 

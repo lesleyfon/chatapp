@@ -2,14 +2,15 @@ import { create } from 'zustand';
 import type { PrivateChatResultType } from '../types';
 
 export const usePrivateMessagesStore = create<{
-  allRoomMessages: PrivateChatResultType[];
-  setAllRoomMessages: (msgs: PrivateChatResultType[]) => void;
+  allPrivateMessagesRoomMessages: PrivateChatResultType[];
+  setAllPrivateMessagesRoomMessages: (msgs: PrivateChatResultType[]) => void;
   optimisticUpdate: (msg: PrivateChatResultType) => void;
 }>()((set) => ({
-  allRoomMessages: [],
-  setAllRoomMessages: (msgs: PrivateChatResultType[]) => set({ allRoomMessages: msgs }),
+  allPrivateMessagesRoomMessages: [],
+  setAllPrivateMessagesRoomMessages: (msgs: PrivateChatResultType[]) =>
+    set({ allPrivateMessagesRoomMessages: msgs }),
   optimisticUpdate: (msg: PrivateChatResultType) =>
-    set((state: { allRoomMessages: PrivateChatResultType[] }) => ({
-      allRoomMessages: [...state.allRoomMessages, msg],
+    set((state: { allPrivateMessagesRoomMessages: PrivateChatResultType[] }) => ({
+      allPrivateMessagesRoomMessages: [...state.allPrivateMessagesRoomMessages, msg],
     })),
 }));

@@ -7,6 +7,7 @@ export type ChatUserType = {
   pk_user_id: string;
   email: string | null;
   sender?: string;
+  unique_chat_key: string | null;
 };
 
 interface ChatMessage {
@@ -27,9 +28,11 @@ export type ChatRoomType = {
 
 export type PrivateChatType = {
   pk_private_chat_id: string; // Assuming UUID or similar
-  sender_id: string;
-  recipient_id: string;
+  user_a_id: string;
+  user_b_id: string;
   created_at: Date; // Assuming it's a timestamp
+  unique_chat_key: string;
+  isNewPrivateChat?: boolean;
 };
 
 export type PrivateMessageType = {
@@ -125,6 +128,8 @@ export interface ChatInputProps {
   chatId: string;
   chatName: string;
   isPrivateChat?: boolean;
+  uniquePrivateChatKey?: string;
+  recipientId?: string;
 }
 
 export type ErrorMessagesProps = { errors: FieldErrors<MessageInputProps> };

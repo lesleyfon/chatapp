@@ -1,11 +1,11 @@
 import { TriangleAlert } from 'lucide-react';
-import { useLocation } from 'react-router';
 
 import type { ErrorResponse, SuccessResponse } from '../../../api/http-methods';
 import { SocketProvider } from '../../../context/socket.context';
 import useRoomData from '../../../hooks/use-room-data';
 import { Loader } from '../../loader';
 
+import useAuthStorage from '../../../store/use-auth-storage';
 import { ChatMessageInput } from './chat-room-message-input';
 import { ChatRoomSection } from './chat-room-section';
 import { PrivateMessageSection } from './private-chat-section';
@@ -15,9 +15,10 @@ function isErrorResponse(data: ErrorResponse | SuccessResponse): data is ErrorRe
 }
 
 function ChatRoomLayout() {
-  const { loadingState, chatData, recipientData, chatId, recipientId } = useRoomData();
-  const { pathname } = useLocation();
-  const isPrivateChatRoute = pathname.startsWith('/private-chats');
+  const { loadingState, chatData, recipientData, chatId, uniquePrivateChatKey, isNewPrivateChat } =
+    useRoomData();
+
+  const userId = useAuthStorage((state) => state.userId);
   if (loadingState) {
     return <Loader />;
   }
@@ -26,7 +27,7 @@ function ChatRoomLayout() {
     (chatData && isErrorResponse(chatData)) ||
     (recipientData && isErrorResponse(recipientData))
   ) {
-    const ERROR_MESSAGE = isPrivateChatRoute ? 'Private Chat Not Found' : 'Chat Room Not Found';
+    const ERROR_MESSAGE = uniquePrivateChatKey ? 'Private Chat Not Found' : 'Chat Room Not Found';
     return (
       <div className='flex flex-col items-center justify-center h-full'>
         <h2 className='flex items-center justify-center text-red-500 text-8xl'>
@@ -37,12 +38,51 @@ function ChatRoomLayout() {
     );
   }
 
-  if (recipientData?.msg && recipientData.msg.length >= 0 && recipientId) {
+  if (isNewPrivateChat && uniquePrivateChatKey) {
+    const recipientId = uniquePrivateChatKey.split('new_private_chat')[0];
+    return (
+      <section className='overflow-y-hidden grid grid-rows-[12fr_1fr] md:grid-rows-[11fr_1fr]'>
+        <PrivateMessageSection data={[]} />
+        <ChatMessageInput
+          isPrivateChat
+          chatName={''}
+          chatId={uniquePrivateChatKey}
+          uniquePrivateChatKey={uniquePrivateChatKey}
+          recipientId={recipientId}
+        />
+      </section>
+    );
+  }
+  if (recipientData?.msg && recipientData.msg.length >= 0 && uniquePrivateChatKey) {
+    const recipientId = recipientData?.msg.find((msg) => msg.chat_user.pk_user_id !== userId)
+      ?.chat_user?.pk_user_id;
     const data = recipientData?.msg ?? [];
+    const uniqueChatKey = data.length > 0 ? data[0].private_chat.unique_chat_key : undefined;
+    if (!uniqueChatKey) {
+      // biome-ignore lint/suspicious/noConsole: <explanation>
+      console.error('No unique chat key found');
+      return (
+        <div className='flex flex-col items-center justify-center h-full'>
+          <h2 className='flex items-center justify-center text-red-500 text-8xl'>
+            500 <TriangleAlert className='w-24 h-24' />
+          </h2>
+          <p className='flex items-center justify-center text-red-500 text-2xl'>
+            Internal Server Error
+          </p>
+        </div>
+      );
+    }
+
     return (
       <section className='overflow-y-hidden grid grid-rows-[12fr_1fr] md:grid-rows-[11fr_1fr]'>
         <PrivateMessageSection data={data ?? []} />
-        <ChatMessageInput chatId={recipientId} chatName={''} isPrivateChat />
+        <ChatMessageInput
+          isPrivateChat
+          chatName={''}
+          chatId={uniquePrivateChatKey}
+          uniquePrivateChatKey={uniquePrivateChatKey}
+          recipientId={recipientId}
+        />
       </section>
     );
   }

@@ -37,9 +37,15 @@ const PrivateChatroomLinkItem = ({
   chatroomName: ChatUserType;
   handleSelect: () => void;
 }) => {
+  // TODO: unique_chat_key is null, that means its a new private chat
+
   const { pk_user_id, name } = chatroomName;
+  let { unique_chat_key } = chatroomName;
+  if (!unique_chat_key) {
+    unique_chat_key = `new_private_chat_${pk_user_id}`;
+  }
   return (
-    <Link to={`/private-chats/${pk_user_id}`} key={pk_user_id}>
+    <Link to={`/private-chats/${unique_chat_key}`} key={pk_user_id}>
       <CommandItem
         value={pk_user_id}
         onSelect={handleSelect}

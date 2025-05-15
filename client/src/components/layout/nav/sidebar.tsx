@@ -3,17 +3,15 @@ import { Link, useLocation } from 'react-router-dom';
 
 import { SocketProvider } from '../../../context/socket.context';
 import { useGetChatList } from '../../../hooks/use-get-chat-list';
-import { useGetPrivateMessageList } from '../../../hooks/use-get-private-message-list';
+import {
+  useGetPrivateMessageList,
+  usePrivateMessageListStore,
+} from '../../../hooks/use-get-private-message-list';
 import { useMobileSidebar } from '../../../hooks/use-mobile-sidebar';
 import { useSocket } from '../../../hooks/use-socket';
 import { cn, timeDifference } from '../../../lib';
 import useAuthStorage from '../../../store/use-auth-storage';
-import type {
-  ChatListType,
-  PrivateChatResultType,
-  SidebarItemLinkProps,
-  SidebarProps,
-} from '../../../types';
+import type { ChatListType, SidebarItemLinkProps, SidebarProps } from '../../../types';
 import { SIDEBAR_CONSTANTS } from '../../constants';
 import { JoinRoom } from '../../join-room';
 import { SearchPrivateRoom } from '../../join-room/search-private-room';
@@ -131,22 +129,25 @@ const EmptyStateMessage = () => (
   </div>
 );
 
-const PrivateChatList = memo(({ data }: { data: PrivateChatResultType[] }) => {
+function PrivateChatList() {
   const userId = useAuthStorage((state) => state.userId);
-  if (data?.length === 0) {
+  const { privateRoomList } = usePrivateMessageListStore();
+
+  if (privateRoomList?.length === 0) {
     return <EmptyStateMessage />;
   }
 
-  return data.map((d) => {
+  return privateRoomList.map((d) => {
     if (d.private_messages) {
       const isRecipient = d.recipient.pk_user_id === userId;
-      const targetUser = isRecipient ? d.chat_user : d.recipient;
+      const recipientId = isRecipient ? d.chat_user : d.recipient;
+      const uniquePrivateChatKey = d.private_chat.unique_chat_key;
 
       return (
         <SidebarItemLink
           data={{
-            to: `/private-chats/${targetUser.pk_user_id}`,
-            linkTitle: targetUser.name as string,
+            to: `/private-chats/${uniquePrivateChatKey}`,
+            linkTitle: recipientId.name as string,
             message: {
               message_text: d.private_messages.message_text as string,
               sent_at: d.private_messages.sent_at,
@@ -158,7 +159,7 @@ const PrivateChatList = memo(({ data }: { data: PrivateChatResultType[] }) => {
       );
     }
   });
-});
+}
 PrivateChatList.displayName = 'PrivateChatList';
 
 const ChatRoomList = memo(({ data }: { data: ChatListType }) => {
@@ -192,8 +193,8 @@ ChatRoomList.displayName = 'ChatRoomList';
 function SidebarWrapper({ className }: SidebarProps) {
   const socket = useSocket();
 
+  useGetPrivateMessageList({ socket });
   const { chatroomList } = useGetChatList({ socket });
-  const { privateRoomList } = useGetPrivateMessageList({ socket });
   const { handleCloseDialogOnMobileView } = useMobileSidebar();
 
   return (
@@ -207,7 +208,7 @@ function SidebarWrapper({ className }: SidebarProps) {
             </ChannelsSection>
 
             <PrivateMessagesSection>
-              <PrivateChatList data={privateRoomList} />
+              <PrivateChatList />
             </PrivateMessagesSection>
           </nav>
         </section>

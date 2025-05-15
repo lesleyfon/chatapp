@@ -100,20 +100,23 @@ class HttpServer {
   /**
    * This TypeScript function fetches private message lists data from a recipient ID using an API call
    * with authorization.
-   * @param {string} recipientId - RecipientId is a string parameter that represents the unique
-   * identifier of the recipient for whom you want to fetch private message lists data.
-   * @returns The function `fetchPrivateMessageListsDataFromRecipientId` returns a Promise that resolves
+   * @param {string} uniquePrivateChatKey - The unique private chat key is a string parameter that represents the unique
+   * identifier of the private chat for whom you want to fetch private message lists data.
+   * @returns The function `fetchPrivateMessageListsDataFromUniquePrivateChatKey` returns a Promise that resolves
    * to an object with a property `msg` containing an array of `PrivateChatResultType` items.
    */
 
-  async fetchPrivateMessageListsDataFromRecipientId(
-    recipientId: string,
+  async fetchPrivateMessageListsDataFromUniquePrivateChatKey(
+    uniquePrivateChatKey: string,
   ): Promise<SuccessResponse | ErrorResponse> {
     this.setBearerTokenToHeader();
 
-    const response = await fetch(`${this.apiBasePath}/chats/private-message/${recipientId}`, {
-      headers: this.apiHeaders,
-    });
+    const response = await fetch(
+      `${this.apiBasePath}/chats/private-message/${uniquePrivateChatKey}`,
+      {
+        headers: this.apiHeaders,
+      },
+    );
     const data = (await response.json()) as SuccessResponse | ErrorResponse;
 
     return data;

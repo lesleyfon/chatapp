@@ -52,7 +52,7 @@ export class Chat extends AuthMiddlewareMixin(QueryHandlersMixin(BaseClass)) {
       this.getChatMessagesById,
     );
     this.router.get(
-      '/private-message/:recipientId',
+      '/private-message/:uniquePrivateChatKey',
       // @ts-expect-error desc
       this.authMiddleware.authenticateRequests,
       this.getPrivateMessagesById,
@@ -163,21 +163,21 @@ export class Chat extends AuthMiddlewareMixin(QueryHandlersMixin(BaseClass)) {
    */
   async getPrivateMessagesById(req: RequestWithUser, res: Response) {
     try {
-      const { recipientId } = req.params;
-      if (!recipientId) {
+      const { uniquePrivateChatKey } = req.params;
+      if (!uniquePrivateChatKey) {
         // Report Error to Sentry
         const eventId = Sentry.captureEvent({
           level: 'error',
           extra: {
-            messages: `Bad Request: recipientId is required: recipientId = ${recipientId}`,
-            recipientId,
+            messages: `Bad Request: recipientId is required: uniquePrivateChatKey = ${uniquePrivateChatKey}`,
+            uniquePrivateChatKey,
             userId: req.user.pk_user_id,
           },
         });
 
         return res.status(StatusCodes.BAD_REQUEST).json({
           error: true,
-          messages: `Bad Request: recipientId is required: recipientId = ${recipientId}`,
+          messages: `Bad Request: uniquePrivateChatKey is required: uniquePrivateChatKey = ${uniquePrivateChatKey}`,
           eventId,
         });
       }
@@ -185,7 +185,7 @@ export class Chat extends AuthMiddlewareMixin(QueryHandlersMixin(BaseClass)) {
       const userId = req.user.pk_user_id;
       const privateMessages = await this.queryHandlers.getPrivateRoomMessagesBySenderId({
         userId,
-        recipientId: Number.parseInt(recipientId),
+        uniquePrivateChatKey,
       });
 
       if ('error' in privateMessages) {
@@ -196,7 +196,7 @@ export class Chat extends AuthMiddlewareMixin(QueryHandlersMixin(BaseClass)) {
             message: `Bad Request: privateMessages error = ${privateMessages}`,
             privateMessages,
             userId,
-            recipientId,
+            uniquePrivateChatKey,
           },
         });
 
@@ -207,13 +207,13 @@ export class Chat extends AuthMiddlewareMixin(QueryHandlersMixin(BaseClass)) {
       }
 
       Sentry.captureMessage(
-        `Success: retrieved private messages for userId = ${userId} and recipientId = ${recipientId}`,
+        `Success: retrieved private messages for uniquePrivateChatKey = ${uniquePrivateChatKey}`,
         {
           level: 'info',
           extra: {
-            message: `Success: retrieved private messages for userId = ${userId} and recipientId = ${recipientId}`,
+            message: `Success: retrieved private messages for userId = ${userId} and uniquePrivateChatKey = ${uniquePrivateChatKey}`,
             userId,
-            recipientId,
+            uniquePrivateChatKey,
           },
         },
       );
@@ -223,7 +223,7 @@ export class Chat extends AuthMiddlewareMixin(QueryHandlersMixin(BaseClass)) {
       Sentry.captureException(error, {
         extra: {
           userId: req.user.pk_user_id,
-          recipientId: req.params.recipientId,
+          uniquePrivateChatKey: req.params.uniquePrivateChatKey,
           method: 'getPrivateMessagesById',
         },
       });

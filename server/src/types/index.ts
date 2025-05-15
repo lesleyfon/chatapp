@@ -95,9 +95,10 @@ export interface ChatMembersType {
 
 export interface PrivateChatBase {
   pk_private_chat_id: number;
-  sender_id: number;
-  recipient_id: number;
+  user_a_id: number;
+  user_b_id: number;
   created_at: string;
+  unique_chat_key: string;
 }
 
 // Composite Types
@@ -142,4 +143,30 @@ export type AddPrivateMessageType = {
   timezone: string;
   imageFile?: Buffer | File | string;
   imageName?: string;
+  uniquePrivateChatKey: string;
+};
+
+export type CreatePrivateMessageType = {
+  privateChatsInsertResponse: PrivateChatBase & { timezone: string };
+  senderId: number;
+  message: string;
+  created_at: string;
+  timezone: string;
+  imageFile?: Buffer | File | string;
+  imageName?: string;
+};
+
+export type InsertMessageToTableType = {
+  chatId: number;
+  user_id: number;
+  message: string;
+  sent_at: string;
+  timezone: string;
+};
+
+export type CreateNewChatroomRoomNameAndByUserIdReturnTypes = {
+  chats?: ChatBase[];
+  error?: boolean;
+  reason?: string;
+  userId?: number;
 };
