@@ -57,6 +57,13 @@
       "when": 1744992615933,
       "tag": "0007_melodic_zaran",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1747343221019,
+      "tag": "0008_cheerful_talos",
+      "breakpoints": true
     }
   ]
 }
