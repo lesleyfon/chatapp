@@ -8,15 +8,22 @@ import { chatMembers, chats, messages, privateChats, privateMessages, user } fro
 import type {
   ChatListType,
   ChatType,
+  CreateNewChatroomRoomNameAndByUserIdReturnTypes,
+  CreatePrivateMessageType,
+  InsertMessageToTableType,
   MessageType,
+  PrivateChatBase,
   PrivateChatResult,
   PrivateMessageTypeWithoutImageFile,
   SQLErrorType,
   TypedMessage,
+  UserBase,
 } from '../types';
 import { getEnvs } from '../utils/get-envs';
 import { ObfuscatedChatKey } from '../utils/obfuscated-chat-key';
 import { UserSchema } from './auth.models';
+
+type CreatePrivateChatEntryType = Omit<UserBase, 'name' | 'email'>;
 
 export class QueryHandlers extends UserSchema {
   db: NodePgDatabase;
@@ -56,13 +63,7 @@ export class QueryHandlers extends UserSchema {
     message,
     sent_at,
     timezone,
-  }: {
-    chatId: number;
-    user_id: number;
-    message: string;
-    sent_at: string;
-    timezone: string;
-  }) {
+  }: InsertMessageToTableType) {
     const [messageResponse] = await Promise.all([
       this.db
         .insert(messages)
@@ -512,16 +513,7 @@ export class QueryHandlers extends UserSchema {
     created_at: string;
     timezone: string;
     userId: number;
-  }): Promise<{
-    chats?: {
-      pk_chats_id: number;
-      chat_name: string | null;
-      createdAt: string;
-    }[];
-    error?: boolean;
-    reason?: string;
-    userId?: number;
-  }> {
+  }): Promise<CreateNewChatroomRoomNameAndByUserIdReturnTypes> {
     const { chatName, userId, created_at, timezone } = chatData;
     if (!this.isValidInput(chatName, userId)) {
       // TODO: ADD logging to the repo
@@ -826,22 +818,12 @@ export class QueryHandlers extends UserSchema {
    * @returns {Promise<{ name: string | null; pk_user_id: number; email: string | null; password: string | null; created_at: Date; updated_at: Date; }[][]>} - An array of user details.
    */
   async getUserByUserIds({
-    senderId,
-    recipientId,
-  }: { senderId: number; recipientId: number }): Promise<
-    {
-      name: string | null;
-      pk_user_id: number;
-      email: string | null;
-      password: string | null;
-      created_at: string;
-      updated_at: string;
-      timezone: string;
-    }[][]
-  > {
+    userAId,
+    userBId,
+  }: { userAId: number; userBId: number }): Promise<(UserBase & { timezone: string })[][]> {
     const userListPromises = [
-      this.db.select().from(user).where(eq(user.pk_user_id, senderId)),
-      this.db.select().from(user).where(eq(user.pk_user_id, recipientId)),
+      this.db.select().from(user).where(eq(user.pk_user_id, userAId)),
+      this.db.select().from(user).where(eq(user.pk_user_id, userBId)),
     ];
 
     const userListResponse = await Promise.all(userListPromises);
@@ -866,16 +848,7 @@ export class QueryHandlers extends UserSchema {
    */
   async getPrivateChatEntryByUniquePrivateChatKey({
     uniquePrivateChatKey,
-  }: { uniquePrivateChatKey: string }): Promise<
-    {
-      pk_private_chat_id: number;
-      user_a_id: number;
-      user_b_id: number;
-      created_at: string;
-      timezone: string;
-      unique_chat_key: string;
-    }[]
-  > {
+  }: { uniquePrivateChatKey: string }): Promise<(PrivateChatBase & { timezone: string })[]> {
     try {
       const privateChatEntry = await this.db
         .select()
@@ -901,28 +874,10 @@ export class QueryHandlers extends UserSchema {
    * @returns {Promise<{ pk_private_chat_id: number; user_a_id: number; user_b_id: number; created_at: Date; unique_chat_key: string }>} - The created chat entry.
    */
   async createPrivateChatEntry(
-    sender: {
-      pk_user_id: number;
-      created_at: string;
-      updated_at: string;
-      timezone: string;
-    },
-    receiver: {
-      pk_user_id: number;
-      created_at: string;
-      updated_at: string;
-      timezone: string;
-    },
+    sender: CreatePrivateChatEntryType & { timezone: string },
+    receiver: CreatePrivateChatEntryType & { timezone: string },
     uniquePrivateChatKey: string,
-  ): Promise<
-    {
-      pk_private_chat_id: number;
-      user_a_id: number;
-      user_b_id: number;
-      created_at: string;
-      unique_chat_key: string;
-    }[]
-  > {
+  ): Promise<PrivateChatBase[]> {
     // If an entry already exists, return the existing entry
     const existingEntry = await this.getPrivateChatEntryByUniquePrivateChatKey({
       uniquePrivateChatKey,
@@ -970,21 +925,7 @@ export class QueryHandlers extends UserSchema {
     timezone,
     imageFile,
     imageName,
-  }: {
-    privateChatsInsertResponse: {
-      pk_private_chat_id: number;
-      user_a_id: number;
-      user_b_id: number;
-      created_at: string;
-      unique_chat_key: string;
-    };
-    senderId: number;
-    message: string;
-    created_at: string;
-    timezone: string;
-    imageFile?: Buffer | File | string;
-    imageName?: string;
-  }) {
+  }: CreatePrivateMessageType) {
     try {
       let imageProcessingPromise: Promise<Buffer | null> | null = null;
 

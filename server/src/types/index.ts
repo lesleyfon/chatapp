@@ -145,3 +145,28 @@ export type AddPrivateMessageType = {
   imageName?: string;
   uniquePrivateChatKey: string;
 };
+
+export type CreatePrivateMessageType = {
+  privateChatsInsertResponse: PrivateChatBase & { timezone: string };
+  senderId: number;
+  message: string;
+  created_at: string;
+  timezone: string;
+  imageFile?: Buffer | File | string;
+  imageName?: string;
+};
+
+export type InsertMessageToTableType = {
+  chatId: number;
+  user_id: number;
+  message: string;
+  sent_at: string;
+  timezone: string;
+};
+
+export type CreateNewChatroomRoomNameAndByUserIdReturnTypes = {
+  chats?: ChatBase[];
+  error?: boolean;
+  reason?: string;
+  userId?: number;
+};
