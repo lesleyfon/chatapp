@@ -40,7 +40,7 @@ function updateChatList({
     };
   }
 
-  return { ...state }; // Return unchanged data if not the same chat
+  return state; // Return unchanged data if not the same chat
 }
 
 export const useGetPrivateMessageList = ({ socket }: { socket: Socket | null }) => {
