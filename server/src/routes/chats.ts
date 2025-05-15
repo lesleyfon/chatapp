@@ -169,7 +169,7 @@ export class Chat extends AuthMiddlewareMixin(QueryHandlersMixin(BaseClass)) {
         const eventId = Sentry.captureEvent({
           level: 'error',
           extra: {
-            messages: `Bad Request: recipientId is required: recipientId = ${uniquePrivateChatKey}`,
+            messages: `Bad Request: recipientId is required: uniquePrivateChatKey = ${uniquePrivateChatKey}`,
             uniquePrivateChatKey,
             userId: req.user.pk_user_id,
           },
