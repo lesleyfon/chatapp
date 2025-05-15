@@ -1,9 +1,17 @@
-import { useCallback, useEffect, useState } from 'react';
-import type { Socket } from 'socket.io-client';
-
+import { useCallback, useEffect } from 'react';
 import { useParams } from 'react-router';
+import type { Socket } from 'socket.io-client';
+import { create } from 'zustand';
 import useAuthStorage from '../store/use-auth-storage';
 import type { PrivateChatResultType } from '../types/index';
+
+export const usePrivateMessageListStore = create<{
+  privateRoomList: PrivateChatResultType[];
+  setPrivateRoomList: (privateRoomList: PrivateChatResultType[]) => void;
+}>((set) => ({
+  privateRoomList: [],
+  setPrivateRoomList: (privateRoomList) => set({ privateRoomList }),
+}));
 
 /**
  * Checks if two chats are the same
@@ -32,12 +40,11 @@ function updateChatList({
     };
   }
 
-  return state; // Return unchanged data if not the same chat
+  return { ...state }; // Return unchanged data if not the same chat
 }
 
 export const useGetPrivateMessageList = ({ socket }: { socket: Socket | null }) => {
-  // TODO: use zustand to store the private room list
-  const [privateRoomList, setPrivateRoomList] = useState<PrivateChatResultType[]>([]);
+  const { privateRoomList, setPrivateRoomList } = usePrivateMessageListStore();
   const { uniquePrivateChatKey } = useParams();
   const { userId } = useAuthStorage((state) => state);
 
@@ -46,31 +53,30 @@ export const useGetPrivateMessageList = ({ socket }: { socket: Socket | null }) 
       if (!userId) return;
 
       const { unique_chat_key } = response.private_chat;
-
       // Check if the user is a participant in the chat If not, return early
       if (uniquePrivateChatKey !== unique_chat_key) return;
 
-      setPrivateRoomList((prevList) => {
-        // Check if the new response is part of a message sent by an already existing chat.
-        const userExist = prevList.some((chat) =>
-          doChatsMatch(chat.private_chat, response.private_chat),
-        );
+      // Check if the new response is part of a message sent by an already existing chat.
+      const userExist = privateRoomList.some((chat) =>
+        doChatsMatch(chat.private_chat, response.private_chat),
+      );
 
-        // If the user does not exist, update the chat list with the new message
-        if (!userExist) {
-          return [updateChatList({ response, state: response }), ...prevList];
-        }
+      // If the user does not exist, update the chat list with the new message
+      if (!userExist) {
+        const updatedList = [updateChatList({ response, state: response }), ...privateRoomList];
+        setPrivateRoomList(updatedList);
+        return;
+      }
 
-        //Filter out the chat that has the same sender and recipient from the list. This is the response that we want to update.
-        const updatedList = prevList.filter(
-          (chat) => !doChatsMatch(chat.private_chat, response.private_chat),
-        );
-
-        // Update the chat list with the new message
-        return [updateChatList({ response, state: response }), ...updatedList];
-      });
+      // Filter out the chat that has the same sender and recipient from the list. This is the response that we want to update.
+      const updatedList = privateRoomList.filter(
+        (chat) => !doChatsMatch(chat.private_chat, response.private_chat),
+      );
+      const itemToUpdate = updateChatList({ response, state: response });
+      const newState = [itemToUpdate, ...updatedList];
+      setPrivateRoomList(newState);
     },
-    [userId, uniquePrivateChatKey],
+    [userId, uniquePrivateChatKey, privateRoomList, setPrivateRoomList],
   );
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>

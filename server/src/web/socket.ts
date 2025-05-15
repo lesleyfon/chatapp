@@ -239,8 +239,8 @@ export class AppSocketBase extends QueryHandlers {
           }
 
           const [[sender], [receiver]] = await this.getUserByUserIds({
-            senderId: senderIdCopy,
-            recipientId,
+            userAId: senderIdCopy,
+            userBId: recipientId,
           });
 
           const privateChatsInsertResponse = await this.createPrivateChatEntry(
@@ -255,6 +255,7 @@ export class AppSocketBase extends QueryHandlers {
               pk_private_chat_id: privateChatsInsertResponseObject.pk_private_chat_id,
               user_a_id: privateChatsInsertResponseObject.user_a_id,
               user_b_id: privateChatsInsertResponseObject.user_b_id,
+              timezone: timezoneCopy,
             },
             senderId,
             message,
