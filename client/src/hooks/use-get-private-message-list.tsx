@@ -33,7 +33,7 @@ export const useGetPrivateMessageList = ({ socket }: { socket: Socket | null }) 
 
       const { user_a_id, user_b_id } = response.private_chat;
       const userIsParticipant = [user_a_id, user_b_id].some(
-        (id) => Number.parseInt(id) === Number.parseInt(userId),
+        (id) => Number.parseInt(id, 10) === Number.parseInt(userId, 10),
       );
       // If the user is not a participant, return early
       if (!userIsParticipant) return;
@@ -60,7 +60,7 @@ export const useGetPrivateMessageList = ({ socket }: { socket: Socket | null }) 
     [userId, privateRoomList, setPrivateRoomList],
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: The socket and userId dependencies are handled manually
+  // biome-ignore lint/correctness/useExhaustiveDependencies: privateRoomList and setPrivateRoomList are intentionally omitted to prevent unnecessary re-renders
   useEffect(() => {
     if (socket === null) return;
 
