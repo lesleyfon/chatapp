@@ -40,9 +40,17 @@ export function useAddPrivateMessageResponse({
 
     socket?.on('add-private-message-response', (response: PrivateChatResultType) => {
       const { user_a_id, user_b_id, unique_chat_key } = response.private_chat;
-      const isNewPrivateChat = response.private_chat?.isNewPrivateChat as boolean;
+
+      const isNewPrivateChat = response.private_chat?.isNewPrivateChat;
+
       const responseSenderId = response.private_messages.fk_user_id;
       const responseRecipientId = user_a_id === responseSenderId ? user_b_id : user_a_id;
+
+      const privateChatUserIds = new Set([responseSenderId, responseRecipientId].map(String));
+      // If the user is not part of the private chat, return early
+      if (!privateChatUserIds.has(userId)) {
+        return;
+      }
 
       // If the unique chat key is not the same, return early and it is not a new private chat
       if (uniquePrivateChatKey !== unique_chat_key && !isNewPrivateChat) return;
@@ -51,12 +59,6 @@ export function useAddPrivateMessageResponse({
         if (isNewPrivateChat) {
           navigate(`/private-chats/${unique_chat_key}`);
         }
-        return;
-      }
-      const chatUser = new Set([responseSenderId, responseRecipientId]);
-
-      // IF users are not the same, return early
-      if (!chatUser.has(userId)) {
         return;
       }
 

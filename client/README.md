@@ -30,7 +30,7 @@ export default {
 - Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and add `plugin:react/recommended` & `plugin:react/jsx-runtime` to the `extends` list
 
 ### FEATURES TO ADD
-- [x] Ensure that you cant go to a chats room page if the chatroom does not exist
+- [X] Ensure that you cant go to a chats room page if the chatroom does not exist
 - [X] BUG: signing into a new session causes an infinite rerender.
 - [X] Create an error Page
 - [X] BUG: SORT MESSAGES BY DATE SENT NOT WORKING CORRECTLY
@@ -41,5 +41,5 @@ export default {
 - [X] FEAT: The replaceZWithCSTOffset function has a TODO comment about handling provided timezones but currently only handles UTC
 - [X] FEAT: The timeDifference function hardcodes "America/Chicago" timezone instead of using the user's timezone
 - [X] FEAT: The formatDate function also hardcodes "America/Chicago" timezone
+- [X] FEAT: Make message input a dropzone for images. [See this](https://supabase.com/ui/docs/nextjs/dropzone)
 - [ ] FEAT: Sanitize messages sent for XSS
-- [ ] FEAT: Make message input a dropzone for images. [See this](https://supabase.com/ui/docs/nextjs/dropzone)
