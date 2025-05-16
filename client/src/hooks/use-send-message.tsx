@@ -115,7 +115,7 @@ export function useSendMessage({ socket }: { socket: Socket | null }) {
     socket.emit('add-private-message', {
       senderId: userId,
       imageFile: file,
-      recipientId: data.recipientId, // TODO: remove this. Since we are using the unique chat key to identify the chat
+      recipientId: data.recipientId,
       message: data.message_text,
       imageName: data?.imageName,
       uniquePrivateChatKey: data?.uniquePrivateChatKey,

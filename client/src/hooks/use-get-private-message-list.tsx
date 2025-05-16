@@ -4,6 +4,9 @@ import { create } from 'zustand';
 import useAuthStorage from '../store/use-auth-storage';
 import type { PrivateChatResultType } from '../types/index';
 
+/**
+ * @description This store is used to store the latest private message list for a user.
+ */
 export const usePrivateMessageListStore = create<{
   privateRoomList: PrivateChatResultType[];
   setPrivateRoomList: (privateRoomList: PrivateChatResultType[]) => void;
@@ -18,14 +21,26 @@ export const usePrivateMessageListStore = create<{
  * @param chat2 - The second chat
  * @returns true if the chats are the same, false otherwise
  */
-const doChatsMatch = (chat1: { unique_chat_key: string }, chat2: { unique_chat_key: string }) => {
+const uniquePrivateChatKeyMatch = (
+  chat1: { unique_chat_key: string },
+  chat2: { unique_chat_key: string },
+) => {
   return chat1.unique_chat_key === chat2.unique_chat_key;
 };
 
+/**
+ * @description This hook is used to get the latest private message list for a user.
+ * @param socket - The socket
+ * @returns The private message list
+ */
 export const useGetPrivateMessageList = ({ socket }: { socket: Socket | null }) => {
   const { privateRoomList, setPrivateRoomList } = usePrivateMessageListStore();
   const { userId } = useAuthStorage((state) => state);
 
+  /**
+   * @description This function is used to update the private message list when a new message is sent.
+   * @param {PrivateChatResultType} response - The new private message list response from the server
+   */
   const handleMessageUpdate = useCallback(
     (response: PrivateChatResultType) => {
       // If the user is not logged in, return early
@@ -40,7 +55,7 @@ export const useGetPrivateMessageList = ({ socket }: { socket: Socket | null }) 
 
       // Check if the new response is part of a message sent by an already existing chat.
       const privateChatExists = privateRoomList.some((chat) =>
-        doChatsMatch(chat.private_chat, response.private_chat),
+        uniquePrivateChatKeyMatch(chat.private_chat, response.private_chat),
       );
 
       // If the user does not exist, update the chat list with the new message
@@ -51,11 +66,10 @@ export const useGetPrivateMessageList = ({ socket }: { socket: Socket | null }) 
 
       // Filter out the chat that has the same sender and recipient from the list. This is the response that we want to update.
       const updatedList = privateRoomList.filter(
-        (chat) => !doChatsMatch(chat.private_chat, response.private_chat),
+        (chat) => !uniquePrivateChatKeyMatch(chat.private_chat, response.private_chat),
       );
       // Update the chat list with the new message
-      const newState = [response, ...updatedList];
-      setPrivateRoomList(newState);
+      setPrivateRoomList([response, ...updatedList]);
     },
     [userId, privateRoomList, setPrivateRoomList],
   );
