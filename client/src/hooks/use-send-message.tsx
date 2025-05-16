@@ -135,7 +135,12 @@ export function useSendMessage({ socket }: { socket: Socket | null }) {
    * @param data - An object containing the chat ID, chat name, and the message text to be sent.
    */
   function sendMessage(
-    data: MessageInputProps & { chatId: string; chatName: string },
+    data: MessageInputProps & {
+      chatId: string;
+      chatName: string;
+      imageFile?: HTMLImageElement | File | string;
+      imageName?: string;
+    },
     socket: Socket | null,
   ) {
     // If the socket is null, return early
@@ -147,12 +152,14 @@ export function useSendMessage({ socket }: { socket: Socket | null }) {
     const timezone = getBrowserTimeZone();
 
     socket.emit('add-message', {
+      sent_at,
+      timezone,
+      senderId: userId,
       chatId: data.chatId,
       message: data.message_text,
       chatName: data.chatName,
-      senderId: userId,
-      sent_at,
-      timezone,
+      imageFile: data.imageFile,
+      imageName: data.imageName,
     });
   }
 

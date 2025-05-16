@@ -51,15 +51,14 @@ export default function ImageCard({
 }
 
 function ConversationCard({ data, isSender }: { data: PrivateChatResultType; isSender: boolean }) {
-  const { image_file, image_name, message_text, sent_at, timezone, image_url } =
-    data.private_messages;
-  const hasImage = image_file || image_url;
+  const { image_name, message_text, sent_at, timezone, image_url } = data.private_messages;
+  const hasImage = image_url && image_name;
   return (
     <>
       {hasImage ? (
         <ImageCard
           // Default to using the image_url if it exists, otherwise use the image_file
-          imageUrl={image_url ?? (image_file as string)}
+          imageUrl={image_url}
           imageName={image_name as string}
           isSender={isSender}
         />
@@ -68,7 +67,7 @@ function ConversationCard({ data, isSender }: { data: PrivateChatResultType; isS
         className={cn(
           'flex py-4',
           isSender ? 'justify-end' : 'justify-start',
-          hasImage ? 'py-0' : 'py-4',
+          hasImage ? 'pt-0' : 'pt-4',
         )}
       >
         <Card className={cn('max-w-[70%]', isSender ? 'bg-slate-300 text-black' : '')}>
