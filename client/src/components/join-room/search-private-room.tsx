@@ -37,8 +37,6 @@ const PrivateChatroomLinkItem = ({
   chatroomName: ChatUserType;
   handleSelect: () => void;
 }) => {
-  // TODO: unique_chat_key is null, that means its a new private chat
-
   const { pk_user_id, name } = chatroomName;
   let { unique_chat_key } = chatroomName;
   if (!unique_chat_key) {
