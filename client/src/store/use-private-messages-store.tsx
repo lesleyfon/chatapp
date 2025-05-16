@@ -1,6 +1,9 @@
 import { create } from 'zustand';
 import type { PrivateChatResultType } from '../types';
 
+/**
+ * @description This store is used to store all private message responses for a user.
+ */
 export const usePrivateMessagesStore = create<{
   allPrivateMessagesRoomMessages: PrivateChatResultType[];
   setAllPrivateMessagesRoomMessages: (msgs: PrivateChatResultType[]) => void;
