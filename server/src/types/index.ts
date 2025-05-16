@@ -61,15 +61,19 @@ export interface MessageBase {
   fk_user_id: number;
   sent_at: string;
   message_text: string | null;
+  image_name: string | null;
+  image_file?: ImageFile | null;
+  image_url: string | null;
 }
 
 export interface MessageType extends MessageBase {
   fk_chat_id: number;
 }
 
+export type ImageFile = Buffer | File | string | null;
 export interface PrivateMessageBase extends MessageBase {
   fk_private_chat_id: number;
-  image_file: Buffer | File | string | null;
+  image_file: ImageFile;
   image_name: string | null;
   timezone: string;
 }
@@ -162,6 +166,9 @@ export type InsertMessageToTableType = {
   message: string;
   sent_at: string;
   timezone: string;
+  imageFile?: ImageFile;
+  imageName?: string;
+  imageUrl?: string;
 };
 
 export type CreateNewChatroomRoomNameAndByUserIdReturnTypes = {

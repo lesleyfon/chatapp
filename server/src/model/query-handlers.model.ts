@@ -1,4 +1,3 @@
-import { File } from 'node:buffer';
 import * as Sentry from '@sentry/node';
 import { asc, desc, eq, inArray, ne, or, sql } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
@@ -57,43 +56,101 @@ export class QueryHandlers extends UserSchema {
    * console.log(messageResponse);
    * // Output: { id: '...', sent_at: '...', fk_user_id: 456, fk_chat_id: 123, message_text: 'Hello World' }
    */
-  async insertMessageToTable({
+  async insertMessageToChannelsTable({
     chatId,
     user_id,
     message,
     sent_at,
     timezone,
+    imageFile,
+    imageName,
   }: InsertMessageToTableType) {
-    const [messageResponse] = await Promise.all([
-      this.db
-        .insert(messages)
-        .values({
-          fk_chat_id: chatId,
-          fk_user_id: user_id,
-          message_text: message,
-          sent_at: sent_at,
-          timezone: timezone,
-        })
-        .returning({
-          id: messages.id,
-          sent_at: messages.sent_at,
-          fk_user_id: messages.fk_user_id,
-          fk_chat_id: messages.fk_chat_id,
-          message_text: messages.message_text,
-          timezone: messages.timezone,
-        }),
+    try {
+      let imageProcessingPromise: Promise<Buffer | null> | null = null;
+      if (imageFile) {
+        imageProcessingPromise = this.processImageForStorage(imageFile);
+      }
+      const [messageResponse, _, processedImage] = await Promise.all([
+        this.db
+          .insert(messages)
+          .values({
+            fk_chat_id: chatId,
+            fk_user_id: user_id,
+            message_text: message,
+            sent_at: sent_at,
+            timezone: timezone,
+            image_name: imageName,
+            image_file: null,
+          })
+          .returning({
+            id: messages.id,
+            sent_at: messages.sent_at,
+            fk_user_id: messages.fk_user_id,
+            fk_chat_id: messages.fk_chat_id,
+            message_text: messages.message_text,
+            timezone: messages.timezone,
+            image_name: messages.image_name,
+            image_url: messages.image_url,
+          }),
 
-      /** @description  Insert a new record into the chatMembers table, but only if that record does not already exist. */
-      this.db.execute(sql`
-        INSERT INTO ${chatMembers} (fk_chat_id, fk_user_id, added_at, timezone)
-        SELECT ${chatId}, ${user_id}, ${sent_at}, ${timezone}
-        WHERE NOT EXISTS (
-          SELECT 1 FROM ${chatMembers} WHERE fk_chat_id = ${chatId} AND fk_user_id = ${user_id}
+        /** @description  Insert a new record into the chatMembers table, but only if that record does not already exist. */
+        this.db.execute(sql`
+          INSERT INTO ${chatMembers} (fk_chat_id, fk_user_id, added_at, timezone)
+          SELECT ${chatId}, ${user_id}, ${sent_at}, ${timezone}
+          WHERE NOT EXISTS (
+            SELECT 1 FROM ${chatMembers} WHERE fk_chat_id = ${chatId} AND fk_user_id = ${user_id}
+          );
+        `),
+        imageProcessingPromise,
+      ]);
+
+      // If we have an image to upload, do it after DB insertion
+      if (processedImage && imageName) {
+        //TODO: look into streaming the image from the response to the client
+        const bucketResponse = await this.uploadImageToChannelChatImageBucket(
+          processedImage,
+          imageName,
         );
-      `),
-    ]);
 
-    return messageResponse;
+        if (bucketResponse) {
+          const { SUPABASE_BUCKET_URL } = getEnvs();
+          const fullFilePath = `${SUPABASE_BUCKET_URL}/storage/v1/object/public/${bucketResponse.fullPath}`;
+          // TODO: Make this Promise chaining(.then().catch()) and stream the image to the client
+          const updateResponse = await this.db
+            .update(messages)
+            .set({ image_url: fullFilePath })
+            .where(eq(messages.id, messageResponse[0].id))
+            .returning({
+              id: messages.id,
+              fk_chat_id: messages.fk_chat_id,
+              fk_user_id: messages.fk_user_id,
+              message_text: messages.message_text,
+              sent_at: messages.sent_at,
+              timezone: messages.timezone,
+              image_name: messages.image_name,
+              image_url: messages.image_url,
+            });
+
+          messageResponse[0].image_url = fullFilePath;
+          return updateResponse;
+        }
+      }
+
+      return messageResponse;
+    } catch (err) {
+      Sentry.captureException(err, {
+        tags: {
+          method: 'insertMessageToChannelsTable',
+          chatId,
+          user_id,
+        },
+      });
+      return {
+        error: true,
+        reason: err instanceof Error ? err.message : 'Unknown error',
+        details: err,
+      };
+    }
   }
 
   /**
@@ -247,6 +304,8 @@ export class QueryHandlers extends UserSchema {
             message_text: messages.message_text,
             sent_at: messages.sent_at,
             timezone: messages.timezone,
+            image_name: messages.image_name,
+            image_url: messages.image_url,
           },
           chat_user: {
             pk_user_id: user.pk_user_id,
@@ -279,9 +338,9 @@ export class QueryHandlers extends UserSchema {
           chat_user: data.chat_user,
         };
       });
+
       const typedMessages: TypedMessage[] = mappedMessages.map((msg) => ({
         ...msg,
-
         messages: msg.messages
           ? {
               ...msg.messages,
@@ -498,6 +557,7 @@ export class QueryHandlers extends UserSchema {
         chat_name: chats.chat_name,
         createdAt: chats.createdAt,
         timezone: chats.timezone,
+        pk_chats_id: chats.pk_chats_id,
       });
     return insertIntoChatResponse;
   }
@@ -931,18 +991,7 @@ export class QueryHandlers extends UserSchema {
 
       // Start image processing early
       if (imageFile) {
-        imageProcessingPromise = (async () => {
-          if (imageFile instanceof Buffer) {
-            return imageFile;
-          } else if (imageFile instanceof File) {
-            const arrayBuffer = await imageFile.arrayBuffer();
-            return Buffer.from(arrayBuffer);
-          } else if (typeof imageFile === 'string') {
-            const cleanBase64 = imageFile.replace(/^data:image\/\w+;base64,/, '');
-            return Buffer.from(cleanBase64, 'base64');
-          }
-          return null;
-        })();
+        imageProcessingPromise = this.processImageForStorage(imageFile);
       }
 
       // Start DB insertion immediately

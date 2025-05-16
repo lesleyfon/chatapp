@@ -79,6 +79,9 @@ export type MessageType = {
   message_text: string | null;
   sent_at: Date;
   timezone: string;
+  image_file?: string;
+  image_url?: string;
+  image_name?: string;
 };
 
 export type ChatMember = {
