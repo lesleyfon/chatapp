@@ -1,6 +1,12 @@
 import type { LucideIcon } from 'lucide-react';
 import type { DropzoneInputProps, DropzoneRootProps } from 'react-dropzone';
-import type { FieldErrors } from 'react-hook-form';
+import type { ControllerRenderProps, FieldErrors } from 'react-hook-form';
+import type { z } from 'zod';
+
+import type {
+  LoginFormSchemaValidation,
+  RegisterFormSchemaValidation,
+} from '../pages/authentication/validation';
 
 export type ChatUserType = {
   name: string | null;
@@ -140,3 +146,21 @@ export type FileInputElementProps = ErrorMessagesProps & {
   getRootProps: <T extends DropzoneRootProps>(props?: T) => T;
   getInputProps: <T extends DropzoneInputProps>(props?: T) => T;
 };
+
+export type FormSchema = z.infer<
+  typeof RegisterFormSchemaValidation | typeof LoginFormSchemaValidation
+>;
+export type NameType =
+  | keyof z.infer<typeof RegisterFormSchemaValidation>
+  | keyof z.infer<typeof LoginFormSchemaValidation>;
+export type Field = ControllerRenderProps<FormSchema>;
+
+export interface SharedAuthInputProps {
+  field: Field;
+  fd: {
+    name: NameType;
+    label: string;
+    type: string;
+    autoComplete: string;
+  };
+}

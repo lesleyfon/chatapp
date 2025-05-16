@@ -1,29 +1,10 @@
 import { Eye, EyeOff } from 'lucide-react';
 import { useCallback, useRef, useState } from 'react';
-import type { ControllerRenderProps } from 'react-hook-form';
-import type { z } from 'zod';
 
 import { Button } from '../../components/ui/button';
 import { FormControl } from '../../components/ui/form';
 import { Input } from '../../components/ui/input';
-import type { LoginFormSchemaValidation, RegisterFormSchemaValidation } from './validation';
-
-// TODO: move types into the types file
-type FormSchema = z.infer<typeof RegisterFormSchemaValidation | typeof LoginFormSchemaValidation>;
-type NameType =
-  | keyof z.infer<typeof RegisterFormSchemaValidation>
-  | keyof z.infer<typeof LoginFormSchemaValidation>;
-type Field = ControllerRenderProps<FormSchema>;
-
-interface SharedAuthInputProps {
-  field: Field;
-  fd: {
-    name: NameType;
-    label: string;
-    type: string;
-    autoComplete: string;
-  };
-}
+import type { SharedAuthInputProps } from '../../types';
 
 export function SharedAuthInput({ field, fd }: SharedAuthInputProps) {
   const [showPassword, setShowPassword] = useState(false);
