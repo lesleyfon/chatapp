@@ -4,7 +4,13 @@ import type { Socket, Server as SocketIOServer } from 'socket.io';
 
 import type { ExtendedError } from 'socket.io/dist/namespace';
 import { QueryHandlers } from '../model/query-handlers.model';
-import type { AddPrivateMessageType, CbType, ChatListType, JWT_RETURN_USER } from '../types';
+import type {
+  AddPrivateMessageType,
+  CbType,
+  ChatListType,
+  ImageFile,
+  JWT_RETURN_USER,
+} from '../types';
 import { ObfuscatedChatKey } from '../utils/obfuscated-chat-key';
 
 export class AppSocketBase extends QueryHandlers {
@@ -100,7 +106,7 @@ export class AppSocketBase extends QueryHandlers {
     }
   }
 
-  addMessageToRoom(socket: Socket) {
+  addMessageToChannelRoom(socket: Socket) {
     socket.on(
       'add-message',
       async (data: {
@@ -109,8 +115,10 @@ export class AppSocketBase extends QueryHandlers {
         senderId: string;
         sent_at: string;
         timezone: string;
+        imageFile?: ImageFile;
+        imageName?: string;
       }) => {
-        const { chatName, message, sent_at, timezone } = data;
+        const { chatName, message, sent_at, timezone, imageFile, imageName } = data;
         const token = socket.handshake.auth?.token;
         const user = (await this.decodeJWT(token)) as JWT_RETURN_USER;
 
@@ -131,59 +139,44 @@ export class AppSocketBase extends QueryHandlers {
 
         const userId = user.userId;
 
-        const chatExist = await this.selectChatByChatName(chatName);
+        let chatRoom = await this.selectChatByChatName(chatName);
 
-        if (chatExist.length === 0) {
+        if (chatRoom.length === 0) {
           // Create a new room
-          const insertIntoChatResponse = await this.createNewChatRoom({
+          chatRoom = await this.createNewChatRoom({
             chatName,
             created_at: sent_at,
             timezone: timezone,
           });
-
-          const chatId = insertIntoChatResponse[0].id;
-
-          // Add message to the message table - refactor this
-          const messageResponse = await this.insertMessageToTable({
-            chatId,
-            user_id: userId,
-            message,
-            sent_at,
-            timezone,
-          });
-          const chatExist = await this.selectChatByChatName(chatName);
-
-          const addMessageResponse = messageResponse.map((message) => ({
-            ...message,
-            chats: chatExist[0],
-          }));
-          const chatList = await this.getLatestChatRoomMessageSent(userId, chatId);
-
-          this.io.to(chatName).emit('get-latest-chat-room-message', chatList);
-          this.io.to(chatName).emit('add-message-response', addMessageResponse);
-          return;
         }
 
-        const chatId = chatExist[0].pk_chats_id;
-        const messageInsertResponse = await this.insertMessageToTable({
-          chatId,
+        const chatRoomId = chatRoom[0].pk_chats_id;
+        const messageInsertResponse = await this.insertMessageToChannelsTable({
+          chatId: chatRoomId,
           user_id: userId,
           message,
           sent_at,
           timezone,
+          imageFile: imageFile,
+          imageName: imageName,
         });
+
+        if ('error' in messageInsertResponse) {
+          return this.emitAddMessageErrorResponse(chatName, messageInsertResponse.reason);
+        }
+
         const messageResponse = await this.getMostRecentChatMessageSent(messageInsertResponse);
 
         // Emit message to other users
         const addMessageResponse = messageResponse.map((message) => ({
           ...message,
-          chats: chatExist[0],
+          chats: chatRoom[0],
         }));
 
         // Emitter
         this.io.to(chatName).emit('add-message-response', addMessageResponse);
 
-        const chatList = await this.getLatestChatRoomMessageSent(userId, chatId);
+        const chatList = await this.getLatestChatRoomMessageSent(userId, chatRoomId);
         this.io.to(chatName).emit('get-latest-chat-room-message', chatList);
       },
     );
@@ -328,7 +321,7 @@ export class AppSocketBase extends QueryHandlers {
   }
   socketEvents() {
     this.io.on('connection', (socket) => {
-      this.addMessageToRoom(socket);
+      this.addMessageToChannelRoom(socket);
       this.addPrivateMessage(socket);
       this.getAUserChatList(socket);
       this.getPrivateMessageList(socket);
