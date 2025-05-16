@@ -7,6 +7,7 @@ import { cn, formatDate } from '../../../lib';
 import useAuthStorage from '../../../store/use-auth-storage';
 import { usePrivateMessagesStore } from '../../../store/use-private-messages-store';
 import type { PrivateChatResultType } from '../../../types';
+import ImageCard from '../../image-card';
 import { Card, CardContent } from '../../ui/card';
 import { ScrollArea } from '../../ui/scroll-area';
 
@@ -21,33 +22,6 @@ export function getImageSrc(imageUrl: string, imageName?: string): string {
       ? imageNameParts.pop()
       : 'jpeg';
   return `data:image/${imageType};base64,${imageUrl}`;
-}
-
-export default function ImageCard({
-  imageUrl,
-  imageName,
-  isSender,
-}: {
-  imageUrl: string;
-  imageName: string;
-  isSender: boolean;
-}) {
-  const src = getImageSrc(imageUrl, imageName);
-
-  return (
-    <div className={cn('flex justify-end', isSender ? 'justify-end' : 'justify-start')}>
-      <div className='bg-white rounded-lg shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl dark:bg-gray-950 w-[400px] h-[250px]'>
-        <img
-          src={src}
-          alt={imageName}
-          width={400}
-          height={250}
-          className='object-contain'
-          style={{ aspectRatio: '400/250', objectFit: 'contain' }}
-        />
-      </div>
-    </div>
-  );
 }
 
 function ConversationCard({ data, isSender }: { data: PrivateChatResultType; isSender: boolean }) {

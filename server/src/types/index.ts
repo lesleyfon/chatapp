@@ -61,9 +61,9 @@ export interface MessageBase {
   fk_user_id: number;
   sent_at: string;
   message_text: string | null;
-  image_name: string | null;
+  image_name?: string | null;
   image_file?: ImageFile | null;
-  image_url: string | null;
+  image_url?: string | null;
 }
 
 export interface MessageType extends MessageBase {
@@ -170,7 +170,9 @@ export type InsertMessageToTableType = {
   imageName?: string;
   imageUrl?: string;
 };
-
+export type InsertMessageReturnType =
+  | { ok: true; data: MessageType[] }
+  | { ok: false; reason: string; details?: unknown };
 export type CreateNewChatroomRoomNameAndByUserIdReturnTypes = {
   chats?: ChatBase[];
   error?: boolean;

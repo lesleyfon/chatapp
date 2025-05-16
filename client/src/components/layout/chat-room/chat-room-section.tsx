@@ -6,13 +6,12 @@ import { cn, formatDate, scrollToBottom } from '../../../lib';
 import useAuthStorage from '../../../store/use-auth-storage';
 import { useChannelRoomMessages } from '../../../store/use-channel-room-messages-store';
 import type { RoomMessagesResponse } from '../../../types';
+import ImageCard from '../../image-card';
 import { Card, CardContent } from '../../ui/card';
 import { ScrollArea } from '../../ui/scroll-area';
-import ImageCard from './private-chat-section';
 
 //TODO: Consolidate this component with the PrivateMessageSection ConversationCard component
 function MessageCard({ msgData }: { msgData: RoomMessagesResponse }) {
-  if (!msgData?.messages?.message_text) return null;
   const {
     messages: { id, message_text, sent_at, timezone, image_url, image_name },
     chat_user: { sender, name },
@@ -20,7 +19,7 @@ function MessageCard({ msgData }: { msgData: RoomMessagesResponse }) {
 
   const isSender = sender === 'You';
   const hasImage = image_url && image_name;
-  const hasText = message_text;
+  const hasText = message_text && message_text.length > 0;
 
   return (
     <>
@@ -78,7 +77,7 @@ export const ChatRoomSection = () => {
     // If the socket is not connected, connect it
     if (socket.connected === false) socket.connect();
 
-    socket.on('add-message-response', (response: RoomMessagesResponse[]) => {
+    const handler = (response: RoomMessagesResponse[]) => {
       //If the current channel page id is not the same as the response chats id, return early
       if (chatroomId?.toString() !== response?.[0]?.chats?.pk_chats_id?.toString()) {
         return;
@@ -91,10 +90,12 @@ export const ChatRoomSection = () => {
         return responseData;
       });
       setCurrentChannelRoomMessages([...currentChannelRoomMessages, ...response]);
-    });
+    };
+
+    socket.on('add-message-response', handler);
 
     return () => {
-      socket?.off('add-message-response');
+      socket?.off('add-message-response', handler);
     };
   }, [chatroomId, socket, userId, currentChannelRoomMessages, setCurrentChannelRoomMessages]);
 

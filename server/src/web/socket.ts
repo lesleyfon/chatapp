@@ -118,66 +118,82 @@ export class AppSocketBase extends QueryHandlers {
         imageFile?: ImageFile;
         imageName?: string;
       }) => {
-        const { chatName, message, sent_at, timezone, imageFile, imageName } = data;
-        const token = socket.handshake.auth?.token;
-        const user = (await this.decodeJWT(token)) as JWT_RETURN_USER;
+        try {
+          const { chatName, message, sent_at, timezone, imageFile, imageName } = data;
+          const token = socket.handshake.auth?.token;
+          const user = (await this.decodeJWT(token)) as JWT_RETURN_USER;
 
-        this.io.socketsJoin(chatName);
+          this.io.socketsJoin(chatName);
 
-        if (!chatName) {
-          return this.emitAddMessageErrorResponse(null, 'Chat name cannot be empty');
-        }
-        if (!message) {
-          return this.emitAddMessageErrorResponse(chatName, 'Message cannot be empty');
-        }
-        if (!sent_at || !timezone) {
-          return this.emitAddMessageErrorResponse(chatName, 'sent_at and timezone cannot be empty');
-        }
-        if (!user) {
-          return this.emitAddMessageErrorResponse(chatName, 'User not found');
-        }
+          if (!chatName) {
+            return this.emitAddMessageErrorResponse(null, 'Chat name cannot be empty');
+          }
+          if (!message) {
+            return this.emitAddMessageErrorResponse(chatName, 'Message cannot be empty');
+          }
+          if (!sent_at || !timezone) {
+            return this.emitAddMessageErrorResponse(
+              chatName,
+              'sent_at and timezone cannot be empty',
+            );
+          }
+          if (!user) {
+            return this.emitAddMessageErrorResponse(chatName, 'User not found');
+          }
 
-        const userId = user.userId;
+          const userId = user.userId;
 
-        let chatRoom = await this.selectChatByChatName(chatName);
+          let chatRoom = await this.selectChatByChatName(chatName);
 
-        if (chatRoom.length === 0) {
-          // Create a new room
-          chatRoom = await this.createNewChatRoom({
-            chatName,
-            created_at: sent_at,
-            timezone: timezone,
+          if (chatRoom.length === 0) {
+            // Create a new room
+            chatRoom = await this.createNewChatRoom({
+              chatName,
+              created_at: sent_at,
+              timezone: timezone,
+            });
+          }
+
+          const chatRoomId = chatRoom[0].pk_chats_id;
+          const messageInsertResponse = await this.insertMessageToChannelsTable({
+            chatId: chatRoomId,
+            user_id: userId,
+            message,
+            sent_at,
+            timezone,
+            imageFile: imageFile,
+            imageName: imageName,
           });
+
+          if ('error' in messageInsertResponse) {
+            return this.emitAddMessageErrorResponse(chatName, messageInsertResponse.reason);
+          }
+
+          const messageResponse = await this.getMostRecentChatMessageSent(messageInsertResponse);
+
+          // Emit message to other users
+          const addMessageResponse = messageResponse.map((message) => ({
+            ...message,
+            chats: chatRoom[0],
+          }));
+
+          // Emitter
+          this.io.to(chatName).emit('add-message-response', addMessageResponse);
+
+          const chatList = await this.getLatestChatRoomMessageSent(userId, chatRoomId);
+          this.io.to(chatName).emit('get-latest-chat-room-message', chatList);
+        } catch (error) {
+          const { chatName, sent_at, timezone } = data;
+          Sentry.captureException(error, {
+            extra: {
+              chatName,
+              sent_at,
+              timezone,
+              method: 'addMessageToChannelRoom',
+            },
+          });
+          this.emitAddMessageErrorResponse(chatName, 'Failed to send message. Please try again.');
         }
-
-        const chatRoomId = chatRoom[0].pk_chats_id;
-        const messageInsertResponse = await this.insertMessageToChannelsTable({
-          chatId: chatRoomId,
-          user_id: userId,
-          message,
-          sent_at,
-          timezone,
-          imageFile: imageFile,
-          imageName: imageName,
-        });
-
-        if ('error' in messageInsertResponse) {
-          return this.emitAddMessageErrorResponse(chatName, messageInsertResponse.reason);
-        }
-
-        const messageResponse = await this.getMostRecentChatMessageSent(messageInsertResponse);
-
-        // Emit message to other users
-        const addMessageResponse = messageResponse.map((message) => ({
-          ...message,
-          chats: chatRoom[0],
-        }));
-
-        // Emitter
-        this.io.to(chatName).emit('add-message-response', addMessageResponse);
-
-        const chatList = await this.getLatestChatRoomMessageSent(userId, chatRoomId);
-        this.io.to(chatName).emit('get-latest-chat-room-message', chatList);
       },
     );
   }

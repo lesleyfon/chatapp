@@ -70,29 +70,32 @@ export class QueryHandlers extends UserSchema {
       if (imageFile) {
         imageProcessingPromise = this.processImageForStorage(imageFile);
       }
-      const [messageResponse, _, processedImage] = await Promise.all([
-        this.db
-          .insert(messages)
-          .values({
-            fk_chat_id: chatId,
-            fk_user_id: user_id,
-            message_text: message,
-            sent_at: sent_at,
-            timezone: timezone,
-            image_name: imageName,
-            image_file: null,
-          })
-          .returning({
-            id: messages.id,
-            sent_at: messages.sent_at,
-            fk_user_id: messages.fk_user_id,
-            fk_chat_id: messages.fk_chat_id,
-            message_text: messages.message_text,
-            timezone: messages.timezone,
-            image_name: messages.image_name,
-            image_url: messages.image_url,
-          }),
 
+      const [messageResponse, _, processedImage] = await Promise.all([
+        this.db.transaction(async (tx) => {
+          const [msg] = await tx
+            .insert(messages)
+            .values({
+              fk_chat_id: chatId,
+              fk_user_id: user_id,
+              message_text: message,
+              sent_at: sent_at,
+              timezone: timezone,
+              image_name: null,
+              image_url: null,
+            })
+            .returning({
+              id: messages.id,
+              sent_at: messages.sent_at,
+              fk_user_id: messages.fk_user_id,
+              fk_chat_id: messages.fk_chat_id,
+              message_text: messages.message_text,
+              timezone: messages.timezone,
+              image_name: messages.image_name,
+              image_url: messages.image_url,
+            });
+          return [msg];
+        }),
         /** @description  Insert a new record into the chatMembers table, but only if that record does not already exist. */
         this.db.execute(sql`
           INSERT INTO ${chatMembers} (fk_chat_id, fk_user_id, added_at, timezone)
@@ -118,7 +121,7 @@ export class QueryHandlers extends UserSchema {
           // TODO: Make this Promise chaining(.then().catch()) and stream the image to the client
           const updateResponse = await this.db
             .update(messages)
-            .set({ image_url: fullFilePath })
+            .set({ image_url: fullFilePath, image_name: imageName })
             .where(eq(messages.id, messageResponse[0].id))
             .returning({
               id: messages.id,
@@ -139,10 +142,15 @@ export class QueryHandlers extends UserSchema {
       return messageResponse;
     } catch (err) {
       Sentry.captureException(err, {
-        tags: {
-          method: 'insertMessageToChannelsTable',
+        extra: {
           chatId,
           user_id,
+          sent_at,
+          timezone,
+          method: 'insertMessageToChannelsTable',
+        },
+        tags: {
+          method: 'insertMessageToChannelsTable',
         },
       });
       return {

@@ -109,6 +109,7 @@ var QueryHandlers = /** @class */ (function (_super) {
         var chatId = _a.chatId, user_id = _a.user_id, message = _a.message, sent_at = _a.sent_at, timezone = _a.timezone, imageFile = _a.imageFile, imageName = _a.imageName;
         return __awaiter(this, void 0, void 0, function () {
             var imageProcessingPromise, _b, messageResponse, _, processedImage, bucketResponse, SUPABASE_BUCKET_URL, fullFilePath, updateResponse, err_1;
+            var _this = this;
             return __generator(this, function (_c) {
                 switch (_c.label) {
                     case 0:
@@ -118,27 +119,37 @@ var QueryHandlers = /** @class */ (function (_super) {
                             imageProcessingPromise = this.processImageForStorage(imageFile);
                         }
                         return [4 /*yield*/, Promise.all([
-                                this.db
-                                    .insert(schema_1.messages)
-                                    .values({
-                                    fk_chat_id: chatId,
-                                    fk_user_id: user_id,
-                                    message_text: message,
-                                    sent_at: sent_at,
-                                    timezone: timezone,
-                                    image_name: imageName,
-                                    image_file: null
-                                })
-                                    .returning({
-                                    id: schema_1.messages.id,
-                                    sent_at: schema_1.messages.sent_at,
-                                    fk_user_id: schema_1.messages.fk_user_id,
-                                    fk_chat_id: schema_1.messages.fk_chat_id,
-                                    message_text: schema_1.messages.message_text,
-                                    timezone: schema_1.messages.timezone,
-                                    image_name: schema_1.messages.image_name,
-                                    image_url: schema_1.messages.image_url
-                                }),
+                                this.db.transaction(function (tx) { return __awaiter(_this, void 0, void 0, function () {
+                                    var msg;
+                                    return __generator(this, function (_a) {
+                                        switch (_a.label) {
+                                            case 0: return [4 /*yield*/, tx
+                                                    .insert(schema_1.messages)
+                                                    .values({
+                                                    fk_chat_id: chatId,
+                                                    fk_user_id: user_id,
+                                                    message_text: message,
+                                                    sent_at: sent_at,
+                                                    timezone: timezone,
+                                                    image_name: null,
+                                                    image_url: null
+                                                })
+                                                    .returning({
+                                                    id: schema_1.messages.id,
+                                                    sent_at: schema_1.messages.sent_at,
+                                                    fk_user_id: schema_1.messages.fk_user_id,
+                                                    fk_chat_id: schema_1.messages.fk_chat_id,
+                                                    message_text: schema_1.messages.message_text,
+                                                    timezone: schema_1.messages.timezone,
+                                                    image_name: schema_1.messages.image_name,
+                                                    image_url: schema_1.messages.image_url
+                                                })];
+                                            case 1:
+                                                msg = (_a.sent())[0];
+                                                return [2 /*return*/, [msg]];
+                                        }
+                                    });
+                                }); }),
                                 /** @description  Insert a new record into the chatMembers table, but only if that record does not already exist. */
                                 this.db.execute(drizzle_orm_1.sql(templateObject_1 || (templateObject_1 = __makeTemplateObject(["\n          INSERT INTO ", " (fk_chat_id, fk_user_id, added_at, timezone)\n          SELECT ", ", ", ", ", ", ", "\n          WHERE NOT EXISTS (\n            SELECT 1 FROM ", " WHERE fk_chat_id = ", " AND fk_user_id = ", "\n          );\n        "], ["\n          INSERT INTO ", " (fk_chat_id, fk_user_id, added_at, timezone)\n          SELECT ", ", ", ", ", ", ", "\n          WHERE NOT EXISTS (\n            SELECT 1 FROM ", " WHERE fk_chat_id = ", " AND fk_user_id = ", "\n          );\n        "])), schema_1.chatMembers, chatId, user_id, sent_at, timezone, schema_1.chatMembers, chatId, user_id)),
                                 imageProcessingPromise,
@@ -154,7 +165,7 @@ var QueryHandlers = /** @class */ (function (_super) {
                         fullFilePath = SUPABASE_BUCKET_URL + "/storage/v1/object/public/" + bucketResponse.fullPath;
                         return [4 /*yield*/, this.db
                                 .update(schema_1.messages)
-                                .set({ image_url: fullFilePath })
+                                .set({ image_url: fullFilePath, image_name: imageName })
                                 .where(drizzle_orm_1.eq(schema_1.messages.id, messageResponse[0].id))
                                 .returning({
                                 id: schema_1.messages.id,
@@ -174,10 +185,15 @@ var QueryHandlers = /** @class */ (function (_super) {
                     case 5:
                         err_1 = _c.sent();
                         Sentry.captureException(err_1, {
-                            tags: {
-                                method: 'insertMessageToChannelsTable',
+                            extra: {
                                 chatId: chatId,
-                                user_id: user_id
+                                user_id: user_id,
+                                sent_at: sent_at,
+                                timezone: timezone,
+                                method: 'insertMessageToChannelsTable'
+                            },
+                            tags: {
+                                method: 'insertMessageToChannelsTable'
                             }
                         });
                         return [2 /*return*/, {

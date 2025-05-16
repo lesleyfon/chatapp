@@ -47,9 +47,9 @@ export type PrivateMessageType = {
   fk_user_id: string;
   message_text: string;
   sent_at: Date; // Assuming it's a timestamp
-  image_file: string;
+  image_file?: string;
   image_url?: string;
-  image_name: string;
+  image_name?: string;
   timezone: string;
 };
 

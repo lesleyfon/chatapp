@@ -66,7 +66,7 @@ export class FileUploadModel {
 
   /**
    * Uploads an image to the Channel Chat image bucket.
-   * @param file - The image file to upload.??
+   * @param file - The image file to upload.
    * @param name - The name of the image file.
    * @returns The uploaded image data.
    */
@@ -85,7 +85,7 @@ export class FileUploadModel {
         if (error) {
           Sentry.captureException(error, {
             tags: {
-              method: 'uploadImageToChannelChatBucket',
+              method: 'uploadImageToChannelChatImageBucket',
               error: error.message,
             },
           });
@@ -94,7 +94,7 @@ export class FileUploadModel {
         Sentry.captureMessage('Image uploaded to Channel Chat image bucket', {
           level: 'info',
           tags: {
-            method: 'uploadImageToChannelChatBucket',
+            method: 'uploadImageToChannelChatImageBucket',
             filePath,
           },
         });
@@ -103,7 +103,7 @@ export class FileUploadModel {
       .catch((error) => {
         Sentry.captureException(error, {
           tags: {
-            method: 'uploadImageToChannelChatBucket',
+            method: 'uploadImageToChannelChatImageBucket',
           },
         });
         return null;
