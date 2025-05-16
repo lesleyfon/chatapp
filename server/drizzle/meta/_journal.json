@@ -64,6 +64,13 @@
       "when": 1747343221019,
       "tag": "0008_cheerful_talos",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1747360015989,
+      "tag": "0009_premium_lucky_pierre",
+      "breakpoints": true
     }
   ]
 }
