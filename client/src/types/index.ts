@@ -9,7 +9,7 @@ import type {
 } from '../pages/authentication/validation';
 
 export type ChatUserType = {
-  name: string | null;
+  name: string;
   pk_user_id: string;
   email: string | null;
   sender?: string;
@@ -46,7 +46,7 @@ export type PrivateMessageType = {
   fk_private_chat_id: string;
   fk_user_id: string;
   message_text: string;
-  sent_at: Date; // Assuming it's a timestamp
+  sent_at: string; // Assuming it's a timestamp
   image_file?: string;
   image_url?: string;
   image_name?: string;
@@ -77,7 +77,7 @@ export type MessageType = {
   fk_chat_id: string;
   fk_user_id: string;
   message_text: string | null;
-  sent_at: Date;
+  sent_at: string;
   timezone: string;
   image_file?: string;
   image_url?: string;
