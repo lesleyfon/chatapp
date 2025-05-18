@@ -57,19 +57,19 @@ export const ChatRoomSection = () => {
         <section ref={messageSectionContainerRef}>
           {currentChannelRoomMessages.map((msgData: RoomMessagesResponse) => {
             const isSender = msgData.chat_user.sender === 'You';
+            const { timezone, sent_at, message_text, id, image_name, image_url } = msgData.messages;
+            const user_name = msgData.chat_user.sender as string;
             return (
               <MessageCard
-                key={msgData?.messages?.id}
-                {...{
-                  isSender,
-                  timezone: msgData.messages.timezone,
-                  sent_at: msgData.messages.sent_at,
-                  message_text: msgData.messages.message_text,
-                  user_name: msgData.chat_user.sender as string,
-                  message_id: msgData.messages.id,
-                  image_name: msgData.messages.image_name,
-                  image_url: msgData.messages.image_url,
-                }}
+                key={id}
+                isSender={isSender}
+                timezone={timezone}
+                sent_at={sent_at}
+                message_text={message_text}
+                user_name={user_name}
+                message_id={id}
+                image_name={image_name}
+                image_url={image_url}
               />
             );
           })}

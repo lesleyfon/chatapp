@@ -90,21 +90,21 @@ export const PrivateMessageSection = ({ data }: { data: PrivateChatResultType[] 
           >
             {allPrivateMessagesRoomMessages.map((data) => {
               const isSender = String(data?.chat_user?.pk_user_id ?? '') === String(userId);
+              const { timezone, sent_at, message_text, id, image_name, image_url } =
+                data.private_messages;
               const user_name = isSender ? 'You' : data?.chat_user.name;
 
               return (
                 <MessageCard
                   key={data.private_messages.id}
-                  {...{
-                    isSender,
-                    user_name,
-                    timezone: data.private_messages.timezone,
-                    sent_at: data.private_messages.sent_at,
-                    message_text: data.private_messages.message_text,
-                    message_id: Number.parseInt(data.private_messages.id, 10),
-                    image_name: data.private_messages.image_name,
-                    image_url: data.private_messages.image_url,
-                  }}
+                  isSender={isSender}
+                  timezone={timezone}
+                  sent_at={sent_at}
+                  message_text={message_text}
+                  user_name={user_name}
+                  message_id={Number.parseInt(id, 10)}
+                  image_name={image_name}
+                  image_url={image_url}
                 />
               );
             })}
