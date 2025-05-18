@@ -29,7 +29,6 @@ export function useSendMessage({ socket }: { socket: Socket | null }) {
   useSocketAuth({ socket });
 
   const { privateMessageOptimisticUIUpdate } = useAddPrivateMessageResponse({
-    socket,
     userId: userId as string,
     vListRef: null,
   });
