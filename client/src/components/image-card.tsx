@@ -1,5 +1,5 @@
 import { cn } from '../lib';
-import { getImageSrc } from './layout/chat-room/private-chat-section';
+import { getImageSrc } from './../lib';
 
 export default function ImageCard({
   imageUrl,

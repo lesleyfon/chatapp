@@ -11,19 +11,6 @@ import ImageCard from '../../image-card';
 import { Card, CardContent } from '../../ui/card';
 import { ScrollArea } from '../../ui/scroll-area';
 
-export function getImageSrc(imageUrl: string, imageName?: string): string {
-  if (imageUrl.startsWith('blob:') || imageUrl.startsWith('https://')) {
-    return imageUrl;
-  }
-  // Fall back for images uploaded before migration
-  const imageNameParts = imageName?.split('.');
-  const imageType =
-    imageNameParts?.length !== undefined && imageNameParts.length > 0
-      ? imageNameParts.pop()
-      : 'jpeg';
-  return `data:image/${imageType};base64,${imageUrl}`;
-}
-
 function ConversationCard({ data, isSender }: { data: PrivateChatResultType; isSender: boolean }) {
   const { image_name, message_text, sent_at, timezone, image_url } = data.private_messages;
   const hasImage = image_url && image_name;
