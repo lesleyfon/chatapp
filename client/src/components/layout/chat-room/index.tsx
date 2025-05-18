@@ -8,6 +8,7 @@ import { Loader } from '../../loader';
 
 import useAuthStorage from '../../../store/use-auth-storage';
 import { useChannelRoomMessages } from '../../../store/use-channel-room-messages-store';
+import { usePrivateMessagesStore } from '../../../store/use-private-messages-store';
 import { ChatMessageInput } from './chat-room-message-input';
 import { ChatRoomSection } from './chat-room-section';
 import { PrivateMessageSection } from './private-chat-section';
@@ -20,12 +21,19 @@ function ChatRoomLayout() {
   const { loadingState, chatData, recipientData, chatId, uniquePrivateChatKey, isNewPrivateChat } =
     useRoomData();
   const { setCurrentChannelRoomMessages } = useChannelRoomMessages();
+  const { setAllPrivateMessagesRoomMessages } = usePrivateMessagesStore();
 
   useEffect(() => {
     if (chatData?.msg) {
       setCurrentChannelRoomMessages(chatData.msg);
     }
   }, [chatData?.msg, setCurrentChannelRoomMessages]);
+
+  useEffect(() => {
+    if (recipientData && 'msg' in recipientData) {
+      setAllPrivateMessagesRoomMessages(recipientData.msg);
+    }
+  }, [recipientData, setAllPrivateMessagesRoomMessages]);
 
   const userId = useAuthStorage((state) => state.userId);
   if (loadingState) {
@@ -51,7 +59,7 @@ function ChatRoomLayout() {
     const recipientId = uniquePrivateChatKey.split('new_private_chat')[0];
     return (
       <section className='overflow-y-hidden grid grid-rows-[12fr_1fr] md:grid-rows-[11fr_1fr]'>
-        <PrivateMessageSection data={[]} />
+        <PrivateMessageSection />
         <ChatMessageInput
           isPrivateChat
           chatName={''}
@@ -84,7 +92,7 @@ function ChatRoomLayout() {
 
     return (
       <section className='overflow-y-hidden grid grid-rows-[12fr_1fr] md:grid-rows-[11fr_1fr]'>
-        <PrivateMessageSection data={data ?? []} />
+        <PrivateMessageSection />
         <ChatMessageInput
           isPrivateChat
           chatName={''}
