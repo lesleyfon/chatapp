@@ -3,59 +3,11 @@ import { VList, type VListHandle } from 'virtua';
 
 import { useAddPrivateMessageResponse } from '../../../hooks/use-add-private-message-response';
 import { useSocket } from '../../../hooks/use-socket';
-import { cn, formatDate } from '../../../lib';
 import useAuthStorage from '../../../store/use-auth-storage';
 import { usePrivateMessagesStore } from '../../../store/use-private-messages-store';
 import type { PrivateChatResultType } from '../../../types';
-import ImageCard from '../../image-card';
-import { Card, CardContent } from '../../ui/card';
+import MessageCard from '../../message-card';
 import { ScrollArea } from '../../ui/scroll-area';
-
-function ConversationCard({ data, isSender }: { data: PrivateChatResultType; isSender: boolean }) {
-  const { image_name, message_text, sent_at, timezone, image_url } = data.private_messages;
-  const hasImage = image_url && image_name;
-  return (
-    <>
-      {hasImage ? (
-        <ImageCard
-          // Default to using the image_url if it exists, otherwise use the image_file
-          imageUrl={image_url}
-          imageName={image_name as string}
-          isSender={isSender}
-        />
-      ) : null}
-      <div
-        className={cn(
-          'flex py-4',
-          isSender ? 'justify-end' : 'justify-start',
-          hasImage ? 'pt-0' : 'pt-4',
-        )}
-      >
-        <Card
-          className={cn(
-            'max-w-[70%] md:max-w-[60%] lg:max-w-[50%]',
-            isSender ? 'bg-slate-300 text-black' : '',
-          )}
-        >
-          <CardContent className='p-3'>
-            <div
-              className={cn(
-                'text-sm font-semibold mb-1',
-                isSender ? 'text-primary-foreground' : 'text-secondary-foreground',
-              )}
-            >
-              {isSender ? 'You' : data?.chat_user.name}
-            </div>
-            <p>{message_text as string}</p>
-            <div className='text-[10px] text-muted-foreground mt-1'>
-              {formatDate(sent_at, timezone)}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    </>
-  );
-}
 
 export const PrivateMessageSection = ({ data }: { data: PrivateChatResultType[] }) => {
   const vListRef = useRef<VListHandle>(null);
@@ -138,8 +90,22 @@ export const PrivateMessageSection = ({ data }: { data: PrivateChatResultType[] 
           >
             {allPrivateMessagesRoomMessages.map((data) => {
               const isSender = String(data?.chat_user?.pk_user_id ?? '') === String(userId);
+              const user_name = isSender ? 'You' : data?.chat_user.name;
+
               return (
-                <ConversationCard key={data?.private_messages.id} data={data} isSender={isSender} />
+                <MessageCard
+                  key={data.private_messages.id}
+                  {...{
+                    isSender,
+                    user_name,
+                    timezone: data.private_messages.timezone,
+                    sent_at: data.private_messages.sent_at,
+                    message_text: data.private_messages.message_text,
+                    message_id: Number.parseInt(data.private_messages.id, 10),
+                    image_name: data.private_messages.image_name,
+                    image_url: data.private_messages.image_url,
+                  }}
+                />
               );
             })}
           </VList>
