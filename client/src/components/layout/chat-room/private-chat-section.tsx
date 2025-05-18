@@ -1,41 +1,35 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { VList, type VListHandle } from 'virtua';
 
 import { useAddPrivateMessageResponse } from '../../../hooks/use-add-private-message-response';
+import { useSetScrollPosition } from '../../../hooks/use-set-scroll-position';
 import { useSocket } from '../../../hooks/use-socket';
 import useAuthStorage from '../../../store/use-auth-storage';
 import { usePrivateMessagesStore } from '../../../store/use-private-messages-store';
-import type { PrivateChatResultType } from '../../../types';
 import MessageCard from '../../message-card';
 import { ScrollArea } from '../../ui/scroll-area';
 
-export const PrivateMessageSection = ({ data }: { data: PrivateChatResultType[] }) => {
-  const vListRef = useRef<VListHandle>(null);
+export const PrivateMessageSection = () => {
+  const virtualizerListRef = useRef<VListHandle>(null);
   const userId = useAuthStorage((state) => state.userId);
   const socket = useSocket();
 
   useAddPrivateMessageResponse({
     socket,
     userId: userId as string,
-    vListRef: vListRef,
+    vListRef: virtualizerListRef,
   });
-  const { allPrivateMessagesRoomMessages, setAllPrivateMessagesRoomMessages } =
-    usePrivateMessagesStore();
-
-  useEffect(() => {
-    if (data?.length === undefined || data?.length === 0) return;
-    setAllPrivateMessagesRoomMessages(data);
-  }, [data, setAllPrivateMessagesRoomMessages]);
+  const { allPrivateMessagesRoomMessages } = usePrivateMessagesStore();
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {
     // Restore scroll position after component is mounted and virtualized list has rendered
     const savedScrollPosition = localStorage.getItem('scrollPosition');
-    if (savedScrollPosition && vListRef.current) {
+    if (savedScrollPosition && virtualizerListRef.current) {
       // Apply scroll position after list has rendered
       setTimeout(() => {
-        if (vListRef.current) {
-          vListRef.current.scrollToIndex(Number(savedScrollPosition), {
+        if (virtualizerListRef.current) {
+          virtualizerListRef.current.scrollToIndex(Number(savedScrollPosition), {
             smooth: true,
             align: 'start',
           });
@@ -45,33 +39,10 @@ export const PrivateMessageSection = ({ data }: { data: PrivateChatResultType[] 
   }, [allPrivateMessagesRoomMessages.length]); // Triggered after data is loaded
 
   const scrollAreaRef = useRef(null);
-  const [scrollAreaHeight, setScrollAreaHeight] = useState(0);
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
-  useEffect(() => {
-    const setScrollArea = () => {
-      if (scrollAreaRef.current) {
-        const scrollArea = scrollAreaRef.current as HTMLElement;
-        setScrollAreaHeight(scrollArea.clientHeight);
-      }
-    };
-
-    if (scrollAreaRef.current) {
-      setScrollArea();
-    }
-    if (typeof window === 'undefined' || !scrollAreaRef?.current) {
-      setScrollAreaHeight(800);
-    }
-
-    const controller = new AbortController();
-    const signal = controller.signal;
-
-    window.addEventListener('resize', setScrollArea, { signal });
-
-    return () => {
-      controller.abort();
-    };
-  }, [scrollAreaRef]);
+  const { scrollAreaHeight } = useSetScrollPosition({
+    ref: scrollAreaRef,
+    data: allPrivateMessagesRoomMessages,
+  });
 
   const handleScroll = (offset: number) => {
     localStorage.setItem('scrollPosition', offset.toString());
@@ -82,8 +53,12 @@ export const PrivateMessageSection = ({ data }: { data: PrivateChatResultType[] 
       {allPrivateMessagesRoomMessages.length > 0 ? (
         <section>
           <VList
-            style={{ height: scrollAreaHeight, flexDirection: 'column' }}
-            ref={vListRef}
+            style={{
+              height: scrollAreaHeight,
+              flexDirection: 'column',
+              scrollBehavior: 'smooth',
+            }}
+            ref={virtualizerListRef}
             count={allPrivateMessagesRoomMessages.length}
             onScroll={handleScroll}
             shift={true}
