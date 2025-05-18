@@ -7,3 +7,4 @@ repos:
         language: system
         types: [text]
         files: \.(js|jsx|ts|tsx)$
+        
