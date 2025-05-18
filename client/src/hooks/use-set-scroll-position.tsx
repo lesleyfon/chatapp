@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useLayoutEffect, useState } from 'react';
 
 export const useSetScrollPosition = ({
   ref,
@@ -6,14 +6,14 @@ export const useSetScrollPosition = ({
 }: { ref: React.RefObject<HTMLDivElement>; data: unknown[] }) => {
   const [scrollAreaHeight, setScrollAreaHeight] = useState(0);
 
-  const setScrollArea = () => {
+  const setScrollArea = useCallback(() => {
     if (ref.current) {
       const scrollArea = ref.current as HTMLElement;
       setScrollAreaHeight(scrollArea.clientHeight);
     }
-  };
-  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
-  useEffect(() => {
+  }, [ref]);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: intentional
+  useLayoutEffect(() => {
     if (ref.current) {
       setScrollArea();
     }
