@@ -31,7 +31,12 @@ function ConversationCard({ data, isSender }: { data: PrivateChatResultType; isS
           hasImage ? 'pt-0' : 'pt-4',
         )}
       >
-        <Card className={cn('max-w-[70%]', isSender ? 'bg-slate-300 text-black' : '')}>
+        <Card
+          className={cn(
+            'max-w-[70%] md:max-w-[60%] lg:max-w-[50%]',
+            isSender ? 'bg-slate-300 text-black' : '',
+          )}
+        >
           <CardContent className='p-3'>
             <div
               className={cn(
