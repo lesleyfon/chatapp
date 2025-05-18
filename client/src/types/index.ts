@@ -18,7 +18,7 @@ export type ChatUserType = {
 
 interface ChatMessage {
   message_text: string;
-  sent_at: Date;
+  sent_at: string;
 }
 export interface SidebarItemLinkProps {
   to: string;
@@ -29,14 +29,14 @@ export interface SidebarItemLinkProps {
 export type ChatRoomType = {
   pk_chats_id: string;
   chat_name: string | null;
-  createdAt: Date;
+  createdAt: string;
 };
 
 export type PrivateChatType = {
   pk_private_chat_id: string; // Assuming UUID or similar
   user_a_id: string;
   user_b_id: string;
-  created_at: Date; // Assuming it's a timestamp
+  created_at: string; // Assuming it's a timestamp
   unique_chat_key: string;
   isNewPrivateChat?: boolean;
 };
@@ -88,7 +88,7 @@ export type ChatMember = {
   id: string | null;
   fk_chat_id: string;
   fk_user_id: string;
-  added_at: Date;
+  added_at: string;
 };
 
 export type ChatListType = {
