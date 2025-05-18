@@ -134,8 +134,13 @@ export function useSendMessage({ socket }: { socket: Socket | null }) {
    *
    * @param data - An object containing the chat ID, chat name, and the message text to be sent.
    */
-  function sendMessage(
-    data: MessageInputProps & { chatId: string; chatName: string },
+  async function sendMessage(
+    data: MessageInputProps & {
+      chatId: string;
+      chatName: string;
+      imageFile?: HTMLImageElement | File | string;
+      imageName?: string;
+    },
     socket: Socket | null,
   ) {
     // If the socket is null, return early
@@ -146,13 +151,26 @@ export function useSendMessage({ socket }: { socket: Socket | null }) {
     const sent_at = getCurrentDateTimeWithTimezone();
     const timezone = getBrowserTimeZone();
 
+    /**
+     * IF the imageFile is a gif, convert to base64
+     */
+    let file = data?.imageFile;
+
+    if (file instanceof File) {
+      if (file.type === 'image/gif') {
+        file = await convertGifToBase64(file);
+      }
+    }
+
     socket.emit('add-message', {
+      sent_at,
+      timezone,
+      senderId: userId,
       chatId: data.chatId,
       message: data.message_text,
       chatName: data.chatName,
-      senderId: userId,
-      sent_at,
-      timezone,
+      imageFile: file,
+      imageName: data.imageName,
     });
   }
 

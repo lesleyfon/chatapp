@@ -1,11 +1,13 @@
 import { TriangleAlert } from 'lucide-react';
 
+import { useEffect } from 'react';
 import type { ErrorResponse, SuccessResponse } from '../../../api/http-methods';
 import { SocketProvider } from '../../../context/socket.context';
 import useRoomData from '../../../hooks/use-room-data';
 import { Loader } from '../../loader';
 
 import useAuthStorage from '../../../store/use-auth-storage';
+import { useChannelRoomMessages } from '../../../store/use-channel-room-messages-store';
 import { ChatMessageInput } from './chat-room-message-input';
 import { ChatRoomSection } from './chat-room-section';
 import { PrivateMessageSection } from './private-chat-section';
@@ -17,6 +19,13 @@ function isErrorResponse(data: ErrorResponse | SuccessResponse): data is ErrorRe
 function ChatRoomLayout() {
   const { loadingState, chatData, recipientData, chatId, uniquePrivateChatKey, isNewPrivateChat } =
     useRoomData();
+  const { setCurrentChannelRoomMessages } = useChannelRoomMessages();
+
+  useEffect(() => {
+    if (chatData?.msg) {
+      setCurrentChannelRoomMessages(chatData.msg);
+    }
+  }, [chatData?.msg, setCurrentChannelRoomMessages]);
 
   const userId = useAuthStorage((state) => state.userId);
   if (loadingState) {
@@ -89,7 +98,7 @@ function ChatRoomLayout() {
   const roomName = chatData?.msg?.[0]?.chats?.chat_name ?? '';
   return (
     <section className='overflow-y-hidden grid grid-rows-[12fr_1fr] md:grid-rows-[11fr_1fr]'>
-      <ChatRoomSection data={chatData?.msg ?? []} />
+      <ChatRoomSection />
       {chatId && chatId.length > 0 ? (
         <ChatMessageInput chatId={chatId} chatName={roomName} />
       ) : null}

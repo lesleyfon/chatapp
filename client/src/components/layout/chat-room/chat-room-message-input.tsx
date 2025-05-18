@@ -152,14 +152,18 @@ export function ChatMessageInput({
       return;
     }
     const message_img = getValues(FILE_INPUT_NAME) as unknown as File;
+    const sharedPayloadObject = {
+      message_text: data.message_text,
+      sent_at: getCurrentDateTimeWithTimezone(),
+      imageFile: message_img,
+      imageName: message_img?.name,
+    };
+
     if (isPrivateChat) {
       sendPrivateMessage(
         {
-          message_text: data.message_text,
+          ...sharedPayloadObject,
           recipientId: recipientId as string,
-          imageFile: message_img,
-          imageName: message_img?.name,
-          sent_at: getCurrentDateTimeWithTimezone(),
           uniquePrivateChatKey: uniquePrivateChatKey,
         },
         socket,
@@ -167,8 +171,8 @@ export function ChatMessageInput({
     } else {
       sendMessage(
         {
+          ...sharedPayloadObject,
           chatId,
-          message_text: data.message_text,
           chatName,
         },
         socket,

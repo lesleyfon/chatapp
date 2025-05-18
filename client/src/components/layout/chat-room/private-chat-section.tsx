@@ -7,59 +7,19 @@ import { cn, formatDate } from '../../../lib';
 import useAuthStorage from '../../../store/use-auth-storage';
 import { usePrivateMessagesStore } from '../../../store/use-private-messages-store';
 import type { PrivateChatResultType } from '../../../types';
+import ImageCard from '../../image-card';
 import { Card, CardContent } from '../../ui/card';
 import { ScrollArea } from '../../ui/scroll-area';
 
-export function getImageSrc(imageUrl: string, imageName?: string): string {
-  if (imageUrl.startsWith('blob:') || imageUrl.startsWith('https://')) {
-    return imageUrl;
-  }
-  // Fall back for images uploaded before migration
-  const imageNameParts = imageName?.split('.');
-  const imageType =
-    imageNameParts?.length !== undefined && imageNameParts.length > 0
-      ? imageNameParts.pop()
-      : 'jpeg';
-  return `data:image/${imageType};base64,${imageUrl}`;
-}
-
-export default function ImageCard({
-  imageUrl,
-  imageName,
-  isSender,
-}: {
-  imageUrl: string;
-  imageName: string;
-  isSender: boolean;
-}) {
-  const src = getImageSrc(imageUrl, imageName);
-
-  return (
-    <div className={cn('flex justify-end', isSender ? 'justify-end' : 'justify-start')}>
-      <div className='bg-white rounded-lg shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl dark:bg-gray-950 w-[400px] h-[250px]'>
-        <img
-          src={src}
-          alt={imageName}
-          width={400}
-          height={250}
-          className='object-contain'
-          style={{ aspectRatio: '400/250', objectFit: 'contain' }}
-        />
-      </div>
-    </div>
-  );
-}
-
 function ConversationCard({ data, isSender }: { data: PrivateChatResultType; isSender: boolean }) {
-  const { image_file, image_name, message_text, sent_at, timezone, image_url } =
-    data.private_messages;
-  const hasImage = image_file || image_url;
+  const { image_name, message_text, sent_at, timezone, image_url } = data.private_messages;
+  const hasImage = image_url && image_name;
   return (
     <>
       {hasImage ? (
         <ImageCard
           // Default to using the image_url if it exists, otherwise use the image_file
-          imageUrl={image_url ?? (image_file as string)}
+          imageUrl={image_url}
           imageName={image_name as string}
           isSender={isSender}
         />
@@ -68,10 +28,15 @@ function ConversationCard({ data, isSender }: { data: PrivateChatResultType; isS
         className={cn(
           'flex py-4',
           isSender ? 'justify-end' : 'justify-start',
-          hasImage ? 'py-0' : 'py-4',
+          hasImage ? 'pt-0' : 'pt-4',
         )}
       >
-        <Card className={cn('max-w-[70%]', isSender ? 'bg-slate-300 text-black' : '')}>
+        <Card
+          className={cn(
+            'max-w-[70%] md:max-w-[60%] lg:max-w-[50%]',
+            isSender ? 'bg-slate-300 text-black' : '',
+          )}
+        >
           <CardContent className='p-3'>
             <div
               className={cn(
