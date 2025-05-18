@@ -9,7 +9,7 @@ import type {
 } from '../pages/authentication/validation';
 
 export type ChatUserType = {
-  name: string | null;
+  name: string;
   pk_user_id: string;
   email: string | null;
   sender?: string;
@@ -18,7 +18,10 @@ export type ChatUserType = {
 
 interface ChatMessage {
   message_text: string;
-  sent_at: Date;
+  /**
+   * ISO-8601 formatted timestamp string (e.g., "2023-04-25T15:30:00.000Z")
+   */
+  sent_at: string;
 }
 export interface SidebarItemLinkProps {
   to: string;
@@ -28,15 +31,15 @@ export interface SidebarItemLinkProps {
 }
 export type ChatRoomType = {
   pk_chats_id: string;
-  chat_name: string | null;
-  createdAt: Date;
+  chat_name: string;
+  createdAt: string;
 };
 
 export type PrivateChatType = {
   pk_private_chat_id: string; // Assuming UUID or similar
   user_a_id: string;
   user_b_id: string;
-  created_at: Date; // Assuming it's a timestamp
+  created_at: string; // Assuming it's a timestamp
   unique_chat_key: string;
   isNewPrivateChat?: boolean;
 };
@@ -46,7 +49,10 @@ export type PrivateMessageType = {
   fk_private_chat_id: string;
   fk_user_id: string;
   message_text: string;
-  sent_at: Date; // Assuming it's a timestamp
+  /**
+   * ISO-8601 formatted timestamp string (e.g., "2023-04-25T15:30:00.000Z")
+   */
+  sent_at: string;
   image_file?: string;
   image_url?: string;
   image_name?: string;
@@ -77,7 +83,10 @@ export type MessageType = {
   fk_chat_id: string;
   fk_user_id: string;
   message_text: string | null;
-  sent_at: Date;
+  /**
+   * ISO-8601 formatted timestamp string (e.g., "2023-04-25T15:30:00.000Z")
+   */
+  sent_at: string;
   timezone: string;
   image_file?: string;
   image_url?: string;
@@ -88,7 +97,7 @@ export type ChatMember = {
   id: string | null;
   fk_chat_id: string;
   fk_user_id: string;
-  added_at: Date;
+  added_at: string;
 };
 
 export type ChatListType = {
@@ -121,6 +130,9 @@ export type PrivateChatResultType = {
 export type MessageInputProps = {
   message_text: string;
   message_img?: string;
+  /**
+   * ISO-8601 formatted timestamp string (e.g., "2023-04-25T15:30:00.000Z")
+   */
   sent_at?: string;
 };
 

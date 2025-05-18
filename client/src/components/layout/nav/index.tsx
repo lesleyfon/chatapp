@@ -124,7 +124,7 @@ function Header(): ReactNode {
         (item) =>
           item.private_chat.unique_chat_key === uniquePrivateChatKey &&
           item.private_messages.fk_user_id !== userId,
-      )?.chat_user?.name ?? 'Chat App';
+      )?.chat_user?.name || 'Chat App';
   }
   const roomName = data?.msg?.[0]?.chats?.chat_name ?? userName;
 
