@@ -179,3 +179,19 @@ export interface SharedAuthInputProps {
     autoComplete: string;
   };
 }
+
+/**
+========================================================
+Components Types
+========================================================
+ */
+export type MessageCardType = {
+  isSender: boolean;
+  timezone: string;
+  sent_at: string;
+  message_text?: string | null;
+  user_name: string;
+  message_id: number;
+  image_name?: string;
+  image_url?: string;
+};

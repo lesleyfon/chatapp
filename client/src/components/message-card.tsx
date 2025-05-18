@@ -1,17 +1,8 @@
 import { cn, formatDate } from '../lib';
+import type { MessageCardType } from '../types';
 import ImageCard from './image-card';
 import { Card, CardContent } from './ui/card';
 
-type MessageCardType = {
-  isSender: boolean;
-  timezone: string;
-  sent_at: string;
-  message_text?: string | null;
-  user_name: string;
-  message_id: number;
-  image_name?: string;
-  image_url?: string;
-};
 export default function MessageCard({
   image_name,
   image_url,
