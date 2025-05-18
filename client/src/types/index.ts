@@ -18,6 +18,9 @@ export type ChatUserType = {
 
 interface ChatMessage {
   message_text: string;
+  /**
+   * ISO-8601 formatted timestamp string (e.g., "2023-04-25T15:30:00.000Z")
+   */
   sent_at: string;
 }
 export interface SidebarItemLinkProps {
@@ -28,7 +31,7 @@ export interface SidebarItemLinkProps {
 }
 export type ChatRoomType = {
   pk_chats_id: string;
-  chat_name: string | null;
+  chat_name: string;
   createdAt: string;
 };
 
@@ -46,7 +49,10 @@ export type PrivateMessageType = {
   fk_private_chat_id: string;
   fk_user_id: string;
   message_text: string;
-  sent_at: string; // Assuming it's a timestamp
+  /**
+   * ISO-8601 formatted timestamp string (e.g., "2023-04-25T15:30:00.000Z")
+   */
+  sent_at: string;
   image_file?: string;
   image_url?: string;
   image_name?: string;
@@ -77,6 +83,9 @@ export type MessageType = {
   fk_chat_id: string;
   fk_user_id: string;
   message_text: string | null;
+  /**
+   * ISO-8601 formatted timestamp string (e.g., "2023-04-25T15:30:00.000Z")
+   */
   sent_at: string;
   timezone: string;
   image_file?: string;
@@ -121,6 +130,9 @@ export type PrivateChatResultType = {
 export type MessageInputProps = {
   message_text: string;
   message_img?: string;
+  /**
+   * ISO-8601 formatted timestamp string (e.g., "2023-04-25T15:30:00.000Z")
+   */
   sent_at?: string;
 };
 
