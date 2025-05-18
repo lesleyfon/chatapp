@@ -6,5 +6,5 @@ repos:
         entry: npx @biomejs/biome check --write --files-ignore-unknown=true --no-errors-on-unmatched
         language: system
         types: [text]
-        files: \.(js|jsx|ts|tsx)$
+        files: '\.(js|jsx|ts|tsx)$'
         
