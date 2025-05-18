@@ -25,8 +25,8 @@ import {
 } from '../ui/dialog';
 
 function sortData(a: ChatUserType, b: ChatUserType) {
-  const aLowercaseChatroomName = (a.name ?? '').toLowerCase();
-  const bLowercaseChatroomName = (b.name ?? '').toLowerCase();
+  const aLowercaseChatroomName = a.name.toLowerCase();
+  const bLowercaseChatroomName = b.name.toLowerCase();
   return aLowercaseChatroomName > bLowercaseChatroomName ? 1 : -1;
 }
 
@@ -49,7 +49,7 @@ const PrivateChatroomLinkItem = ({
         onSelect={handleSelect}
         className=' cursor-pointer !w-full hover:!bg-[#4c4c52] '
       >
-        {name ?? ''}
+        {name}
       </CommandItem>
     </Link>
   );
