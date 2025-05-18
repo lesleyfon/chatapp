@@ -36,8 +36,7 @@ const useAuthStorage = create<AuthState>()(
       login: (data: { userId: string; token: string }) => {
         localStorage.setItem(LOCAL_STORAGE_AUTH_KEYS.TOKEN, JSON.stringify(data.token));
         localStorage.setItem(LOCAL_STORAGE_AUTH_KEYS.USER_ID, JSON.stringify(data.userId));
-        // Clear app state on logout
-        localStorage.clear();
+
         return set({
           token: data.token,
           userId: data.userId,
