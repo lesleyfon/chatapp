@@ -2,22 +2,21 @@ import set from 'lodash/set';
 import { useEffect } from 'react';
 import { useParams } from 'react-router';
 import { useNavigate } from 'react-router-dom';
-import type { Socket } from 'socket.io-client';
 import type { VListHandle } from 'virtua';
 
 import { usePrivateMessagesStore } from '../store/use-private-messages-store';
 import type { PrivateChatResultType } from '../types';
+import { useSocket } from './use-socket';
 
 export function useAddPrivateMessageResponse({
-  socket,
   userId,
   vListRef,
 }: {
   userId: string;
-  socket: Socket | null;
   vListRef: React.RefObject<VListHandle> | null;
 }) {
   const navigate = useNavigate();
+  const socket = useSocket();
   const { allPrivateMessagesRoomMessages, setAllPrivateMessagesRoomMessages } =
     usePrivateMessagesStore();
   const { uniquePrivateChatKey } = useParams();

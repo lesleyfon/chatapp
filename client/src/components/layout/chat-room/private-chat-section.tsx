@@ -3,7 +3,6 @@ import { VList, type VListHandle } from 'virtua';
 
 import { useAddPrivateMessageResponse } from '../../../hooks/use-add-private-message-response';
 import { useSetScrollPosition } from '../../../hooks/use-set-scroll-position';
-import { useSocket } from '../../../hooks/use-socket';
 import useAuthStorage from '../../../store/use-auth-storage';
 import { usePrivateMessagesStore } from '../../../store/use-private-messages-store';
 import MessageCard from '../../message-card';
@@ -12,10 +11,8 @@ import { ScrollArea } from '../../ui/scroll-area';
 export const PrivateMessageSection = () => {
   const virtualizerListRef = useRef<VListHandle>(null);
   const userId = useAuthStorage((state) => state.userId);
-  const socket = useSocket();
 
   useAddPrivateMessageResponse({
-    socket,
     userId: userId as string,
     vListRef: virtualizerListRef,
   });
