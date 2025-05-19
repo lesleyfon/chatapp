@@ -179,3 +179,39 @@ export type CreateNewChatroomRoomNameAndByUserIdReturnTypes = {
   reason?: string;
   userId?: number;
 };
+
+export interface SocketErrorPayload {
+  /**
+   * Human-readable error message
+   */
+  message: string;
+  /**
+   * Error code for categorization
+   */
+  code: string;
+  /**
+   * When the error occurred
+   */
+  timestamp: number;
+  /**
+   * Error severity level
+   */
+  severity: 'low' | 'medium' | 'high';
+  /**
+   * Additional context about where/why the error occurred
+   */
+  context?: {
+    userId?: number; // User who encountered the error
+    roomId?: string; // Chat room where error occurred
+    action?: string; // Action that triggered the error
+    metadata?: Record<string, unknown>; // Any additional relevant data
+  };
+  /**
+   * Whether the client can recover without refresh
+   */
+  isRecoverable: boolean;
+  /**
+   * Whether the action can be retried
+   */
+  retryable: boolean;
+}
