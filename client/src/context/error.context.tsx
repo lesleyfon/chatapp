@@ -20,20 +20,60 @@ interface ErrorContextType {
 
 type SeverityType = 'low' | 'medium' | 'high';
 interface ErrorPayloadType {
+  /**
+   * Human-readable error message
+   */
   message: string;
-  code?: string;
-  timestamp?: number;
-  severity?: SeverityType;
+  /**
+   * Error code for categorization
+   */
+  code: string;
+  /**
+   * When the error occurred
+   */
+  timestamp: number;
+  /**
+   * Error severity level
+   */
+  severity: SeverityType;
+  /**
+   * Additional context about where/why the error occurred
+   */
   context?: {
-    userId?: string;
+    /**
+     * User who encountered the error
+     */
+    userId?: number;
+    /**
+     * User who received the error
+     */
+    recipientId?: number;
+    /**
+     * Chat room where error occurred
+     */
     roomId?: string;
+    /**
+     * Action that triggered the error
+     */
     action?: string;
+    /**
+     * Any additional relevant data
+     */
     metadata?: Record<string, unknown>;
   };
-  isRecoverable?: boolean;
-  retryable?: boolean;
+  /**
+   * Whether the client can recover without refresh
+   */
+  isRecoverable: boolean;
+  /**
+   * Whether the action can be retried
+   */
+  retryable: boolean;
+  /**
+   * Full error object
+   */
+  fullError?: string;
 }
-
 const ErrorContext = createContext<ErrorContextType | undefined>(undefined);
 /**
  * @description This hook is used to show an error dialog to the user.
