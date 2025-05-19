@@ -10,6 +10,7 @@ import type {
   ChatListType,
   ImageFile,
   JWT_RETURN_USER,
+  SocketErrorPayload,
 } from '../types';
 import { ObfuscatedChatKey } from '../utils/obfuscated-chat-key';
 
@@ -92,18 +93,37 @@ export class AppSocketBase extends QueryHandlers {
    * a string that represents the error message to be included in the response object. This message will
    * be sent back to the client when emitting the "add-message-response" event.
    */
-  private emitAddMessageErrorResponse(chatName: string | null, message: string) {
-    const response = {
-      data: null,
-      error: true,
-      message: message,
-      chats: { chatName },
-    };
-    if (chatName) {
-      this.io.to(chatName).emit('add-message-response', response);
-    } else {
-      this.io.emit('add-message-response', response);
-    }
+  private emitSocketError({
+    message,
+    code,
+    timestamp,
+    severity,
+    isRecoverable,
+    retryable,
+    context,
+  }: Partial<SocketErrorPayload>) {
+    // Log the error to Sentry
+    Sentry.captureException(new Error(message), {
+      extra: {
+        code,
+        timestamp,
+        severity,
+        isRecoverable,
+        retryable,
+        context,
+      },
+    });
+
+    // Emit the error to the client
+    this.io.emit('socket-error', {
+      message,
+      code,
+      timestamp,
+      severity,
+      isRecoverable,
+      retryable,
+      context,
+    });
   }
 
   addMessageToChannelRoom(socket: Socket) {
@@ -126,19 +146,79 @@ export class AppSocketBase extends QueryHandlers {
           this.io.socketsJoin(chatName);
 
           if (!chatName) {
-            return this.emitAddMessageErrorResponse(null, 'Chat name cannot be empty');
+            return this.emitSocketError({
+              message: 'Chat name cannot be empty',
+              code: 'CHAT_NAME_EMPTY',
+              timestamp: Date.now(),
+              severity: 'high',
+              isRecoverable: false,
+              retryable: false,
+              context: {
+                userId: user.userId,
+                roomId: chatName,
+                action: 'addMessageToChannelRoom',
+                metadata: {
+                  sent_at,
+                  timezone,
+                },
+              },
+            });
           }
           if (!message) {
-            return this.emitAddMessageErrorResponse(chatName, 'Message cannot be empty');
+            return this.emitSocketError({
+              message: 'Message cannot be empty',
+              code: 'MESSAGE_EMPTY',
+              timestamp: Date.now(),
+              severity: 'high',
+              isRecoverable: false,
+              retryable: false,
+              context: {
+                userId: user.userId,
+                roomId: chatName,
+                action: 'addMessageToChannelRoom',
+                metadata: {
+                  sent_at,
+                  timezone,
+                },
+              },
+            });
           }
           if (!sent_at || !timezone) {
-            return this.emitAddMessageErrorResponse(
-              chatName,
-              'sent_at and timezone cannot be empty',
-            );
+            return this.emitSocketError({
+              message: 'sent_at and timezone cannot be empty',
+              code: 'SENT_AT_TIMEZONE_EMPTY',
+              timestamp: Date.now(),
+              severity: 'high',
+              isRecoverable: false,
+              retryable: false,
+              context: {
+                userId: user.userId,
+                roomId: chatName,
+                action: 'addMessageToChannelRoom',
+                metadata: {
+                  sent_at,
+                  timezone,
+                },
+              },
+            });
           }
           if (!user) {
-            return this.emitAddMessageErrorResponse(chatName, 'User not found');
+            return this.emitSocketError({
+              message: 'User not found',
+              code: 'USER_NOT_FOUND',
+              timestamp: Date.now(),
+              severity: 'high',
+              isRecoverable: false,
+              retryable: false,
+              context: {
+                roomId: chatName,
+                action: 'addMessageToChannelRoom',
+                metadata: {
+                  sent_at,
+                  timezone,
+                },
+              },
+            });
           }
 
           const userId = user.userId;
@@ -166,7 +246,23 @@ export class AppSocketBase extends QueryHandlers {
           });
 
           if ('error' in messageInsertResponse) {
-            return this.emitAddMessageErrorResponse(chatName, messageInsertResponse.reason);
+            return this.emitSocketError({
+              message: messageInsertResponse.reason,
+              code: 'MESSAGE_INSERT_ERROR',
+              timestamp: Date.now(),
+              severity: 'high',
+              isRecoverable: false,
+              retryable: false,
+              context: {
+                userId: user.userId,
+                roomId: chatName,
+                action: 'addMessageToChannelRoom',
+                metadata: {
+                  sent_at,
+                  timezone,
+                },
+              },
+            });
           }
 
           const messageResponse = await this.getMostRecentChatMessageSent(messageInsertResponse);
@@ -192,7 +288,19 @@ export class AppSocketBase extends QueryHandlers {
               method: 'addMessageToChannelRoom',
             },
           });
-          this.emitAddMessageErrorResponse(chatName, 'Failed to send message. Please try again.');
+          this.emitSocketError({
+            message: 'Failed to send message. Please try again.',
+            code: 'MESSAGE_SEND_ERROR',
+            timestamp: Date.now(),
+            severity: 'high',
+            isRecoverable: false,
+            retryable: false,
+            context: {
+              roomId: chatName,
+              action: 'addMessageToChannelRoom',
+              metadata: { sent_at, timezone },
+            },
+          });
         }
       },
     );
@@ -212,10 +320,20 @@ export class AppSocketBase extends QueryHandlers {
       }: AddPrivateMessageType) => {
         try {
           if (!created_at || !timezone) {
-            return this.emitAddMessageErrorResponse(
-              null,
-              'created_at and timezone cannot be empty',
-            );
+            return this.emitSocketError({
+              message: 'created_at and timezone cannot be empty',
+              code: 'CREATED_AT_TIMEZONE_EMPTY',
+              timestamp: Date.now(),
+              severity: 'high',
+              isRecoverable: false,
+              retryable: false,
+              context: {
+                userId: senderId,
+                roomId: uniquePrivateChatKey,
+                action: 'addPrivateMessage',
+                metadata: { created_at, timezone },
+              },
+            });
           }
           const isNewPrivateChat = uniquePrivateChatKey.includes('new_private_chat');
           let uniquePrivateChatKeyCopy = uniquePrivateChatKey;
@@ -241,7 +359,20 @@ export class AppSocketBase extends QueryHandlers {
               uniquePrivateChatKey: uniquePrivateChatKeyCopy,
             });
             if (privateChatEntry.length === 0) {
-              return this.emitAddMessageErrorResponse(null, 'Private chat not found');
+              return this.emitSocketError({
+                message: 'Private chat not found',
+                code: 'PRIVATE_CHAT_NOT_FOUND',
+                timestamp: Date.now(),
+                severity: 'high',
+                isRecoverable: false,
+                retryable: false,
+                context: {
+                  userId: senderId,
+                  roomId: uniquePrivateChatKey,
+                  action: 'addPrivateMessage',
+                  metadata: { created_at, timezone },
+                },
+              });
             }
             const { user_a_id, user_b_id } = privateChatEntry[0];
             recipientId = user_a_id === senderIdCopy ? user_b_id : user_a_id;
@@ -274,7 +405,20 @@ export class AppSocketBase extends QueryHandlers {
             timezone,
           });
           if ('error' in response) {
-            return this.emitAddMessageErrorResponse(null, response.reason);
+            return this.emitSocketError({
+              message: response.reason,
+              code: 'MESSAGE_INSERT_ERROR',
+              timestamp: Date.now(),
+              severity: 'high',
+              isRecoverable: false,
+              retryable: false,
+              context: {
+                userId: senderId,
+                roomId: uniquePrivateChatKey,
+                action: 'addPrivateMessage',
+                metadata: { created_at, timezone },
+              },
+            });
           }
           const privateMessageInsertResponse = response[0];
 
