@@ -145,6 +145,26 @@ export class AppSocketBase extends QueryHandlers {
 
           this.io.socketsJoin(chatName);
 
+          if (!user || !user.userId) {
+            return this.emitSocketError({
+              message: 'User not found',
+              code: 'USER_NOT_FOUND',
+              timestamp: Date.now(),
+              severity: 'high',
+              isRecoverable: false,
+              retryable: false,
+              context: {
+                roomId: chatName,
+                action: 'addMessageToChannelRoom',
+                metadata: {
+                  sent_at,
+                  timezone,
+                  fullError: JSON.stringify(user),
+                },
+              },
+            });
+          }
+
           if (!chatName) {
             return this.emitSocketError({
               message: 'Chat name cannot be empty',
@@ -193,24 +213,6 @@ export class AppSocketBase extends QueryHandlers {
               retryable: false,
               context: {
                 userId: user.userId,
-                roomId: chatName,
-                action: 'addMessageToChannelRoom',
-                metadata: {
-                  sent_at,
-                  timezone,
-                },
-              },
-            });
-          }
-          if (!user) {
-            return this.emitSocketError({
-              message: 'User not found',
-              code: 'USER_NOT_FOUND',
-              timestamp: Date.now(),
-              severity: 'high',
-              isRecoverable: false,
-              retryable: false,
-              context: {
                 roomId: chatName,
                 action: 'addMessageToChannelRoom',
                 metadata: {
@@ -416,7 +418,7 @@ export class AppSocketBase extends QueryHandlers {
                 userId: senderId,
                 roomId: uniquePrivateChatKey,
                 action: 'addPrivateMessage',
-                metadata: { created_at, timezone },
+                metadata: { created_at, timezone, fullError: JSON.stringify(response.error) },
               },
             });
           }
@@ -458,22 +460,26 @@ export class AppSocketBase extends QueryHandlers {
           this.io.emit('get-latest-private-message-sent', addPrivateMessageSocketResponse);
         } catch (error) {
           const hasFiles = imageFile !== null;
-          Sentry.captureException(error, {
-            extra: {
-              senderId,
-              hasFiles,
-              timezone,
-              imageName,
-              created_at,
-              uniquePrivateChatKey,
-              method: 'addPrivateMessage',
-            },
-          });
 
-          // TODO: Make this an internal server error and create a new UI for the error.
-          this.io.emit('add-private-message-error', {
-            error: true,
+          this.emitSocketError({
             message: 'Failed to send message. Please try again.',
+            code: 'MESSAGE_SEND_ERROR',
+            timestamp: Date.now(),
+            severity: 'high',
+            isRecoverable: false,
+            retryable: false,
+            context: {
+              userId: senderId,
+              roomId: uniquePrivateChatKey,
+              action: 'addPrivateMessage',
+              metadata: {
+                created_at,
+                timezone,
+                hasFiles,
+                imageName,
+                fullError: JSON.stringify(error),
+              },
+            },
           });
         }
       },
