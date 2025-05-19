@@ -6,6 +6,8 @@ import { SocketProvider } from '../../../context/socket.context';
 import useRoomData from '../../../hooks/use-room-data';
 import { Loader } from '../../loader';
 
+import { ErrorProvider, useError } from '../../../context/error.context';
+import { useSocket } from '../../../hooks/use-socket';
 import useAuthStorage from '../../../store/use-auth-storage';
 import { useChannelRoomMessages } from '../../../store/use-channel-room-messages-store';
 import { usePrivateMessagesStore } from '../../../store/use-private-messages-store';
@@ -22,6 +24,15 @@ function ChatRoomLayout() {
     useRoomData();
   const { setCurrentChannelRoomMessages } = useChannelRoomMessages();
   const { setAllPrivateMessagesRoomMessages } = usePrivateMessagesStore();
+  const socket = useSocket();
+  const { showError } = useError();
+
+  useEffect(() => {
+    socket.on('socket-error', showError);
+    return () => {
+      socket.off('socket-error', showError);
+    };
+  }, [socket, showError]);
 
   useEffect(() => {
     if (chatData?.msg) {
@@ -117,7 +128,9 @@ function ChatRoomLayout() {
 const ChatRoomLayoutWithSocketProvider = () => {
   return (
     <SocketProvider>
-      <ChatRoomLayout />
+      <ErrorProvider>
+        <ChatRoomLayout />
+      </ErrorProvider>
     </SocketProvider>
   );
 };

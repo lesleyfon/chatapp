@@ -6,6 +6,10 @@ import { useChannelRoomMessages } from '../store/use-channel-room-messages-store
 import type { RoomMessagesResponse } from '../types';
 import { useSocket } from './use-socket';
 
+/**
+ * @description This hook is used to add a chat room response to the current channel room messages.
+ * @returns {void}
+ */
 export function useAddChatRoomResponse() {
   const { currentChannelRoomMessages, setCurrentChannelRoomMessages } = useChannelRoomMessages();
   const userId = useAuthStorage((state) => state.userId);
