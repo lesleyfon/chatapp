@@ -201,10 +201,26 @@ export interface SocketErrorPayload {
    * Additional context about where/why the error occurred
    */
   context?: {
-    userId?: number; // User who encountered the error
-    roomId?: string; // Chat room where error occurred
-    action?: string; // Action that triggered the error
-    metadata?: Record<string, unknown>; // Any additional relevant data
+    /**
+     * User who encountered the error
+     */
+    userId?: number;
+    /**
+     * User who received the error
+     */
+    recipientId?: number;
+    /**
+     * Chat room where error occurred
+     */
+    roomId?: string;
+    /**
+     * Action that triggered the error
+     */
+    action?: string;
+    /**
+     * Any additional relevant data
+     */
+    metadata?: Record<string, unknown>;
   };
   /**
    * Whether the client can recover without refresh
