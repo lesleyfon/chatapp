@@ -83,6 +83,22 @@ export class AppSocketBase extends QueryHandlers {
     });
   }
 
+  private errorToJSON(error: Error | string | Record<string, unknown>) {
+    if (typeof error === 'string') return error;
+    return JSON.stringify(error, (key, value) =>
+      key === 'stack'
+        ? value
+        : typeof value === 'object' && value !== null && !Array.isArray(value)
+          ? Object.keys(value).reduce((acc: Record<string, unknown>, k) => {
+              if (k !== 'cause' && k !== 'errors') {
+                acc[k] = value[k];
+              }
+              return acc;
+            }, {})
+          : value,
+    );
+  }
+
   private buildError(params: {
     message: string;
     code: string;
@@ -98,7 +114,8 @@ export class AppSocketBase extends QueryHandlers {
   }
 
   /**
-   * The function `emitSocketError` sends an error response message to all connected clients.
+   * The function `emitSocketError` sends an error response message to the originating socket
+   * and logs the error to Sentry with detailed context.
    */
   private emitSocketError(
     socket: Socket,
@@ -162,11 +179,8 @@ export class AppSocketBase extends QueryHandlers {
                 context: {
                   roomId: chatName,
                   action: 'addMessageToChannelRoom',
-                  metadata: {
-                    sent_at,
-                    timezone,
-                    fullError: JSON.stringify(user),
-                  },
+                  metadata: { sent_at, timezone },
+                  fullError: this.errorToJSON(user as unknown as Error),
                 },
               }),
             );
@@ -263,11 +277,8 @@ export class AppSocketBase extends QueryHandlers {
                   userId: user?.userId,
                   roomId: chatName,
                   action: 'addMessageToChannelRoom',
-                  fullError: JSON.stringify(messageInsertResponse, null, 2),
-                  metadata: {
-                    sent_at,
-                    timezone,
-                  },
+                  metadata: { sent_at, timezone },
+                  fullError: this.errorToJSON(messageInsertResponse),
                 },
               }),
             );
@@ -305,7 +316,7 @@ export class AppSocketBase extends QueryHandlers {
                 roomId: chatName,
                 action: 'addMessageToChannelRoom',
                 metadata: { sent_at, timezone },
-                fullError: JSON.stringify(error, null, 2),
+                fullError: this.errorToJSON(error),
               },
             }),
           );
@@ -421,7 +432,7 @@ export class AppSocketBase extends QueryHandlers {
                   roomId: uniquePrivateChatKey,
                   action: 'addPrivateMessage',
                   metadata: { created_at, timezone },
-                  fullError: JSON.stringify(response.error),
+                  fullError: this.errorToJSON(response as unknown as Error),
                 },
               }),
             );
@@ -474,13 +485,13 @@ export class AppSocketBase extends QueryHandlers {
                 userId: senderId,
                 roomId: uniquePrivateChatKey,
                 action: 'addPrivateMessage',
-                fullError: JSON.stringify(error),
                 metadata: {
                   created_at,
                   timezone,
                   hasFiles,
                   imageName,
                 },
+                fullError: this.errorToJSON(error),
               },
             }),
           );
