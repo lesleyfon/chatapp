@@ -100,15 +100,18 @@ export class AppSocketBase extends QueryHandlers {
   /**
    * The function `emitSocketError` sends an error response message to all connected clients.
    */
-  private emitSocketError({
-    message,
-    code,
-    timestamp,
-    severity,
-    isRecoverable,
-    retryable,
-    context,
-  }: Partial<SocketErrorPayload>) {
+  private emitSocketError(
+    socket: Socket,
+    {
+      message,
+      code,
+      timestamp,
+      severity,
+      isRecoverable,
+      retryable,
+      context,
+    }: Partial<SocketErrorPayload>,
+  ) {
     // Log the error to Sentry
     Sentry.captureException(new Error(message), {
       extra: {
@@ -122,7 +125,7 @@ export class AppSocketBase extends QueryHandlers {
     });
 
     // Emit the error only to the originator
-    this.io.emit('socket-error', {
+    socket.emit('socket-error', {
       message,
       code,
       timestamp,
@@ -152,6 +155,7 @@ export class AppSocketBase extends QueryHandlers {
 
           if (!user || !user.userId) {
             return this.emitSocketError(
+              socket,
               this.buildError({
                 message: 'User not found',
                 code: 'USER_NOT_FOUND',
@@ -170,6 +174,7 @@ export class AppSocketBase extends QueryHandlers {
 
           if (!chatName) {
             return this.emitSocketError(
+              socket,
               this.buildError({
                 message: 'Chat name cannot be empty',
                 code: 'CHAT_NAME_EMPTY',
@@ -187,6 +192,7 @@ export class AppSocketBase extends QueryHandlers {
           }
           if (!message) {
             return this.emitSocketError(
+              socket,
               this.buildError({
                 message: 'Message cannot be empty',
                 code: 'MESSAGE_EMPTY',
@@ -204,6 +210,7 @@ export class AppSocketBase extends QueryHandlers {
           }
           if (!sent_at || !timezone) {
             return this.emitSocketError(
+              socket,
               this.buildError({
                 message: 'sent_at and timezone cannot be empty',
                 code: 'SENT_AT_TIMEZONE_EMPTY',
@@ -248,6 +255,7 @@ export class AppSocketBase extends QueryHandlers {
 
           if ('error' in messageInsertResponse) {
             return this.emitSocketError(
+              socket,
               this.buildError({
                 message: messageInsertResponse.reason,
                 code: 'MESSAGE_INSERT_ERROR',
@@ -289,6 +297,7 @@ export class AppSocketBase extends QueryHandlers {
             },
           });
           this.emitSocketError(
+            socket,
             this.buildError({
               message: 'Failed to send message. Please try again.',
               code: 'MESSAGE_SEND_ERROR',
@@ -320,6 +329,7 @@ export class AppSocketBase extends QueryHandlers {
         try {
           if (!created_at || !timezone) {
             return this.emitSocketError(
+              socket,
               this.buildError({
                 message: 'created_at and timezone cannot be empty',
                 code: 'CREATED_AT_TIMEZONE_EMPTY',
@@ -357,6 +367,7 @@ export class AppSocketBase extends QueryHandlers {
             });
             if (privateChatEntry.length === 0) {
               return this.emitSocketError(
+                socket,
                 this.buildError({
                   message: 'Private chat not found',
                   code: 'PRIVATE_CHAT_NOT_FOUND',
@@ -401,6 +412,7 @@ export class AppSocketBase extends QueryHandlers {
           });
           if ('error' in response) {
             return this.emitSocketError(
+              socket,
               this.buildError({
                 message: response.reason,
                 code: 'MESSAGE_INSERT_ERROR',
@@ -454,6 +466,7 @@ export class AppSocketBase extends QueryHandlers {
           const hasFiles = imageFile !== null;
 
           this.emitSocketError(
+            socket,
             this.buildError({
               message: 'Failed to send message. Please try again.',
               code: 'MESSAGE_SEND_ERROR',
