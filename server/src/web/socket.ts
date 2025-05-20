@@ -98,14 +98,7 @@ export class AppSocketBase extends QueryHandlers {
   }
 
   /**
-   * The function `emitAddMessageErrorResponse` sends an error response message to a specific chat room
-   * or to all connected clients.
-   * @param {string | null} chatName - The `chatName` parameter is a string that represents the name of
-   * the chat room where the message is being added. It can also be `null` if the message is not
-   * associated with any specific chat room.
-   * @param {string} message - The `message` parameter in the `emitAddMessageErrorResponse` function is
-   * a string that represents the error message to be included in the response object. This message will
-   * be sent back to the client when emitting the "add-message-response" event.
+   * The function `emitSocketError` sends an error response message to all connected clients.
    */
   private emitSocketError({
     message,
@@ -128,7 +121,7 @@ export class AppSocketBase extends QueryHandlers {
       },
     });
 
-    // Emit the error to the client
+    // Emit the error only to the originator
     this.io.emit('socket-error', {
       message,
       code,
@@ -156,8 +149,6 @@ export class AppSocketBase extends QueryHandlers {
           const { chatName, message, sent_at, timezone, imageFile, imageName } = data;
           const token = socket.handshake.auth?.token;
           const user = (await this.decodeJWT(token)) as JWT_RETURN_USER;
-
-          this.io.socketsJoin(chatName);
 
           if (!user || !user.userId) {
             return this.emitSocketError(
@@ -228,6 +219,8 @@ export class AppSocketBase extends QueryHandlers {
               }),
             );
           }
+
+          this.io.socketsJoin(chatName);
 
           const userId = user.userId;
 
