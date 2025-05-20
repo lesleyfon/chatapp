@@ -12,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '../components/ui/dialog';
+import { cn } from '../lib';
 
 interface ErrorContextType {
   showError: (error: ErrorPayloadType) => void;
@@ -74,6 +75,20 @@ interface ErrorPayloadType {
    */
   fullError?: string;
 }
+
+export const getSeverityStyles = (severity?: SeverityType) => {
+  switch (severity) {
+    case 'high':
+      return 'bg-red-50 border-red-500 text-white';
+    case 'medium':
+      return 'bg-yellow-50 border-yellow-500 text-white';
+    case 'low':
+      return 'bg-blue-50 border-blue-500 text-white';
+    default:
+      return 'bg-gray-50 border-gray-500 text-white';
+  }
+};
+
 const ErrorContext = createContext<ErrorContextType | undefined>(undefined);
 /**
  * @description This hook is used to show an error dialog to the user.
@@ -128,7 +143,7 @@ export function ErrorProvider({ children }: { children: React.ReactNode }) {
           </DialogHeader>
 
           {error?.context && (
-            <div className='text-sm text-muted-foreground text-red-500'>
+            <div className={cn('text-sm text-muted-foreground', getSeverityStyles(error.severity))}>
               <h4 className='font-semibold'>Additional Information:</h4>
               <pre className='mt-2 rounded bg-secondary p-2 font-mono text-xs'>
                 {JSON.stringify(error.context, null, 2)}
@@ -162,16 +177,3 @@ export function ErrorProvider({ children }: { children: React.ReactNode }) {
     </ErrorContext.Provider>
   );
 }
-
-export const getSeverityStyles = (severity?: SeverityType) => {
-  switch (severity) {
-    case 'high':
-      return 'bg-red-50 border-red-500';
-    case 'medium':
-      return 'bg-yellow-50 border-yellow-500';
-    case 'low':
-      return 'bg-blue-50 border-blue-500';
-    default:
-      return 'bg-gray-50 border-gray-500';
-  }
-};
