@@ -174,7 +174,7 @@ export class AppSocketBase extends QueryHandlers {
                 message: 'Chat name cannot be empty',
                 code: 'CHAT_NAME_EMPTY',
                 context: {
-                  userId: user.userId,
+                  userId: user?.userId,
                   roomId: chatName,
                   action: 'addMessageToChannelRoom',
                   metadata: {
@@ -191,7 +191,7 @@ export class AppSocketBase extends QueryHandlers {
                 message: 'Message cannot be empty',
                 code: 'MESSAGE_EMPTY',
                 context: {
-                  userId: user.userId,
+                  userId: user?.userId,
                   roomId: chatName,
                   action: 'addMessageToChannelRoom',
                   metadata: {
@@ -208,7 +208,7 @@ export class AppSocketBase extends QueryHandlers {
                 message: 'sent_at and timezone cannot be empty',
                 code: 'SENT_AT_TIMEZONE_EMPTY',
                 context: {
-                  userId: user.userId,
+                  userId: user?.userId,
                   roomId: chatName,
                   action: 'addMessageToChannelRoom',
                   metadata: {
@@ -252,7 +252,7 @@ export class AppSocketBase extends QueryHandlers {
                 message: messageInsertResponse.reason,
                 code: 'MESSAGE_INSERT_ERROR',
                 context: {
-                  userId: user.userId,
+                  userId: user?.userId,
                   roomId: chatName,
                   action: 'addMessageToChannelRoom',
                   fullError: JSON.stringify(messageInsertResponse, null, 2),
