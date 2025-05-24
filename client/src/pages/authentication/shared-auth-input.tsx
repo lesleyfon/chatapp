@@ -23,12 +23,12 @@ export function SharedAuthInput({ field, fd }: SharedAuthInputProps) {
 
   return (
     <FormControl>
-      <div className='flex flex-row relative items-center'>
+      <div className='relative flex flex-row items-center'>
         <Input {...field} {...fd} ref={inputRef} placeholder={fd.label} type={type} />
         {fd.type === 'password' && (
           <Button
             type='button'
-            className='bg-white text-black'
+            className='text-black bg-white'
             onClick={togglePasswordVisibility}
             aria-label={showPassword ? 'Hide password' : 'Show password'}
             aria-pressed={showPassword}

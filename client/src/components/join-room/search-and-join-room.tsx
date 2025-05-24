@@ -107,7 +107,7 @@ export function SearchRoom() {
           variant='outline'
           className='border-0 p-0 bg-transparent  hover:bg-[#2f2f2f]'
         >
-          <SearchIcon className='h-5 w-5' />
+          <SearchIcon className='w-5 h-5' />
           <span className='sr-only'>Search room</span>
         </Button>
       </DialogTrigger>

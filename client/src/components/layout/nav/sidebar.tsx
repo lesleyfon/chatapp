@@ -35,7 +35,7 @@ export const SidebarItemLink = React.memo(({ data }: { data: SidebarItemLinkProp
         isActivePathLinkItem ? 'bg-slate-200 hover:!bg-slate-200 text-black' : '',
       )}
     >
-      <Avatar className='h-8 w-8 border flex content-center justify-center items-center'>
+      <Avatar className='flex items-center content-center justify-center w-8 h-8 border'>
         <Icon />
       </Avatar>
       <div className='flex-1 truncate'>
@@ -68,10 +68,10 @@ SidebarItemLink.displayName = 'SidebarLinkItem';
 
 function ChannelsSection({ children }: { children: React.ReactNode }) {
   return (
-    <section aria-label='Chat channels' className='h-1/2 flex flex-col'>
-      <h1 className='text-center font-bold text-l pt-4'>Channels</h1>
+    <section aria-label='Chat channels' className='flex flex-col h-1/2'>
+      <h1 className='pt-4 font-bold text-center text-l'>Channels</h1>
       <ScrollArea className='flex-1 w-full'>
-        <div className='space-y-1 p-2'>{children}</div>
+        <div className='p-2 space-y-1'>{children}</div>
       </ScrollArea>
     </section>
   );
@@ -81,9 +81,9 @@ ChannelsSection.displayName = 'ChannelsSection';
 function PrivateMessagesSection({ children }: { children: React.ReactNode }) {
   return (
     <section aria-label='Private Messages' className='h-[90%] flex flex-col'>
-      <h1 className='text-center font-bold text-l pt-4'>Private Message</h1>
+      <h1 className='pt-4 font-bold text-center text-l'>Private Message</h1>
       <ScrollArea className='flex-1 w-full'>
-        <div className='space-y-1 p-2'>{children}</div>
+        <div className='p-2 space-y-1'>{children}</div>
       </ScrollArea>
       <SearchPrivateRoom
         triggerChild={
@@ -96,7 +96,7 @@ function PrivateMessagesSection({ children }: { children: React.ReactNode }) {
             )}
           >
             <span>New Private Chat</span>
-            <SIDEBAR_CONSTANTS.ICON_MAP.Plus className='h-5 w-5' />
+            <SIDEBAR_CONSTANTS.ICON_MAP.Plus className='w-5 h-5' />
             <span className='sr-only'>Search room</span>
           </Button>
         }
@@ -110,7 +110,7 @@ PrivateMessagesSection.displayName = 'PrivateMessagesSection';
 function SidebarWrapperHeader() {
   return (
     <SidebarHeader>
-      <div className='sticky top-0 flex h-14 items-center justify-between px-4'>
+      <div className='sticky top-0 flex items-center justify-between px-4 h-14'>
         <div className='font-semibold'>Chats</div>
         <div>
           <JoinRoom />
@@ -198,7 +198,7 @@ function SidebarWrapper({ className }: SidebarProps) {
   const { handleCloseDialogOnMobileView } = useMobileSidebar();
 
   return (
-    <Sidebar side='left' className='dark h-screen'>
+    <Sidebar side='left' className='h-screen dark'>
       <SidebarWrapperHeader />
       <SidebarContent onClick={handleCloseDialogOnMobileView}>
         <section className={cn('w-full', className)}>

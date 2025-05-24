@@ -21,7 +21,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '../../ui/popover';
 const ErrorMessages = ({ errors }: ErrorMessagesProps) => (
   <div className='flex flex-col'>
     {Object.keys(errors).map((error) => (
-      <p key={error} className='text-red-400 text-xs'>
+      <p key={error} className='text-xs text-red-400'>
         {errors[error as keyof MessageInputProps]?.message as string}
       </p>
     ))}
@@ -49,10 +49,10 @@ const FileInputElement = ({
         )}
       >
         {svgUrl === DEFAULT_SVG_URL ? (
-          <ImageIcon className='h-5 w-5' />
+          <ImageIcon className='w-5 h-5' />
         ) : (
           <div
-            className='w-full h-full absolute inset-0'
+            className='absolute inset-0 w-full h-full'
             style={{
               backgroundImage: `url(${svgUrl})`,
               backgroundRepeat: 'no-repeat',
@@ -226,11 +226,11 @@ export function ChatMessageInput({
         <Popover>
           <PopoverTrigger>
             <Button type='button' variant='ghost' size='icon' className='ml-2'>
-              <SmileIcon className='h-5 w-5' />
+              <SmileIcon className='w-5 h-5' />
               <span className='sr-only'>Add emoji</span>
             </Button>
           </PopoverTrigger>
-          <PopoverContent className='border-0 p-0 mr-5'>
+          <PopoverContent className='p-0 mr-5 border-0'>
             <EmojiPicker
               width={300}
               theme={Theme.DARK}
@@ -244,7 +244,7 @@ export function ChatMessageInput({
           </PopoverContent>
         </Popover>
         <Button type='submit' size='icon' className='ml-2'>
-          <SendIcon className='h-5 w-5' />
+          <SendIcon className='w-5 h-5' />
           <span className='sr-only'>Send message</span>
         </Button>
       </form>

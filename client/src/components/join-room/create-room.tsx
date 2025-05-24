@@ -76,7 +76,7 @@ export function CreateNewRoom() {
           variant='outline'
           className='border-0 p-0 bg-transparent  hover:bg-[#2f2f2f] '
         >
-          <PlusIcon className='h-5 w-5' />
+          <PlusIcon className='w-5 h-5' />
           <span className='sr-only'>New Chat</span>
         </Button>
       </DialogTrigger>
@@ -124,7 +124,7 @@ export function CreateNewRoom() {
                 size='icon'
                 className={cn('ml-2 hover:border-primary hover:border-solid')}
               >
-                <SendIcon className='h-5 w-5' />
+                <SendIcon className='w-5 h-5' />
                 <span className='sr-only'>Send message</span>
               </Button>
             </div>

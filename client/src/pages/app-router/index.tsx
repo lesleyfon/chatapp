@@ -12,7 +12,7 @@ export const ProtectedRoute: FC<{ isAuthenticated: () => boolean }> = ({ isAuthe
 };
 
 const MainLayout = () => (
-  <div className='h-screen border-collapse overflow-hidden w-screen'>
+  <div className='w-screen h-screen overflow-hidden border-collapse'>
     <main className='flex-1 overflow-y-auto overflow-x-hidden bg-secondary/10 pb-1 grid md:grid-cols-[1fr_11fr]'>
       <Sidebar className='relative hidden h-full md:grid' />
       <div className='grid grid-rows-[1fr_11fr] h-screen'>

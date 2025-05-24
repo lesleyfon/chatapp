@@ -63,7 +63,7 @@ function Desktop({ roomName }: { roomName: string }): ReactNode {
       <div>
         <div className='font-semibold'>{roomName}</div>
         <div className='text-xs text-muted-foreground'>
-          <span className='inline-flex bg-green-400 rounded-full w-2 h-2'></span>
+          <span className='inline-flex w-2 h-2 bg-green-400 rounded-full'></span>
           <span className='ml-1'>Online</span>
         </div>
       </div>
@@ -107,7 +107,7 @@ function Header(): ReactNode {
       <>
         <MobileNav />
         <nav className={navVariants({ variant: 'desktop' })}>
-          <p className='flex items-center justify-center h-full text-red-500 text-2xl'>
+          <p className='flex items-center justify-center h-full text-2xl text-red-500'>
             {ERROR_MESSAGE} <TriangleAlert className='w-6 h-6' />
           </p>
           <NavActions />
@@ -129,7 +129,7 @@ function Header(): ReactNode {
   const roomName = data?.msg?.[0]?.chats?.chat_name ?? userName;
 
   return (
-    <header className='supports-backdrop-blur:bg-background/60 left-0 right-0 top-0 z-20 bg-background/95 backdrop-blur'>
+    <header className='top-0 left-0 right-0 z-20 supports-backdrop-blur:bg-background/60 bg-background/95 backdrop-blur'>
       <Desktop roomName={roomName} />
       <MobileNav />
     </header>

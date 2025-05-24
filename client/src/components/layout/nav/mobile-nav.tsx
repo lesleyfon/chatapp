@@ -32,7 +32,7 @@ export const MobileSidebar = ({
   return (
     <div className='block md:!hidden mx-5'>
       <div className='px-1 py-6 pt-16'>
-        <Sidebar className='block md:hidden h-screen border-0 overflow-hidden' />
+        <Sidebar className='block h-screen overflow-hidden border-0 md:hidden' />
       </div>
     </div>
   );

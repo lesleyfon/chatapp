@@ -61,7 +61,7 @@ function ChatRoomLayout() {
         <h2 className='flex items-center justify-center text-red-500 text-8xl'>
           404 <TriangleAlert className='w-24 h-24' />
         </h2>
-        <p className='flex items-center justify-center text-red-500 text-2xl'>{ERROR_MESSAGE}</p>
+        <p className='flex items-center justify-center text-2xl text-red-500'>{ERROR_MESSAGE}</p>
       </div>
     );
   }
@@ -94,7 +94,7 @@ function ChatRoomLayout() {
           <h2 className='flex items-center justify-center text-red-500 text-8xl'>
             500 <TriangleAlert className='w-24 h-24' />
           </h2>
-          <p className='flex items-center justify-center text-red-500 text-2xl'>
+          <p className='flex items-center justify-center text-2xl text-red-500'>
             Internal Server Error
           </p>
         </div>

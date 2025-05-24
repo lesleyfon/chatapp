@@ -62,7 +62,7 @@ export function Register() {
               name={fd.name}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className='text-left w-full flex'>{fd.label}</FormLabel>
+                  <FormLabel className='flex w-full text-left'>{fd.label}</FormLabel>
                   <SharedAuthInput field={field} fd={fd} />
                   <FormMessage />
                 </FormItem>
@@ -70,8 +70,8 @@ export function Register() {
             />
           );
         })}
-        <FormRootError className=' text-red-300 text-left' />
-        <Button type='submit' className='bg-white text-black'>
+        <FormRootError className='text-left text-red-300 ' />
+        <Button type='submit' className='text-black bg-white'>
           Submit
         </Button>
       </form>

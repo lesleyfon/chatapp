@@ -20,7 +20,7 @@ export const LogoutButton: FC = (): ReactNode => {
       className='border-0 p-0 bg-transparent  hover:bg-[#2f2f2f]'
       onClick={logoutHandler}
     >
-      <LogOutIcon className='h-5 w-5' />
+      <LogOutIcon className='w-5 h-5' />
       <span className='sr-only'>Logout</span>
     </Button>
   );
