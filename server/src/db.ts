@@ -19,13 +19,3 @@ export function connectToDB() {
 
   return drizzle(client as unknown as never);
 }
-
-// Initialize a single client instance
-const client = new Client({
-  connectionString: DATABASE_URL,
-  ssl: process.env.ENVIRONMENT === 'production' ? { rejectUnauthorized: false } : undefined,
-});
-
-// TODO: Add A retry here/in this file
-client.connect();
-export const db = drizzle(client as unknown as never);
