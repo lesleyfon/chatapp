@@ -26,8 +26,8 @@ export default function MessageCard({
         >
           <Card
             className={cn(
-              'max-w-[70%] md:max-w-[60%] lg:max-w-[50%] !bg-[#242424]',
-              isSender ? 'bg-slate-300 text-black' : '',
+              'max-w-[70%] md:max-w-[60%] lg:max-w-[50%]',
+              isSender ? 'bg-slate-300 text-black' : '!bg-[#242424]',
             )}
           >
             <CardContent className='p-3'>
