@@ -61,9 +61,9 @@ export function useSendMessage({ socket }: { socket: Socket | null }) {
     // Convert Image to a urlObject
     // Only perform optimistic update for the sender
     if (userId !== data.recipientId) {
-      let imageFile = data?.imageFile;
-      if (imageFile instanceof File) {
-        imageFile = URL.createObjectURL(imageFile);
+      let imageURL = data?.imageFile;
+      if (data?.imageFile instanceof File) {
+        imageURL = URL.createObjectURL(data?.imageFile);
       }
       privateMessageOptimisticUIUpdate({
         private_chat: {
@@ -79,7 +79,7 @@ export function useSendMessage({ socket }: { socket: Socket | null }) {
           message_text: data.message_text,
           sent_at: created_at,
           fk_user_id: userId as string,
-          image_file: imageFile as string,
+          image_url: imageURL as string,
           image_name: data.imageName as string,
           timezone,
         },
