@@ -1057,7 +1057,7 @@ export class QueryHandlers extends UserSchema {
     processedImage: Buffer;
     imageName: string;
     messageId: number;
-  }) {
+  }): Promise<string | null> {
     // Add retries to the uploadImageToPrivateImageBucket function
     return this.uploadImageToPrivateImageBucket(processedImage, imageName).then(
       (bucketResponse) => {
@@ -1067,15 +1067,17 @@ export class QueryHandlers extends UserSchema {
         const { SUPABASE_BUCKET_URL } = getEnvs();
         const fullFilePath = `${SUPABASE_BUCKET_URL}/storage/v1/object/public/${bucketResponse.fullPath}`;
 
-        this.db
+        // Return the database update promise so the caller gets the result when it actually completes
+        return this.db
           .update(privateMessages)
           .set({ image_url: fullFilePath })
           .where(eq(privateMessages.id, messageId))
+          .returning({ image_url: privateMessages.image_url })
           .then((response) => {
-            if (response.rowCount === 0) {
+            if (response.length === 0) {
               throw new Error('Failed to update private message with image URL');
             }
-            return fullFilePath;
+            return response[0].image_url;
           })
           .catch((err) => {
             Sentry.captureException(err, {
@@ -1084,9 +1086,8 @@ export class QueryHandlers extends UserSchema {
                 method: 'syncPrivateMessage',
               },
             });
+            throw new Error('Failed to update private message with image URL');
           });
-
-        return fullFilePath;
       },
     );
   }
