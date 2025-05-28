@@ -47,7 +47,7 @@ export function useAddPrivateMessageResponse({
 
       const privateChatUserIds = new Set([responseSenderId, responseRecipientId].map(String));
       // If the user is not part of the private chat, return early
-      if (!privateChatUserIds.has(userId)) {
+      if (!privateChatUserIds.has(String(userId))) {
         return;
       }
 
@@ -65,7 +65,14 @@ export function useAddPrivateMessageResponse({
       if (String(response.chat_user.pk_user_id) === String(userId)) {
         set(responseCopy, 'chat_user.name', 'You');
       }
-      const updatedRoomMessages = [...allPrivateMessagesRoomMessages, responseCopy];
+
+      // [...allPrivateMessagesRoomMessages, responseCopy]
+      const updatedRoomMessages = [
+        ...allPrivateMessagesRoomMessages.filter(
+          (res) => res.private_messages.id !== responseCopy.private_messages.id,
+        ),
+        responseCopy,
+      ];
       setAllPrivateMessagesRoomMessages(updatedRoomMessages);
 
       if (vListRef?.current) {
