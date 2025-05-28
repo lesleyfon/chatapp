@@ -10,6 +10,7 @@ import type {
   ChatListType,
   ImageFile,
   JWT_RETURN_USER,
+  PrivateChatResultWithIsNewPrivateChat,
   SocketErrorPayload,
 } from '../types';
 import { ObfuscatedChatKey } from '../utils/obfuscated-chat-key';
@@ -406,7 +407,7 @@ export class AppSocketBase extends QueryHandlers {
             uniquePrivateChatKeyCopy,
           );
           const privateChatsInsertResponseObject = privateChatsInsertResponse[0];
-          const response = await this.createPrivateMessage({
+          const createPrivateMessageResponse = await this.createPrivateMessage({
             privateChatsInsertResponse: {
               ...privateChatsInsertResponseObject,
               pk_private_chat_id: privateChatsInsertResponseObject.pk_private_chat_id,
@@ -421,25 +422,28 @@ export class AppSocketBase extends QueryHandlers {
             created_at,
             timezone,
           });
-          if ('error' in response) {
+          if ('error' in createPrivateMessageResponse) {
             return this.emitSocketError(
               socket,
               this.buildError({
-                message: response.reason,
+                message: createPrivateMessageResponse.reason,
                 code: 'MESSAGE_INSERT_ERROR',
                 context: {
                   userId: senderId,
                   roomId: uniquePrivateChatKey,
                   action: 'addPrivateMessage',
                   metadata: { created_at, timezone },
-                  fullError: this.errorToJSON(response as unknown as Error),
+                  fullError: this.errorToJSON(
+                    createPrivateMessageResponse.reason as unknown as Error,
+                  ),
                 },
               }),
             );
           }
+          const { response, processedImage } = createPrivateMessageResponse;
           const privateMessageInsertResponse = response[0];
 
-          const addPrivateMessageSocketResponse = {
+          const addPrivateMessageSocketResponse: PrivateChatResultWithIsNewPrivateChat = {
             private_chat: {
               pk_private_chat_id: privateChatsInsertResponseObject.pk_private_chat_id,
               user_a_id: privateChatsInsertResponseObject.user_a_id,
@@ -462,17 +466,37 @@ export class AppSocketBase extends QueryHandlers {
               sent_at: privateMessageInsertResponse.sent_at,
               image_name: privateMessageInsertResponse.image_name,
               timezone: privateMessageInsertResponse.timezone,
+              image_file: imageFile ? '' : null,
             },
             recipient: {
               pk_user_id: receiver.pk_user_id,
               name: receiver.name,
               email: receiver.email,
+              created_at: receiver.created_at,
             },
           };
 
-          this.io.emit('add-private-message-response', addPrivateMessageSocketResponse);
-          // Emits an event to display the most recent message sent
           this.io.emit('get-latest-private-message-sent', addPrivateMessageSocketResponse);
+          this.io.emit('add-private-message-response', addPrivateMessageSocketResponse);
+          if (imageFile && processedImage !== null && imageName !== undefined) {
+            // Sync the private message with the database
+            this.syncPrivateMessage({ processedImage, imageName, messageId: response[0].id })
+              .then((response) => {
+                addPrivateMessageSocketResponse.private_messages.image_url = response;
+                this.io.emit('add-private-message-response', addPrivateMessageSocketResponse);
+              })
+              .catch((err) => {
+                Sentry.captureException(err, {
+                  extra: {
+                    imageName,
+                    messageId: response[0].id,
+                    method: 'syncPrivateMessage',
+                    fullError: this.errorToJSON(err),
+                  },
+                });
+              });
+          }
+          // Emits an event to display the most recent message sent
         } catch (error) {
           const hasFiles = imageFile !== null;
 

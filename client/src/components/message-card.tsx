@@ -15,28 +15,19 @@ export default function MessageCard({
   const hasImage = image_url && image_name;
   const hasText = message_text && message_text.length > 0;
   return (
-    <>
-      {hasImage ? (
-        <ImageCard
-          // Default to using the image_url if it exists, otherwise use the image_file
-          imageUrl={image_url}
-          imageName={image_name as string}
-          isSender={isSender}
-        />
-      ) : null}
-
+    <div className='flex flex-col'>
       {hasText ? (
         <div
           className={cn(
             'flex py-4 ',
             isSender ? 'justify-end' : 'justify-start',
-            hasImage ? 'pt-0' : 'pt-4',
+            hasImage ? 'pb-0' : 'pb-4',
           )}
         >
           <Card
             className={cn(
               'max-w-[70%] md:max-w-[60%] lg:max-w-[50%]',
-              isSender ? 'bg-slate-300 text-black' : '',
+              isSender ? 'bg-slate-300 text-black' : '!bg-[#242424]',
             )}
           >
             <CardContent className='p-3'>
@@ -56,6 +47,10 @@ export default function MessageCard({
           </Card>
         </div>
       ) : null}
-    </>
+
+      {hasImage ? (
+        <ImageCard imageUrl={image_url} imageName={image_name as string} isSender={isSender} />
+      ) : null}
+    </div>
   );
 }

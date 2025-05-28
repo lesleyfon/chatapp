@@ -231,3 +231,7 @@ export interface SocketErrorPayload {
    */
   retryable: boolean;
 }
+
+export type PrivateChatResultWithIsNewPrivateChat = Omit<PrivateChatResult, 'private_chat'> & {
+  private_chat: PrivateChatBase & { isNewPrivateChat: boolean };
+};
