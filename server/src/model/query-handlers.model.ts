@@ -1029,44 +1029,12 @@ export class QueryHandlers extends UserSchema {
         });
 
       // Process image and DB insertion in parallel
-      const [processedImage, dbResponse] = await Promise.all([
+      const [processedImage, response] = await Promise.all([
         imageProcessingPromise,
         dbInsertPromise,
       ]);
 
-      // If we have an image to upload, do it after DB insertion
-      if (processedImage && imageName) {
-        //TODO: look into streaming the image from the response to the client
-        const bucketResponse = await this.uploadImageToPrivateImageBucket(
-          processedImage,
-          imageName,
-        );
-
-        if (bucketResponse) {
-          const { SUPABASE_BUCKET_URL } = getEnvs();
-          const fullFilePath = `${SUPABASE_BUCKET_URL}/storage/v1/object/public/${bucketResponse.fullPath}`;
-
-          const updateResponse = await this.db
-            .update(privateMessages)
-            .set({ image_url: fullFilePath })
-            .where(eq(privateMessages.id, dbResponse[0].id))
-            .returning({
-              id: privateMessages.id,
-              fk_private_chat_id: privateMessages.fk_private_chat_id,
-              fk_user_id: privateMessages.fk_user_id,
-              message_text: privateMessages.message_text,
-              sent_at: privateMessages.sent_at,
-              timezone: privateMessages.timezone,
-              image_file: privateMessages.image_file,
-              image_name: privateMessages.image_name,
-              image_url: privateMessages.image_url,
-            });
-
-          dbResponse[0].image_url = fullFilePath;
-          return updateResponse;
-        }
-      }
-      return dbResponse;
+      return { processedImage, response };
     } catch (err) {
       Sentry.captureException(err, {
         tags: {
@@ -1079,6 +1047,48 @@ export class QueryHandlers extends UserSchema {
         reason: err.message,
       };
     }
+  }
+
+  syncPrivateMessage({
+    processedImage,
+    imageName,
+    messageId,
+  }: {
+    processedImage: Buffer;
+    imageName: string;
+    messageId: number;
+  }) {
+    // Add retries to the uploadImageToPrivateImageBucket function
+    return this.uploadImageToPrivateImageBucket(processedImage, imageName).then(
+      (bucketResponse) => {
+        if (!bucketResponse) {
+          throw new Error('Failed to upload image to private image bucket');
+        }
+        const { SUPABASE_BUCKET_URL } = getEnvs();
+        const fullFilePath = `${SUPABASE_BUCKET_URL}/storage/v1/object/public/${bucketResponse.fullPath}`;
+
+        this.db
+          .update(privateMessages)
+          .set({ image_url: fullFilePath })
+          .where(eq(privateMessages.id, messageId))
+          .then((response) => {
+            if (response.rowCount === 0) {
+              throw new Error('Failed to update private message with image URL');
+            }
+            return fullFilePath;
+          })
+          .catch((err) => {
+            Sentry.captureException(err, {
+              extra: {
+                messageId,
+                method: 'syncPrivateMessage',
+              },
+            });
+          });
+
+        return fullFilePath;
+      },
+    );
   }
 }
 
