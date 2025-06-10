@@ -365,9 +365,8 @@ export class AppSocketBase extends QueryHandlers {
           };
           let recipientId: number;
           if (isNewPrivateChat) {
-            recipientId = Number.parseInt(
-              uniquePrivateChatKeyCopy.split('new_private_chat_').at(-1) as string,
-            );
+            const splitKey = uniquePrivateChatKeyCopy.split('new_private_chat_');
+            recipientId = Number.parseInt(splitKey[splitKey.length - 1]);
             uniquePrivateChatKeyCopy = ObfuscatedChatKey.getObfuscatedChatKey(
               recipientId,
               senderIdCopy,
