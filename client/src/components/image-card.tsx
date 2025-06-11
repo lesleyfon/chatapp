@@ -1,5 +1,4 @@
-import { cn } from '../lib';
-import { getImageSrc } from './../lib';
+import { cn, getImageSrc } from '../lib';
 
 export default function ImageCard({
   imageUrl,

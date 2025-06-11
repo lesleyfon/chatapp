@@ -11,6 +11,7 @@ import { useMobileSidebar } from '../../../hooks/use-mobile-sidebar';
 import { useSocket } from '../../../hooks/use-socket';
 import { cn, timeDifference } from '../../../lib';
 import useAuthStorage from '../../../store/use-auth-storage';
+import { useLatestChannelRoomListStore } from '../../../store/use-latest-channel-room-list-store';
 import type { ChatListType, SidebarItemLinkProps, SidebarProps } from '../../../types';
 import { SIDEBAR_CONSTANTS } from '../../constants';
 import { JoinRoom } from '../../join-room';
@@ -194,7 +195,8 @@ function SidebarWrapper({ className }: SidebarProps) {
   const socket = useSocket();
 
   useGetPrivateMessageList({ socket });
-  const { chatroomList } = useGetChatList({ socket });
+  useGetChatList({ socket });
+  const { latestChannelRoomList } = useLatestChannelRoomListStore();
   const { handleCloseDialogOnMobileView } = useMobileSidebar();
 
   return (
@@ -204,7 +206,7 @@ function SidebarWrapper({ className }: SidebarProps) {
         <section className={cn('w-full', className)}>
           <nav className='grid gap-1  grid-rows-2 h-[calc(100vh-3.5rem)]'>
             <ChannelsSection>
-              <ChatRoomList data={chatroomList} />
+              <ChatRoomList data={latestChannelRoomList} />
             </ChannelsSection>
 
             <PrivateMessagesSection>

@@ -2,8 +2,8 @@ import { Slot } from '@radix-ui/react-slot';
 import { type VariantProps, cva } from 'class-variance-authority';
 import { PanelLeft } from 'lucide-react';
 import * as React from 'react';
+import { useIsMobile } from '../../hooks/use-mobile';
 import { cn } from '../../lib';
-import { useIsMobile } from './../../hooks/use-mobile';
 import { Button } from './button';
 import { Input } from './input';
 import { Separator } from './separator';
@@ -198,7 +198,7 @@ const Sidebar = React.forwardRef<
             }
             side={side}
           >
-            <div className='flex h-full w-full flex-col'>{children}</div>
+            <div className='flex flex-col w-full h-full'>{children}</div>
           </SheetContent>
         </Sheet>
       );
@@ -207,7 +207,7 @@ const Sidebar = React.forwardRef<
     return (
       <div
         ref={ref}
-        className='group peer hidden md:block text-sidebar-foreground'
+        className='hidden group peer md:block text-sidebar-foreground'
         data-state={state}
         data-collapsible={state === 'collapsed' ? collapsible : ''}
         data-variant={variant}
