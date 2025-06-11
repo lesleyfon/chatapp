@@ -218,7 +218,7 @@ export class QueryHandlers extends UserSchema {
       return a.messages.sent_at > b.messages.sent_at ? -1 : 1;
     });
 
-    return response.slice(0, 5) as unknown as ChatListType[];
+    return response as unknown as ChatListType[];
   }
 
   /**
