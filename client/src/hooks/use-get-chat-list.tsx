@@ -1,26 +1,24 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { useNavigate } from 'react-router-dom';
 import type { Socket } from 'socket.io-client';
 import type { ChatListType } from '../types/index';
+import { useLatestChannelRoomListStore } from './../store/use-latest-channel-room-list-store';
 import { useSocketAuth } from './use-socket-auth';
 
 export const useGetChatList = ({ socket }: { socket: Socket | null }) => {
-  const [chatroomList, setChatList] = useState<ChatListType>([]);
-  const [error, setError] = useState<Error | null>(null);
+  const { setLatestChannelRoomList } = useLatestChannelRoomListStore((state) => state);
+  const [_error, setError] = useState<Error | null>(null);
   const navigate = useNavigate();
 
   // Setup listener for new messages
-  const handleMessageUpdate = useCallback((response?: ChatListType) => {
-    if (!response || response?.length === 0) return;
-
-    setChatList((prevChatList) => {
-      const updatedChatList = prevChatList.map((chat) =>
-        chat.chats?.pk_chats_id === response[0].chats?.pk_chats_id ? response[0] : chat,
-      );
-      return updatedChatList;
-    });
-  }, []);
+  const handleMessageUpdate = useCallback(
+    (response?: ChatListType) => {
+      if (!response || response?.length === 0) return;
+      setLatestChannelRoomList(response);
+    },
+    [setLatestChannelRoomList],
+  );
 
   useSocketAuth({ socket });
 
@@ -40,11 +38,9 @@ export const useGetChatList = ({ socket }: { socket: Socket | null }) => {
       // THOUGHT: Would it make sense to have this be an api?
 
       socket.emit('get-chat-list', (response?: ChatListType) => {
-        if (response?.length === undefined || response.length === 0) {
-          setChatList([]);
-          return;
-        }
-        setChatList(response);
+        if (response?.length === undefined || response.length === 0) return;
+
+        setLatestChannelRoomList(response);
       });
 
       socket.on('get-latest-chat-room-message', handleMessageUpdate);
@@ -59,15 +55,4 @@ export const useGetChatList = ({ socket }: { socket: Socket | null }) => {
       socket.off('get-latest-chat-room-message', handleMessageUpdate);
     };
   }, [handleMessageUpdate, navigate, socket]); // Added 'navigate' to the dependency array to ensure effect runs only when it changes
-
-  // Sort the chatroom list by the last message sent
-  const sortedChatroomList = useMemo(() => {
-    return [...chatroomList].sort((a, b) => {
-      const aLastMessage = a.messages?.sent_at;
-      const bLastMessage = b.messages?.sent_at;
-      return aLastMessage > bLastMessage ? -1 : 1;
-    });
-  }, [chatroomList]);
-
-  return { chatroomList: sortedChatroomList, error };
 };
