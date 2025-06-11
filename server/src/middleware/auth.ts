@@ -142,15 +142,29 @@ export class AuthMiddleware extends UserSchema {
         code: StatusCodes.INTERNAL_SERVER_ERROR,
       });
     }
-    // @ts-expect-error Description: Ignoring type error because user is not recognized by TypeScript.
+
+    if (!userObj?.id) {
+      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+        reason: 'Error occurred while creating a new user',
+        code: StatusCodes.INTERNAL_SERVER_ERROR,
+      });
+    }
+
     req.user = {
       name,
       email,
-      userId: userObj?.id,
-      timezone: userObj?.timezone,
+      userId: userObj.id,
+      pk_user_id: userObj.id,
+      timezone: userObj.timezone,
     };
-    // @ts-expect-error Description: Ignoring type error because user is not recognized by TypeScript.
-    req.token = await this.createJWT({ name, email, userId: userObj?.id });
+
+    req.token = await this.createJWT({
+      name,
+      email,
+      userId: userObj.id,
+      timezone: userObj.timezone,
+      created_at: new Date().toISOString(),
+    });
     return next();
   }
 }
