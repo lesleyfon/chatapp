@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
 
-import { useNavigate } from 'react-router-dom';
 import type { Socket } from 'socket.io-client';
 import type { ChatListType } from '../types/index';
 import { useLatestChannelRoomListStore } from './../store/use-latest-channel-room-list-store';
@@ -9,7 +8,6 @@ import { useSocketAuth } from './use-socket-auth';
 export const useGetChatList = ({ socket }: { socket: Socket | null }) => {
   const { setLatestChannelRoomList } = useLatestChannelRoomListStore((state) => state);
   const [_error, setError] = useState<Error | null>(null);
-  const navigate = useNavigate();
 
   // Setup listener for new messages
   const handleMessageUpdate = useCallback(
@@ -54,5 +52,5 @@ export const useGetChatList = ({ socket }: { socket: Socket | null }) => {
     return () => {
       socket.off('get-latest-chat-room-message', handleMessageUpdate);
     };
-  }, [handleMessageUpdate, navigate, socket]); // Added 'navigate' to the dependency array to ensure effect runs only when it changes
+  }, [handleMessageUpdate, socket]);
 };
