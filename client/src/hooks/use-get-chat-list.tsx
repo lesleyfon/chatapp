@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import type { Socket } from 'socket.io-client';
+import { useLatestChannelRoomListStore } from '../store/use-latest-channel-room-list-store';
 import type { ChatListType } from '../types/index';
-import { useLatestChannelRoomListStore } from './../store/use-latest-channel-room-list-store';
 import { useSocketAuth } from './use-socket-auth';
 
 export const useGetChatList = ({ socket }: { socket: Socket | null }) => {
-  const { setLatestChannelRoomList } = useLatestChannelRoomListStore((state) => state);
+  const setLatestChannelRoomList = useLatestChannelRoomListStore((s) => s.setLatestChannelRoomList);
   const [_error, setError] = useState<Error | null>(null);
 
   // Setup listener for new messages
@@ -36,7 +36,7 @@ export const useGetChatList = ({ socket }: { socket: Socket | null }) => {
       // THOUGHT: Would it make sense to have this be an api?
 
       socket.emit('get-chat-list', (response?: ChatListType) => {
-        if (response?.length === undefined || response.length === 0) return;
+        if (!response || response.length === 0) return;
 
         setLatestChannelRoomList(response);
       });
