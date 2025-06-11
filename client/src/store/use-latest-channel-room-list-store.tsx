@@ -12,6 +12,7 @@ function sortChatsByLatestMessage(chats: ChatListType): ChatListType {
 export const useLatestChannelRoomListStore = create<{
   latestChannelRoomList: ChatListType;
   setLatestChannelRoomList: (chatLatestRoomList: ChatListType) => void;
+  updateSingleChat: (updatedChat: ChatListItem) => void;
 }>((set) => ({
   latestChannelRoomList: [],
   setLatestChannelRoomList: (latestChannelRoomUpdates) =>
