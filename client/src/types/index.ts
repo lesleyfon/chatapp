@@ -100,12 +100,14 @@ export type ChatMember = {
   added_at: string;
 };
 
-export type ChatListType = {
+export type ChatListItem = {
   chat_members: ChatMember;
   chats: ChatRoomType | null;
   messages: MessageType;
   chat_user: ChatUserType;
-}[];
+};
+
+export type ChatListType = ChatListItem[];
 
 export type RoomMessagesResponse = {
   chats: ChatRoomType;
