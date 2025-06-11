@@ -4,7 +4,17 @@ import { StatusCodes } from 'http-status-codes';
 import jwt from 'jsonwebtoken';
 import { UserSchema } from '../model/auth.models';
 import { user } from '../schema';
-import type { JWT_RETURN_USER, RequestWithUser, UserInterface } from '../types';
+import type { JWT_RETURN_USER, UserInterface } from '../types';
+
+/**
+ * @description Extends the Request interface to include user and token properties.
+ */
+declare module 'express-serve-static-core' {
+  interface Request {
+    user: Omit<UserInterface, 'created_at' | 'updated_at'>;
+    token: string;
+  }
+}
 
 export class AuthMiddleware extends UserSchema {
   constructor() {
@@ -19,7 +29,7 @@ export class AuthMiddleware extends UserSchema {
    * @param {NextFunction} next - The next function.
    * @returns {Promise<void>} - A promise that resolves to void.
    */
-  async authenticateRequests(req: RequestWithUser, res: Response, next: NextFunction) {
+  async authenticateRequests(req: Request, res: Response, next: NextFunction) {
     const authorization = req.headers.authorization;
     if (!authorization || !authorization.includes('Bearer')) {
       return res.status(StatusCodes.UNAUTHORIZED).json({
@@ -81,9 +91,7 @@ export class AuthMiddleware extends UserSchema {
       return res.status(response.code).json(response);
     }
 
-    // @ts-expect-error Description: Ignoring type error because user is not recognized by TypeScript.
     req.user = response.user as UserInterface;
-    // @ts-expect-error Description: Ignoring type error because token is not recognized by TypeScript.
     req.token = response.token;
 
     return next();

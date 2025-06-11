@@ -45,34 +45,25 @@ export class Chat extends AuthMiddlewareMixin(QueryHandlersMixin(BaseClass)) {
 
     // Middlewares
     this.router.get('/', this.baseRoute);
-    this.router.get(
-      '/:chatId',
-      // @ts-expect-error desc
-      this.authMiddleware.authenticateRequests,
-      this.getChatMessagesById,
-    );
+    this.router.get('/:chatId', this.authMiddleware.authenticateRequests, this.getChatMessagesById);
     this.router.get(
       '/private-message/:uniquePrivateChatKey',
-      // @ts-expect-error desc
       this.authMiddleware.authenticateRequests,
       this.getPrivateMessagesById,
     );
     this.router.get(
       '/all/chat-rooms',
-      // @ts-expect-error desc
       this.authMiddleware.authenticateRequests,
       this.getAllChatRooms,
     );
     // Get all private chat rooms
     this.router.get(
       '/all/private-chat-rooms',
-      // @ts-expect-error desc
       this.authMiddleware.authenticateRequests,
       this.getAllPrivateChatRooms,
     );
     this.router.post(
       '/chat/new-chatroom',
-      // @ts-expect-error desc
       this.authMiddleware.authenticateRequests,
       this.createChatRoom,
     );
@@ -84,10 +75,9 @@ export class Chat extends AuthMiddlewareMixin(QueryHandlersMixin(BaseClass)) {
    * @param res - Response
    * @returns - Chat messages
    */
-  async getChatMessagesById(req: RequestWithUser, res: Response) {
+  async getChatMessagesById(req: Request, res: Response) {
     try {
       const { chatId } = req.params;
-
       if (!chatId) {
         // Report Error to Sentry
         const eventId = Sentry.captureEvent({
